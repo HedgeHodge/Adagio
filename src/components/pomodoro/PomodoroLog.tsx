@@ -14,6 +14,18 @@ interface PomodoroLogProps {
   onEditEntry: (entry: PomodoroLogEntry) => void;
 }
 
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${remainingMinutes}m`;
+};
+
 export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProps) {
   if (log.length === 0) {
     return (
@@ -42,7 +54,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProp
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm text-foreground truncate">
-                    Session #{log.length - index} ({entry.duration} min)
+                    Session #{log.length - index} ({formatDuration(entry.duration)})
                   </div>
                   {entry.project && (
                     <div className="text-xs text-primary/90 flex items-center mt-1 truncate">
