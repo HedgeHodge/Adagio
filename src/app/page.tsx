@@ -96,7 +96,7 @@ export default function PomodoroPage() {
           <Input
             id="project-input"
             type="text"
-            placeholder="E.g., Design new logo"
+            placeholder="E.g., Freelance Project #1"
             value={currentProject}
             onChange={(e) => setCurrentProject(e.target.value)}
             className="mt-1 bg-card border-border shadow-sm"
