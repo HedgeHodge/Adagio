@@ -5,6 +5,7 @@ import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw, SkipForward, Settings } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface TimerControlsProps {
   isRunning: boolean;
@@ -38,9 +39,9 @@ export function TimerControls({
       <AnimatePresence mode="wait">
         {!isRunning ? (
           <motion.div key="start" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
-            <Button 
-              onClick={onStart} 
-              size="lg" 
+            <Button
+              onClick={onStart}
+              size="lg"
               className="px-8 py-6 text-lg shadow-md hover:shadow-lg transition-shadow"
               variant={isBreakInterval ? 'secondary' : 'default'}
             >
@@ -49,32 +50,37 @@ export function TimerControls({
           </motion.div>
         ) : (
           <motion.div key="pause" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
-            <Button 
-              onClick={onPause} 
-              variant="outline" 
-              size="lg" 
-              className="px-8 py-6 text-lg border-primary text-primary hover:bg-primary/10 shadow-md hover:shadow-lg transition-shadow"
+            <Button
+              onClick={onPause}
+              variant="outline"
+              size="lg"
+              className={cn(
+                "px-8 py-6 text-lg shadow-md hover:shadow-lg transition-shadow",
+                isBreakInterval
+                  ? "border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  : "border-primary text-primary hover:bg-primary/10"
+              )}
             >
               <Pause className="mr-2 h-6 w-6" /> Pause
             </Button>
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
         <Button onClick={onReset} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
           <RotateCcw className="h-5 w-5" />
           <span className="sr-only">Reset</span>
         </Button>
       </motion.div>
-      
+
       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
         <Button onClick={onSkip} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
           <SkipForward className="h-5 w-5" />
           <span className="sr-only">Skip</span>
         </Button>
       </motion.div>
-       
+
        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
         <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
           <Settings className="h-5 w-5" />
