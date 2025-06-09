@@ -39,6 +39,7 @@ export default function PomodoroPage() {
     isClient,
     currentProject,
     setCurrentProject,
+    recentProjects,
     motivationalQuote,
     isFetchingQuote,
     activeFilter,
@@ -107,7 +108,7 @@ export default function PomodoroPage() {
 
   const renderTimerContent = () => (
     <>
-      <div className="w-full max-w-md mb-6">
+      <div className="w-full max-w-md mb-2">
         <Label htmlFor="project-input" className="text-sm font-medium text-foreground/80">
           What are you working on?
         </Label>
@@ -121,6 +122,23 @@ export default function PomodoroPage() {
           disabled={isRunning && currentInterval === 'work'}
         />
       </div>
+      {recentProjects && recentProjects.length > 0 && (
+        <div className="w-full max-w-md mb-6 mt-2 flex flex-wrap gap-2">
+          {recentProjects.map((project) => (
+            <Button
+              key={project}
+              variant="outline"
+              size="sm"
+              className="text-xs px-2 py-1 h-auto bg-card hover:bg-accent/80 border-border shadow-sm text-muted-foreground"
+              onClick={() => setCurrentProject(project)}
+            >
+              {project}
+            </Button>
+          ))}
+        </div>
+      )}
+      {(!recentProjects || recentProjects.length === 0) && <div className="mb-6"></div>}
+
 
       <TimerDisplay
         formattedTime={formatTime(currentTime)}

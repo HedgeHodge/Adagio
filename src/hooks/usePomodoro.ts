@@ -5,7 +5,7 @@ import type { PomodoroSettings, PomodoroLogEntry, IntervalType, TimeFilter, Char
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
-import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
+import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25, // minutes for suggestion
@@ -17,6 +17,9 @@ const DEFAULT_SETTINGS: PomodoroSettings = {
 const SETTINGS_KEY = 'pomodoroSettings';
 const LOG_KEY = 'pomodoroLog';
 const PROJECT_KEY = 'currentProject';
+const RECENT_PROJECTS_KEY = 'recentProjects';
+const MAX_RECENT_PROJECTS = 5;
+
 
 export function usePomodoro() {
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_SETTINGS);
@@ -26,6 +29,7 @@ export function usePomodoro() {
   const [pomodorosCompletedThisSet, setPomodorosCompletedThisSet] = useState<number>(0);
   const [pomodoroLog, setPomodoroLog] = useState<PomodoroLogEntry[]>([]);
   const [currentProject, setCurrentProjectState] = useState<string>('');
+  const [recentProjects, setRecentProjects] = useState<string[]>([]);
   const [motivationalQuote, setMotivationalQuote] = useState<MotivationalQuoteOutput | null>(null);
   const [isFetchingQuote, setIsFetchingQuote] = useState<boolean>(false);
   const [isClient, setIsClient] = useState(false);
@@ -55,6 +59,10 @@ export function usePomodoro() {
       if (storedProject) {
         setCurrentProjectState(storedProject);
       }
+      const storedRecentProjects = localStorage.getItem(RECENT_PROJECTS_KEY);
+      if (storedRecentProjects) {
+        setRecentProjects(JSON.parse(storedRecentProjects));
+      }
       audioRef.current = new Audio('/sounds/notification.mp3');
     }
   }, []);
@@ -70,6 +78,13 @@ export function usePomodoro() {
       localStorage.setItem(LOG_KEY, JSON.stringify(pomodoroLog));
     }
   }, [pomodoroLog, isClient]);
+  
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(recentProjects));
+    }
+  }, [recentProjects, isClient]);
+
 
   const setCurrentProject = useCallback((project: string) => {
     setCurrentProjectState(project);
@@ -97,6 +112,17 @@ export function usePomodoro() {
       setIsFetchingQuote(false);
     }
   };
+
+  const updateRecentProjects = useCallback((projectName?: string) => {
+    if (!projectName || projectName.trim() === "") return;
+
+    setRecentProjects(prevRecent => {
+      const filtered = prevRecent.filter(p => p !== projectName);
+      const updated = [projectName, ...filtered].slice(0, MAX_RECENT_PROJECTS);
+      return updated;
+    });
+  }, []);
+
 
   useEffect(() => {
     if (isRunning) {
@@ -172,6 +198,9 @@ export function usePomodoro() {
         };
         setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
         toast({ title: "Work entry logged!", description: `Duration: ${formatTime(currentTime)}` });
+        if (newLogEntry.project) {
+          updateRecentProjects(newLogEntry.project);
+        }
       }
 
       const newCompletedPomodoros = pomodorosCompletedThisSet + 1;
@@ -195,7 +224,7 @@ export function usePomodoro() {
     setCurrentTime(0);
     setLastWorkSessionStartTime(nextInterval === 'work' ? now : null);
     notificationSentRef.current = { work: false, shortBreak: false, longBreak: false };
-  }, [currentInterval, lastWorkSessionStartTime, currentTime, pomodorosCompletedThisSet, settings, toast, currentProject, fetchAndSetQuote]);
+  }, [currentInterval, lastWorkSessionStartTime, currentTime, pomodorosCompletedThisSet, settings, toast, currentProject, fetchAndSetQuote, updateRecentProjects]);
 
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => {
@@ -221,9 +250,12 @@ export function usePomodoro() {
     setPomodoroLog(prevLog => 
       prevLog.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
     );
+    if (updatedEntry.project) {
+      updateRecentProjects(updatedEntry.project);
+    }
     toast({ title: "Entry updated successfully!" });
     closeEditModal();
-  }, [toast, closeEditModal]);
+  }, [toast, closeEditModal, updateRecentProjects]);
 
 
   const formatTime = (timeInSeconds: number): string => {
@@ -315,18 +347,39 @@ export function usePomodoro() {
       // This month (but not this week)
       createTestDataEntry('tm1', now, 15, 13, 0, 75, 'Project Phoenix'),
       createTestDataEntry('tm2', now, 20, 10, 0, 60, 'Adagio App'),
+       createTestDataEntry('tm3', now, 2, 11, 15, 35, 'Quick Sync'),
+      createTestDataEntry('tm4', now, 5, 17, 0, 70, 'Content Creation'),
+      createTestDataEntry('tm5', now, 6, 12, 30, 20, 'Bug Fixing'),
     ];
 
     // Filter out any entries that might be in the future if "now" is close to midnight
     const validTestData = testData.filter(entry => parseISO(entry.endTime) <= now);
+    
+    let newLog = [...pomodoroLog];
+    let projectsToUpdateToRecent: string[] = [];
 
-    setPomodoroLog(prevLog => {
-      const existingIds = new Set(prevLog.map(e => e.id));
-      const newUniqueEntries = validTestData.filter(e => !existingIds.has(e.id));
-      return [...newUniqueEntries, ...prevLog];
+    validTestData.forEach(tdEntry => {
+        if(!newLog.find(entry => entry.id === tdEntry.id)){
+            newLog.unshift(tdEntry); // Add to beginning
+            if(tdEntry.project){
+                projectsToUpdateToRecent.push(tdEntry.project);
+            }
+        }
     });
-    toast({ title: "Test Data Added", description: `${validTestData.length} sample entries have been added to your log.` });
-  }, [toast]);
+    
+    setPomodoroLog(newLog);
+
+    // Update recent projects with unique projects from test data, prioritizing newest
+    if (projectsToUpdateToRecent.length > 0) {
+      setRecentProjects(prevRecent => {
+        const uniqueNewProjects = [...new Set(projectsToUpdateToRecent)];
+        const filteredOldRecent = prevRecent.filter(p => !uniqueNewProjects.includes(p));
+        return [...uniqueNewProjects, ...filteredOldRecent].slice(0, MAX_RECENT_PROJECTS);
+      });
+    }
+    
+    toast({ title: "Test Data Added", description: `${validTestData.length} sample entries have been added/updated in your log.` });
+  }, [toast, pomodoroLog, updateRecentProjects]);
 
 
   return {
@@ -346,13 +399,14 @@ export function usePomodoro() {
     isClient,
     currentProject,
     setCurrentProject,
+    recentProjects,
     motivationalQuote,
     isFetchingQuote,
     activeFilter,
     setActiveFilter,
     processedChartData,
     isEditModalOpen,
-    entryToEdit, // Renamed from selectedLogEntryForEdit
+    entryToEdit, 
     openEditModal,
     closeEditModal,
     updateLogEntry,
