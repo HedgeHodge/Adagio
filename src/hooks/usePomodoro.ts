@@ -4,6 +4,7 @@
 import type { PomodoroSettings, PomodoroLogEntry, IntervalType } from '@/types/pomodoro';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { getMotivationalQuote } from '@/ai/flows/motivational-quote-flow';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
@@ -24,6 +25,8 @@ export function usePomodoro() {
   const [pomodorosCompletedThisSet, setPomodorosCompletedThisSet] = useState<number>(0);
   const [pomodoroLog, setPomodoroLog] = useState<PomodoroLogEntry[]>([]);
   const [currentProject, setCurrentProjectState] = useState<string>('');
+  const [motivationalQuote, setMotivationalQuote] = useState<string | null>(null);
+  const [isFetchingQuote, setIsFetchingQuote] = useState<boolean>(false);
   const [isClient, setIsClient] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -81,6 +84,20 @@ export function usePomodoro() {
     }
   }, []);
 
+  const fetchAndSetQuote = async () => {
+    setIsFetchingQuote(true);
+    setMotivationalQuote(null); // Clear previous quote
+    try {
+      const result = await getMotivationalQuote();
+      setMotivationalQuote(result.quote);
+    } catch (error) {
+      console.error("Failed to fetch motivational quote:", error);
+      setMotivationalQuote("Keep up the great work!"); // Fallback quote
+    } finally {
+      setIsFetchingQuote(false);
+    }
+  };
+
   const handleIntervalEnd = useCallback(() => {
     playNotificationSound();
     setIsRunning(false);
@@ -107,12 +124,14 @@ export function usePomodoro() {
       } else {
         nextInterval = 'shortBreak';
       }
+      fetchAndSetQuote(); // Fetch quote for the upcoming break
     } else { 
       nextInterval = 'work';
       if (currentInterval === 'longBreak') {
         setPomodorosCompletedThisSet(0); 
       }
       toast({ title: "Break's over!", description: "Let's get back to work." });
+      setMotivationalQuote(null); // Clear quote when work interval starts
     }
     
     setCurrentInterval(nextInterval);
@@ -157,7 +176,10 @@ export function usePomodoro() {
 
   const startTimer = useCallback(() => {
     setIsRunning(true);
-  }, []);
+    if (currentInterval !== 'work') {
+      setMotivationalQuote(null); // Clear quote if starting timer during a break
+    }
+  }, [currentInterval]);
 
   const pauseTimer = useCallback(() => {
     setIsRunning(false);
@@ -166,6 +188,11 @@ export function usePomodoro() {
   const resetTimer = useCallback(() => {
     setIsRunning(false);
     if (timerRef.current) clearInterval(timerRef.current);
+    if (currentInterval !== 'work') { // If resetting during a break, refetch quote
+        fetchAndSetQuote();
+    } else {
+        setMotivationalQuote(null);
+    }
     switch (currentInterval) {
       case 'work':
         setCurrentTime(settings.workDuration * 60);
@@ -219,7 +246,7 @@ export function usePomodoro() {
     currentInterval,
     pomodorosCompletedThisSet,
     pomodoroLog,
-    deleteLogEntry, // Export deleteLogEntry
+    deleteLogEntry,
     startTimer,
     pauseTimer,
     resetTimer,
@@ -229,5 +256,7 @@ export function usePomodoro() {
     isClient,
     currentProject,
     setCurrentProject,
+    motivationalQuote,
+    isFetchingQuote,
   };
 }

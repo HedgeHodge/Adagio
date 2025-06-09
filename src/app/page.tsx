@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from '@/components/ui/card';
+import { Quote } from 'lucide-react';
 
 export default function PomodoroPage() {
   const {
@@ -29,6 +32,8 @@ export default function PomodoroPage() {
     isClient,
     currentProject,
     setCurrentProject,
+    motivationalQuote,
+    isFetchingQuote,
   } = usePomodoro();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -57,6 +62,7 @@ export default function PomodoroPage() {
             <Skeleton className="h-12 w-12 rounded-md" />
             <Skeleton className="h-12 w-12 rounded-md" />
           </div>
+          <Skeleton className="w-full max-w-md h-12 mb-8 rounded-lg" />
           <Skeleton className="w-full max-w-md h-64 rounded-lg" />
         </div>
       </main>
@@ -98,6 +104,28 @@ export default function PomodoroPage() {
           onSkip={skipInterval}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
+
+        {(currentInterval === 'shortBreak' || currentInterval === 'longBreak') && (
+          <div className="w-full max-w-md mb-8">
+            {isFetchingQuote && (
+              <Card className="bg-card shadow-md animate-pulse">
+                <CardContent className="p-4">
+                  <Skeleton className="h-5 w-3/4" />
+                </CardContent>
+              </Card>
+            )}
+            {!isFetchingQuote && motivationalQuote && (
+              <Card className="bg-card shadow-md animate-subtle-pop">
+                <CardContent className="p-4">
+                  <div className="flex items-center text-sm text-muted-foreground italic">
+                    <Quote className="h-4 w-4 mr-2 text-primary/70 shrink-0" />
+                    <p>{motivationalQuote}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         <PomodoroLog log={pomodoroLog} onDeleteEntry={deleteLogEntry} />
 
