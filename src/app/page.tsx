@@ -20,6 +20,7 @@ export default function PomodoroPage() {
     isRunning,
     currentInterval,
     pomodoroLog,
+    deleteLogEntry, // Get deleteLogEntry from hook
     startTimer,
     pauseTimer,
     resetTimer,
@@ -99,7 +100,7 @@ export default function PomodoroPage() {
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
-        <PomodoroLog log={pomodoroLog} />
+        <PomodoroLog log={pomodoroLog} onDeleteEntry={deleteLogEntry} />
 
         <SettingsModal
           isOpen={isSettingsOpen}

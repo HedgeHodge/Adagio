@@ -23,7 +23,7 @@ export function usePomodoro() {
   const [currentInterval, setCurrentInterval] = useState<IntervalType>('work');
   const [pomodorosCompletedThisSet, setPomodorosCompletedThisSet] = useState<number>(0);
   const [pomodoroLog, setPomodoroLog] = useState<PomodoroLogEntry[]>([]);
-  const [currentProject, setCurrentProjectState] = useState<string>(''); // Renamed to avoid conflict
+  const [currentProject, setCurrentProjectState] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -188,6 +188,11 @@ export function usePomodoro() {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, []);
 
+  const deleteLogEntry = useCallback((id: string) => {
+    setPomodoroLog(prevLog => prevLog.filter(entry => entry.id !== id));
+    toast({ title: "Session deleted", variant: "destructive" });
+  }, [toast]);
+
   const formatTime = (timeInSeconds: number): string => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = timeInSeconds % 60;
@@ -214,6 +219,7 @@ export function usePomodoro() {
     currentInterval,
     pomodorosCompletedThisSet,
     pomodoroLog,
+    deleteLogEntry, // Export deleteLogEntry
     startTimer,
     pauseTimer,
     resetTimer,
