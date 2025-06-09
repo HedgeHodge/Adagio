@@ -8,7 +8,8 @@ import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { SettingsModal } from '@/components/pomodoro/SettingsModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { Button } from '@/components/ui/button';
-import { SettingsIcon } from 'lucide-react'; // Changed from Settings to SettingsIcon for consistency with lucide naming
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PomodoroPage() {
@@ -26,6 +27,8 @@ export default function PomodoroPage() {
     formatTime,
     currentProgress,
     isClient,
+    currentProject,
+    setCurrentProject,
   } = usePomodoro();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -33,9 +36,9 @@ export default function PomodoroPage() {
   useEffect(() => {
     if (isClient && typeof document !== 'undefined') {
       if (isRunning) {
-        document.title = `${formatTime(currentTime)} - ${currentInterval === 'work' ? 'Work' : 'Break'} | Pomodoro Flow`;
+        document.title = `${formatTime(currentTime)} - ${currentInterval === 'work' ? 'Work' : 'Break'} | Adagio`;
       } else {
-        document.title = "Pomodoro Flow";
+        document.title = "Adagio";
       }
     }
   }, [currentTime, isRunning, currentInterval, formatTime, isClient]);
@@ -45,7 +48,8 @@ export default function PomodoroPage() {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
         <div className="flex flex-col items-center">
-          <Skeleton className="h-10 w-48 mb-10" />
+          <Skeleton className="h-10 w-48 mb-6" />
+          <Skeleton className="w-full max-w-md h-20 mb-6 rounded-lg" />
           <Skeleton className="w-full max-w-md h-48 mb-8 rounded-lg" />
           <div className="flex space-x-3 mb-8">
             <Skeleton className="h-16 w-32 rounded-md" />
@@ -62,14 +66,22 @@ export default function PomodoroPage() {
   return (
     <>
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
-        {/* Settings button is now part of TimerControls for better layout consolidation */}
-        {/* <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} aria-label="Open Settings">
-            <SettingsIcon className="h-6 w-6 text-foreground/70 hover:text-primary transition-colors" />
-          </Button>
-        </div> */}
+        <h1 className="text-4xl font-bold mb-6 text-primary font-headline">Adagio</h1>
 
-        <h1 className="text-4xl font-bold mb-10 text-primary font-headline">Pomodoro Flow</h1>
+        <div className="w-full max-w-md mb-6">
+          <Label htmlFor="project-input" className="text-sm font-medium text-foreground/80">
+            What are you working on?
+          </Label>
+          <Input
+            id="project-input"
+            type="text"
+            placeholder="E.g., Design new logo"
+            value={currentProject}
+            onChange={(e) => setCurrentProject(e.target.value)}
+            className="mt-1 bg-card border-border shadow-sm"
+            disabled={isRunning && currentInterval === 'work'}
+          />
+        </div>
 
         <TimerDisplay
           formattedTime={formatTime(currentTime)}

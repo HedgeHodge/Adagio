@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Pomodoro Flow',
-  description: 'Focus and flow with Pomodoro.',
+  title: 'Adagio',
+  description: 'Find your rhythm with Adagio, your focused work companion.',
 };
 
 export default function RootLayout({

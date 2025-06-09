@@ -11,6 +11,7 @@ export interface PomodoroLogEntry {
   endTime: string; // ISO string
   type: 'work'; // Only logging work pomodoros
   duration: number; // minutes
+  project?: string; // Name of the project or task
 }
 
 export type IntervalType = 'work' | 'shortBreak' | 'longBreak';

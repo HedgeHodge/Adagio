@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: PomodoroSettings = {
 
 const SETTINGS_KEY = 'pomodoroSettings';
 const LOG_KEY = 'pomodoroLog';
+const PROJECT_KEY = 'currentProject'; // Key for storing current project
 
 export function usePomodoro() {
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_SETTINGS);
@@ -22,6 +23,7 @@ export function usePomodoro() {
   const [currentInterval, setCurrentInterval] = useState<IntervalType>('work');
   const [pomodorosCompletedThisSet, setPomodorosCompletedThisSet] = useState<number>(0);
   const [pomodoroLog, setPomodoroLog] = useState<PomodoroLogEntry[]>([]);
+  const [currentProject, setCurrentProjectState] = useState<string>(''); // Renamed to avoid conflict
   const [isClient, setIsClient] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,16 +43,17 @@ export function usePomodoro() {
       if (storedLog) {
         setPomodoroLog(JSON.parse(storedLog));
       }
-      // Ensure audio can be played after user interaction
-      audioRef.current = new Audio('/sounds/notification.mp3'); // Placeholder
+      const storedProject = localStorage.getItem(PROJECT_KEY);
+      if (storedProject) {
+        setCurrentProjectState(storedProject);
+      }
+      audioRef.current = new Audio('/sounds/notification.mp3');
     }
   }, []);
 
   useEffect(() => {
     if (isClient) {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      // Reset current time based on new settings if timer is not running
-      // and current interval is work, or if the current interval duration changed.
       if (!isRunning) {
          if (currentInterval === 'work') setCurrentTime(settings.workDuration * 60);
          else if (currentInterval === 'shortBreak') setCurrentTime(settings.shortBreakDuration * 60);
@@ -64,6 +67,13 @@ export function usePomodoro() {
       localStorage.setItem(LOG_KEY, JSON.stringify(pomodoroLog));
     }
   }, [pomodoroLog, isClient]);
+
+  const setCurrentProject = useCallback((project: string) => {
+    setCurrentProjectState(project);
+    if (isClient) {
+      localStorage.setItem(PROJECT_KEY, project);
+    }
+  }, [isClient]);
 
   const playNotificationSound = useCallback(() => {
     if (audioRef.current) {
@@ -85,6 +95,7 @@ export function usePomodoro() {
         endTime: new Date().toISOString(),
         type: 'work',
         duration: settings.workDuration,
+        project: currentProject || undefined,
       };
       setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
       completedPomodoros++;
@@ -96,10 +107,10 @@ export function usePomodoro() {
       } else {
         nextInterval = 'shortBreak';
       }
-    } else { // currentInterval is 'shortBreak' or 'longBreak'
+    } else { 
       nextInterval = 'work';
       if (currentInterval === 'longBreak') {
-        setPomodorosCompletedThisSet(0); // Reset for new set
+        setPomodorosCompletedThisSet(0); 
       }
       toast({ title: "Break's over!", description: "Let's get back to work." });
     }
@@ -116,7 +127,7 @@ export function usePomodoro() {
         setCurrentTime(settings.longBreakDuration * 60);
         break;
     }
-  }, [currentInterval, pomodorosCompletedThisSet, settings, playNotificationSound, toast]);
+  }, [currentInterval, pomodorosCompletedThisSet, settings, playNotificationSound, toast, currentProject]);
 
 
   useEffect(() => {
@@ -170,7 +181,7 @@ export function usePomodoro() {
 
   const skipInterval = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    handleIntervalEnd(); // Simulate interval end to move to next
+    handleIntervalEnd(); 
   }, [handleIntervalEnd]);
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => {
@@ -191,7 +202,7 @@ export function usePomodoro() {
       case 'longBreak': totalDuration = settings.longBreakDuration * 60; break;
       default: totalDuration = 1; 
     }
-    if (totalDuration === 0) return 0; // Avoid division by zero
+    if (totalDuration === 0) return 0; 
     return ((totalDuration - currentTime) / totalDuration) * 100;
   };
 
@@ -209,6 +220,8 @@ export function usePomodoro() {
     skipInterval,
     formatTime,
     currentProgress,
-    isClient, // To allow components to know if localStorage is safe to use
+    isClient,
+    currentProject,
+    setCurrentProject,
   };
 }
