@@ -10,16 +10,14 @@ interface ProjectTimeChartProps {
   data: ChartDataPoint[];
 }
 
-const formatMinutesToDecimalHours = (totalMinutes: number): string => {
-  if (totalMinutes === 0) return "0h";
-  const hours = totalMinutes / 60;
-  // Show one decimal place if not a whole number, otherwise show no decimal.
-  return `${hours % 1 === 0 ? hours : hours.toFixed(1)}h`;
+const formatMinutesToWholeHours = (totalMinutes: number): string => {
+  const hours = Math.floor(totalMinutes / 60);
+  return `${hours}h`;
 };
 
 const chartConfig = {
   totalMinutes: {
-    label: "Time (hours)", // Updated label
+    label: "Time (hours)",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
@@ -59,7 +57,7 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
             axisLine={false}
             tickMargin={8}
             width={70} 
-            tickFormatter={(value) => formatMinutesToDecimalHours(value)}
+            tickFormatter={(value) => formatMinutesToWholeHours(value)}
             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
           />
           <ChartTooltip
@@ -72,7 +70,7 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
                   if (item.dataKey === 'totalMinutes') {
                     return (
                       <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{formatMinutesToDecimalHours(value as number)}</span>
+                        <span className="font-medium text-foreground">{formatMinutesToWholeHours(value as number)}</span>
                         <span className="text-xs text-muted-foreground">{item.payload.name}</span>
                       </div>
                     );
