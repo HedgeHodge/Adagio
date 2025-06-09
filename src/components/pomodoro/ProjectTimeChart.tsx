@@ -33,7 +33,7 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
         <BarChart 
           accessibilityLayer 
           data={data} 
-          margin={{ top: 5, right: 5, left: -20, bottom: 5 }} // Adjusted left margin for YAxis labels
+          margin={{ top: 5, right: 5, left: -20, bottom: 20 }} // Increased bottom margin for angled labels
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
           <XAxis
@@ -42,11 +42,10 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
             axisLine={false}
             tickMargin={8}
             interval={0} // Show all labels
-            // Angled labels if too many projects, or other strategy
-            // angle={-30}
-            // textAnchor="end" 
-            // height={50} // Adjust height for angled labels
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            angle={-30} // Angle the labels
+            textAnchor="end" // Anchor to the end for angled labels
+            height={60} // Adjust height for angled labels
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} // Slightly smaller font size
           />
           <YAxis
             tickLine={false}
@@ -66,3 +65,4 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
     </ChartContainer>
   );
 }
+
