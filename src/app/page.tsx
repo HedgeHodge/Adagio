@@ -35,6 +35,7 @@ export default function PomodoroPage() {
     pauseTimer,
     resetTimer,
     switchMode,
+    endCurrentWorkSession,
     formatTime,
     isClient,
     currentProject,
@@ -155,6 +156,7 @@ export default function PomodoroPage() {
         onReset={resetTimer}
         onSwitchMode={switchMode}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onEndCurrentWorkSession={endCurrentWorkSession}
       />
 
       {(currentInterval === 'shortBreak' || currentInterval === 'longBreak') && (

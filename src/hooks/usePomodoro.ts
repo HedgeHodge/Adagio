@@ -164,8 +164,10 @@ export function usePomodoro() {
     if (currentInterval === 'work' && currentTime === 0 && lastWorkSessionStartTime === null) {
       setLastWorkSessionStartTime(Date.now());
     } else if (currentInterval === 'work' && lastWorkSessionStartTime === null) {
+      // This handles resuming a paused work timer
       setLastWorkSessionStartTime(Date.now() - currentTime * 1000);
     }
+     // For breaks, no specific start time tracking is needed for logging purposes
   }, [currentInterval, currentTime, lastWorkSessionStartTime]);
 
   const pauseTimer = useCallback(() => {
@@ -177,32 +179,38 @@ export function usePomodoro() {
     setCurrentTime(0);
     notificationSentRef.current = { work: false, shortBreak: false, longBreak: false };
     if (currentInterval === 'work') {
-      setLastWorkSessionStartTime(null);
+      setLastWorkSessionStartTime(null); // Reset start time only if current interval is work
     }
   }, [currentInterval]);
 
-  const switchMode = useCallback(() => {
-    setIsRunning(false);
+  const logWorkEntry = useCallback(() => {
     const now = Date.now();
+    if (currentInterval === 'work' && lastWorkSessionStartTime && currentTime > 0) {
+      const newLogEntry: PomodoroLogEntry = {
+        id: now.toString(),
+        startTime: new Date(lastWorkSessionStartTime).toISOString(),
+        endTime: new Date(now).toISOString(),
+        type: 'work',
+        duration: Math.round(currentTime / 60),
+        project: currentProject || undefined,
+      };
+      setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
+      toast({ title: "Work entry logged!", description: `Duration: ${formatTime(currentTime)}` });
+      if (newLogEntry.project) {
+        updateRecentProjects(newLogEntry.project);
+      }
+      return newLogEntry;
+    }
+    return null;
+  }, [currentInterval, lastWorkSessionStartTime, currentTime, currentProject, toast, updateRecentProjects]);
+
+
+  const switchMode = useCallback(() => {
+    setIsRunning(false); // Stop timer before switching
     let nextInterval: IntervalType;
 
     if (currentInterval === 'work') {
-      if (lastWorkSessionStartTime && currentTime > 0) {
-        const newLogEntry: PomodoroLogEntry = {
-          id: now.toString(),
-          startTime: new Date(lastWorkSessionStartTime).toISOString(),
-          endTime: new Date(now).toISOString(),
-          type: 'work',
-          duration: Math.round(currentTime / 60),
-          project: currentProject || undefined,
-        };
-        setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
-        toast({ title: "Work entry logged!", description: `Duration: ${formatTime(currentTime)}` });
-        if (newLogEntry.project) {
-          updateRecentProjects(newLogEntry.project);
-        }
-      }
-
+      logWorkEntry(); // Log the work session
       const newCompletedPomodoros = pomodorosCompletedThisSet + 1;
       setPomodorosCompletedThisSet(newCompletedPomodoros);
 
@@ -213,18 +221,32 @@ export function usePomodoro() {
       }
       fetchAndSetQuote();
     } else { 
+      // Current interval is a break
       nextInterval = 'work';
-      setMotivationalQuote(null);
+      setMotivationalQuote(null); // Clear quote when switching to work
       if (currentInterval === 'longBreak') {
-        setPomodorosCompletedThisSet(0);
+        setPomodorosCompletedThisSet(0); // Reset count after a long break
       }
     }
 
     setCurrentInterval(nextInterval);
-    setCurrentTime(0);
-    setLastWorkSessionStartTime(nextInterval === 'work' ? now : null);
-    notificationSentRef.current = { work: false, shortBreak: false, longBreak: false };
-  }, [currentInterval, lastWorkSessionStartTime, currentTime, pomodorosCompletedThisSet, settings, toast, currentProject, fetchAndSetQuote, updateRecentProjects]);
+    setCurrentTime(0); // Reset timer for the new interval
+    setLastWorkSessionStartTime(nextInterval === 'work' ? Date.now() : null); // Set start time if new interval is work
+    notificationSentRef.current = { work: false, shortBreak: false, longBreak: false }; // Reset notifications
+  }, [currentInterval, pomodorosCompletedThisSet, settings, logWorkEntry, fetchAndSetQuote]);
+
+  const endCurrentWorkSession = useCallback(() => {
+    if (currentInterval === 'work' && isRunning) {
+      logWorkEntry();
+      setIsRunning(false);
+      setCurrentTime(0);
+      setLastWorkSessionStartTime(null);
+      notificationSentRef.current.work = false; // Reset work notification
+      // pomodorosCompletedThisSet remains, as ending a task doesn't mean the "set" is over.
+      // currentInterval remains 'work', ready for a new task.
+      // motivationalQuote is not changed/fetched here.
+    }
+  }, [currentInterval, isRunning, logWorkEntry]);
 
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => {
@@ -379,7 +401,7 @@ export function usePomodoro() {
     }
     
     toast({ title: "Test Data Added", description: `${validTestData.length} sample entries have been added/updated in your log.` });
-  }, [toast, pomodoroLog, updateRecentProjects]);
+  }, [toast, pomodoroLog]);
 
 
   return {
@@ -395,6 +417,7 @@ export function usePomodoro() {
     pauseTimer,
     resetTimer,
     switchMode,
+    endCurrentWorkSession,
     formatTime,
     isClient,
     currentProject,
