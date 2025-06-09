@@ -32,6 +32,9 @@ export function usePomodoro() {
   const [activeFilter, setActiveFilter] = useState<TimeFilter>('today');
   const [lastWorkSessionStartTime, setLastWorkSessionStartTime] = useState<number | null>(null);
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedLogEntryForEdit, setSelectedLogEntryForEdit] = useState<PomodoroLogEntry | null>(null);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationSentRef = useRef<Record<IntervalType, boolean>>({ work: false, shortBreak: false, longBreak: false });
@@ -101,7 +104,6 @@ export function usePomodoro() {
         setCurrentTime(prevTime => {
           const newTime = prevTime + 1;
 
-          // Pomodoro Push Notifications
           if (currentInterval === 'work' && !notificationSentRef.current.work && newTime >= settings.workDuration * 60) {
             toast({ title: "Focus Period Suggestion", description: `Consider taking a short break. You've been working for ${settings.workDuration} minutes.` });
             playNotificationSound();
@@ -136,7 +138,6 @@ export function usePomodoro() {
     if (currentInterval === 'work' && currentTime === 0 && lastWorkSessionStartTime === null) {
       setLastWorkSessionStartTime(Date.now());
     } else if (currentInterval === 'work' && lastWorkSessionStartTime === null) {
-      // This handles starting timer after a reset or initial load in work mode
       setLastWorkSessionStartTime(Date.now() - currentTime * 1000);
     }
   }, [currentInterval, currentTime, lastWorkSessionStartTime]);
@@ -148,9 +149,9 @@ export function usePomodoro() {
   const resetTimer = useCallback(() => {
     setIsRunning(false);
     setCurrentTime(0);
-    notificationSentRef.current = { work: false, shortBreak: false, longBreak: false }; // Reset notification flags
+    notificationSentRef.current = { work: false, shortBreak: false, longBreak: false };
     if (currentInterval === 'work') {
-      setLastWorkSessionStartTime(null); // Ready for a fresh start
+      setLastWorkSessionStartTime(null);
     }
   }, [currentInterval]);
 
@@ -160,13 +161,13 @@ export function usePomodoro() {
     let nextInterval: IntervalType;
 
     if (currentInterval === 'work') {
-      if (lastWorkSessionStartTime && currentTime > 0) { // Log only if work has happened
+      if (lastWorkSessionStartTime && currentTime > 0) {
         const newLogEntry: PomodoroLogEntry = {
           id: now.toString(),
           startTime: new Date(lastWorkSessionStartTime).toISOString(),
           endTime: new Date(now).toISOString(),
           type: 'work',
-          duration: Math.round(currentTime / 60), // Duration in minutes
+          duration: Math.round(currentTime / 60),
           project: currentProject || undefined,
         };
         setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
@@ -182,7 +183,7 @@ export function usePomodoro() {
         nextInterval = 'shortBreak';
       }
       fetchAndSetQuote();
-    } else { // Switching from break to work
+    } else { 
       nextInterval = 'work';
       setMotivationalQuote(null);
       if (currentInterval === 'longBreak') {
@@ -193,19 +194,37 @@ export function usePomodoro() {
     setCurrentInterval(nextInterval);
     setCurrentTime(0);
     setLastWorkSessionStartTime(nextInterval === 'work' ? now : null);
-    notificationSentRef.current = { work: false, shortBreak: false, longBreak: false }; // Reset notification flags
+    notificationSentRef.current = { work: false, shortBreak: false, longBreak: false };
   }, [currentInterval, lastWorkSessionStartTime, currentTime, pomodorosCompletedThisSet, settings, toast, currentProject, fetchAndSetQuote]);
 
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
-    // If timer isn't running, and settings change, reflect suggestion time for current interval if desired (currently counts up)
   }, []);
 
   const deleteLogEntry = useCallback((id: string) => {
     setPomodoroLog(prevLog => prevLog.filter(entry => entry.id !== id));
     toast({ title: "Session deleted", variant: "destructive" });
   }, [toast]);
+
+  const openEditModal = useCallback((entry: PomodoroLogEntry) => {
+    setSelectedLogEntryForEdit(entry);
+    setIsEditModalOpen(true);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setSelectedLogEntryForEdit(null);
+  }, []);
+
+  const updateLogEntry = useCallback((updatedEntry: PomodoroLogEntry) => {
+    setPomodoroLog(prevLog => 
+      prevLog.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+    );
+    toast({ title: "Session updated successfully!" });
+    closeEditModal();
+  }, [toast, closeEditModal]);
+
 
   const formatTime = (timeInSeconds: number): string => {
     const hours = Math.floor(timeInSeconds / 3600);
@@ -267,13 +286,13 @@ export function usePomodoro() {
     currentTime,
     isRunning,
     currentInterval,
-    pomodorosCompletedThisSet, // Might be less relevant or repurposed
+    pomodorosCompletedThisSet,
     pomodoroLog,
     deleteLogEntry,
     startTimer,
     pauseTimer,
     resetTimer,
-    switchMode, // Replaces skipInterval
+    switchMode,
     formatTime,
     isClient,
     currentProject,
@@ -283,5 +302,10 @@ export function usePomodoro() {
     activeFilter,
     setActiveFilter,
     processedChartData,
+    isEditModalOpen,
+    selectedLogEntryForEdit,
+    openEditModal,
+    closeEditModal,
+    updateLogEntry,
   };
 }

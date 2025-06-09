@@ -5,15 +5,16 @@ import type { PomodoroLogEntry } from '@/types/pomodoro';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListChecks, Briefcase, Trash2 } from 'lucide-react';
+import { ListChecks, Briefcase, Trash2, Pencil } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface PomodoroLogProps {
   log: PomodoroLogEntry[];
   onDeleteEntry: (id: string) => void;
+  onEditEntry: (entry: PomodoroLogEntry) => void;
 }
 
-export function PomodoroLog({ log, onDeleteEntry }: PomodoroLogProps) {
+export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProps) {
   if (log.length === 0) {
     return (
       <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
@@ -39,29 +40,40 @@ export function PomodoroLog({ log, onDeleteEntry }: PomodoroLogProps) {
                 key={entry.id} 
                 className="flex items-center justify-between p-3 rounded-md border border-border bg-background/50 hover:bg-accent/10 transition-colors group"
               >
-                <div>
-                  <div className="font-medium text-sm text-foreground">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-foreground truncate">
                     Session #{log.length - index} ({entry.duration} min)
                   </div>
                   {entry.project && (
-                    <div className="text-xs text-primary/90 flex items-center mt-1">
-                      <Briefcase className="mr-1.5 h-3.5 w-3.5" />
-                      {entry.project}
+                    <div className="text-xs text-primary/90 flex items-center mt-1 truncate">
+                      <Briefcase className="mr-1.5 h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{entry.project}</span>
                     </div>
                   )}
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {format(parseISO(entry.startTime), "MMM d, HH:mm")} - {format(parseISO(entry.endTime), "HH:mm")}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="p-1 rounded-md bg-destructive/10 hover:bg-destructive/30 text-destructive/70 hover:text-destructive transition-all shadow-sm hover:shadow-md opacity-50 group-hover:opacity-100 focus:opacity-100 h-7 w-7"
-                  onClick={() => onDeleteEntry(entry.id)}
-                  aria-label="Delete session"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center ml-2 space-x-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="p-1 rounded-md bg-muted/30 hover:bg-muted/70 text-foreground/70 hover:text-foreground transition-all shadow-sm hover:shadow-md opacity-50 group-hover:opacity-100 focus:opacity-100 h-7 w-7"
+                    onClick={() => onEditEntry(entry)}
+                    aria-label="Edit session"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="p-1 rounded-md bg-destructive/10 hover:bg-destructive/30 text-destructive/70 hover:text-destructive transition-all shadow-sm hover:shadow-md opacity-50 group-hover:opacity-100 focus:opacity-100 h-7 w-7"
+                    onClick={() => onDeleteEntry(entry.id)}
+                    aria-label="Delete session"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

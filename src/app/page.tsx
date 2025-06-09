@@ -7,6 +7,7 @@ import { usePomodoro } from '@/hooks/usePomodoro';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
 import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { SettingsModal } from '@/components/pomodoro/SettingsModal';
+import { EditSessionModal } from '@/components/pomodoro/EditSessionModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ export default function PomodoroPage() {
     startTimer,
     pauseTimer,
     resetTimer,
-    switchMode, // Changed from skipInterval
+    switchMode,
     formatTime,
     isClient,
     currentProject,
@@ -38,6 +39,11 @@ export default function PomodoroPage() {
     activeFilter,
     setActiveFilter,
     processedChartData,
+    isEditModalOpen,
+    selectedLogEntryForEdit,
+    openEditModal,
+    closeEditModal,
+    updateLogEntry,
   } = usePomodoro();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -54,7 +60,7 @@ export default function PomodoroPage() {
          document.title = "Adagio";
       }
        if (!isRunning && currentTime === 0) {
-        document.title = "Adagio"; // Default title when idle
+        document.title = "Adagio"; 
       }
     }
   }, [currentTime, isRunning, currentInterval, formatTime, isClient, currentProject]);
@@ -122,7 +128,7 @@ export default function PomodoroPage() {
           onStart={startTimer}
           onPause={pauseTimer}
           onReset={resetTimer}
-          onSwitchMode={switchMode} // Changed from onSkip
+          onSwitchMode={switchMode}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
@@ -154,7 +160,11 @@ export default function PomodoroPage() {
           </div>
         )}
 
-        <PomodoroLog log={pomodoroLog} onDeleteEntry={deleteLogEntry} />
+        <PomodoroLog 
+          log={pomodoroLog} 
+          onDeleteEntry={deleteLogEntry}
+          onEditEntry={openEditModal}
+        />
 
         <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
           <CardHeader>
@@ -184,12 +194,17 @@ export default function PomodoroPage() {
           </CardContent>
         </Card>
 
-
         <SettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           settings={settings}
           onSave={updateSettings}
+        />
+        <EditSessionModal
+          isOpen={isEditModalOpen}
+          onClose={closeEditModal}
+          session={selectedLogEntryForEdit}
+          onSave={updateLogEntry}
         />
       </main>
     </>
