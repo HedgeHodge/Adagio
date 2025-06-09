@@ -44,6 +44,7 @@ export default function PomodoroPage() {
     openEditModal,
     closeEditModal,
     updateLogEntry,
+    populateTestData,
   } = usePomodoro();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -194,6 +195,13 @@ export default function PomodoroPage() {
           </CardContent>
         </Card>
 
+        <div className="w-full max-w-md mt-4 flex justify-center">
+          <Button onClick={populateTestData} variant="outline" size="sm">
+            Populate Test Data
+          </Button>
+        </div>
+
+
         <SettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
@@ -210,3 +218,5 @@ export default function PomodoroPage() {
     </>
   );
 }
+
+    

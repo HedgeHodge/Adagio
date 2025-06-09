@@ -5,7 +5,7 @@ import type { PomodoroSettings, PomodoroLogEntry, IntervalType, TimeFilter, Char
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
-import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25, // minutes for suggestion
@@ -280,6 +280,55 @@ export function usePomodoro() {
       .sort((a, b) => b.totalMinutes - a.totalMinutes);
   }, [pomodoroLog, activeFilter, isClient]);
 
+  const createTestDataEntry = (idSuffix: string, baseTime: Date, daysAgo: number, hour: number, minute: number, durationMinutes: number, project?: string): PomodoroLogEntry => {
+    const startTime = new Date(baseTime);
+    startTime.setDate(baseTime.getDate() - daysAgo);
+    startTime.setHours(hour, minute, 0, 0);
+  
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+    return {
+      id: `${startTime.getTime()}-${idSuffix}`,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      type: 'work',
+      duration: durationMinutes,
+      project: project,
+    };
+  };
+  
+  const populateTestData = useCallback(() => {
+    const now = new Date();
+    const testData: PomodoroLogEntry[] = [
+      // Today
+      createTestDataEntry('td1', now, 0, 9, 0, 25, 'Project Phoenix'),
+      createTestDataEntry('td2', now, 0, 10, 30, 50, 'Project Phoenix'),
+      createTestDataEntry('td3', now, 0, 14, 0, 45), // No project
+      // Yesterday
+      createTestDataEntry('yd1', now, 1, 11, 0, 60, 'Project Chimera'),
+      createTestDataEntry('yd2', now, 1, 15, 0, 30, 'Project Phoenix'),
+      // This week (but not today/yesterday)
+      createTestDataEntry('tw1', now, 3, 10, 0, 90, 'Adagio App'),
+      createTestDataEntry('tw2', now, 4, 16, 0, 55, 'Client Meeting Prep'),
+       // Last week
+      createTestDataEntry('lw1', now, 8, 9, 30, 120, 'Project Chimera'),
+      createTestDataEntry('lw2', now, 10, 14,0, 40), // No project
+      // This month (but not this week)
+      createTestDataEntry('tm1', now, 15, 13, 0, 75, 'Project Phoenix'),
+      createTestDataEntry('tm2', now, 20, 10, 0, 60, 'Adagio App'),
+    ];
+
+    // Filter out any entries that might be in the future if "now" is close to midnight
+    const validTestData = testData.filter(entry => parseISO(entry.endTime) <= now);
+
+    setPomodoroLog(prevLog => {
+      const existingIds = new Set(prevLog.map(e => e.id));
+      const newUniqueEntries = validTestData.filter(e => !existingIds.has(e.id));
+      return [...newUniqueEntries, ...prevLog];
+    });
+    toast({ title: "Test Data Added", description: `${validTestData.length} sample sessions have been added to your log.` });
+  }, [toast]);
+
+
   return {
     settings,
     updateSettings,
@@ -307,5 +356,8 @@ export function usePomodoro() {
     openEditModal,
     closeEditModal,
     updateLogEntry,
+    populateTestData,
   };
 }
+
+    
