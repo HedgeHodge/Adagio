@@ -126,6 +126,7 @@ export default function PomodoroPage() {
         formattedTime={formatTime(currentTime)}
         intervalType={currentInterval}
         isRunning={isRunning}
+        currentProject={currentProject}
       />
 
       <TimerControls

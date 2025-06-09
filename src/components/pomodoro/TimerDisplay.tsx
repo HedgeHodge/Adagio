@@ -9,15 +9,23 @@ interface TimerDisplayProps {
   formattedTime: string;
   intervalType: IntervalType;
   isRunning: boolean;
+  currentProject?: string;
 }
 
-const intervalLabels: Record<IntervalType, string> = {
-  work: "Working On",
-  shortBreak: "Short Break",
-  longBreak: "Long Break",
+const getIntervalLabel = (intervalType: IntervalType, currentProject?: string): string => {
+  switch (intervalType) {
+    case 'work':
+      return currentProject ? `Working On: ${currentProject}` : "Working On";
+    case 'shortBreak':
+      return "Short Break";
+    case 'longBreak':
+      return "Long Break";
+    default:
+      return "";
+  }
 };
 
-export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDisplayProps) {
+export function TimerDisplay({ formattedTime, intervalType, isRunning, currentProject }: TimerDisplayProps) {
   const animationKey = intervalType;
   const isBreak = intervalType === 'shortBreak' || intervalType === 'longBreak';
 
@@ -33,12 +41,12 @@ export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDi
       )}
     >
       <motion.h2 
-        className="text-2xl font-semibold mb-2 text-foreground/80"
+        className="text-xl md:text-2xl font-semibold mb-2 text-foreground/80 text-center px-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        {intervalLabels[intervalType]}
+        {getIntervalLabel(intervalType, currentProject)}
       </motion.h2>
       <motion.div 
         className={cn(
@@ -52,7 +60,6 @@ export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDi
       >
         {formattedTime}
       </motion.div>
-      {/* Progress bar removed as timer now counts up indefinitely per session */}
     </motion.div>
   );
 }
