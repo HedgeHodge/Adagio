@@ -1,3 +1,4 @@
+
 export interface PomodoroSettings {
   workDuration: number; // minutes
   shortBreakDuration: number; // minutes
@@ -15,3 +16,10 @@ export interface PomodoroLogEntry {
 }
 
 export type IntervalType = 'work' | 'shortBreak' | 'longBreak';
+
+export type TimeFilter = 'today' | 'thisWeek' | 'thisMonth';
+
+export interface ChartDataPoint {
+  name: string; // Project name or "No Project"
+  totalMinutes: number;
+}

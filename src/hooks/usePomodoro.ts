@@ -1,10 +1,11 @@
 
 "use client";
 
-import type { PomodoroSettings, PomodoroLogEntry, IntervalType } from '@/types/pomodoro';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import type { PomodoroSettings, PomodoroLogEntry, IntervalType, TimeFilter, ChartDataPoint } from '@/types/pomodoro';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
+import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
@@ -28,6 +29,7 @@ export function usePomodoro() {
   const [motivationalQuote, setMotivationalQuote] = useState<MotivationalQuoteOutput | null>(null);
   const [isFetchingQuote, setIsFetchingQuote] = useState<boolean>(false);
   const [isClient, setIsClient] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<TimeFilter>('today');
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -86,13 +88,13 @@ export function usePomodoro() {
 
   const fetchAndSetQuote = async () => {
     setIsFetchingQuote(true);
-    setMotivationalQuote(null); // Clear previous quote
+    setMotivationalQuote(null); 
     try {
       const result = await getMotivationalQuote();
       setMotivationalQuote(result);
     } catch (error) {
       console.error("Failed to fetch motivational quote:", error);
-      setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio App" }); // Fallback quote
+      setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio App" }); 
     } finally {
       setIsFetchingQuote(false);
     }
@@ -124,14 +126,14 @@ export function usePomodoro() {
       } else {
         nextInterval = 'shortBreak';
       }
-      fetchAndSetQuote(); // Fetch quote for the upcoming break
+      fetchAndSetQuote(); 
     } else { 
       nextInterval = 'work';
       if (currentInterval === 'longBreak') {
         setPomodorosCompletedThisSet(0); 
       }
       toast({ title: "Break's over!", description: "Let's get back to work." });
-      setMotivationalQuote(null); // Clear quote when work interval starts
+      setMotivationalQuote(null); 
     }
     
     setCurrentInterval(nextInterval);
@@ -177,7 +179,7 @@ export function usePomodoro() {
   const startTimer = useCallback(() => {
     setIsRunning(true);
     if (currentInterval !== 'work') {
-      setMotivationalQuote(null); // Clear quote if starting timer during a break
+      setMotivationalQuote(null); 
     }
   }, [currentInterval]);
 
@@ -188,7 +190,7 @@ export function usePomodoro() {
   const resetTimer = useCallback(() => {
     setIsRunning(false);
     if (timerRef.current) clearInterval(timerRef.current);
-    if (currentInterval !== 'work') { // If resetting during a break, refetch quote
+    if (currentInterval !== 'work') { 
         fetchAndSetQuote();
     } else {
         setMotivationalQuote(null);
@@ -238,6 +240,48 @@ export function usePomodoro() {
     return ((totalDuration - currentTime) / totalDuration) * 100;
   };
 
+  const processedChartData = useMemo((): ChartDataPoint[] => {
+    if (!isClient) return [];
+
+    const now = new Date();
+    let filteredLog: PomodoroLogEntry[];
+
+    switch (activeFilter) {
+      case 'today':
+        filteredLog = pomodoroLog.filter(entry => isToday(parseISO(entry.endTime)));
+        break;
+      case 'thisWeek':
+        filteredLog = pomodoroLog.filter(entry =>
+          isWithinInterval(parseISO(entry.endTime), {
+            start: startOfWeek(now, { weekStartsOn: 1 }), 
+            end: endOfWeek(now, { weekStartsOn: 1 }),
+          })
+        );
+        break;
+      case 'thisMonth':
+         filteredLog = pomodoroLog.filter(entry =>
+          isWithinInterval(parseISO(entry.endTime), {
+            start: startOfMonth(now),
+            end: endOfMonth(now),
+          })
+        );
+        break;
+      default:
+        filteredLog = pomodoroLog; // Should not happen with typed TimeFilter
+    }
+
+    const aggregation: Record<string, number> = {};
+    filteredLog.forEach(entry => {
+      const projectName = entry.project || 'No Project';
+      aggregation[projectName] = (aggregation[projectName] || 0) + entry.duration;
+    });
+
+    return Object.entries(aggregation)
+      .map(([name, totalMinutes]) => ({ name, totalMinutes }))
+      .sort((a, b) => b.totalMinutes - a.totalMinutes); 
+  }, [pomodoroLog, activeFilter, isClient]);
+
+
   return {
     settings,
     updateSettings,
@@ -258,6 +302,8 @@ export function usePomodoro() {
     setCurrentProject,
     motivationalQuote,
     isFetchingQuote,
+    activeFilter,
+    setActiveFilter,
+    processedChartData,
   };
 }
-

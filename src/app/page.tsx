@@ -1,18 +1,20 @@
 
 "use client";
 
+import type { TimeFilter } from '@/types/pomodoro';
 import { useState, useEffect } from 'react';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
 import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { SettingsModal } from '@/components/pomodoro/SettingsModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
+import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from '@/components/ui/card';
-import { Quote } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Quote, BarChart2 } from 'lucide-react';
 
 export default function PomodoroPage() {
   const {
@@ -34,6 +36,9 @@ export default function PomodoroPage() {
     setCurrentProject,
     motivationalQuote,
     isFetchingQuote,
+    activeFilter,
+    setActiveFilter,
+    processedChartData,
   } = usePomodoro();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -52,21 +57,31 @@ export default function PomodoroPage() {
   if (!isClient) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-full max-w-md">
           <Skeleton className="h-16 w-64 mb-8" /> 
-          <Skeleton className="w-full max-w-md h-20 mb-6 rounded-lg" />
-          <Skeleton className="w-full max-w-md h-48 mb-8 rounded-lg" />
+          <Skeleton className="w-full h-12 mb-6 rounded-lg" />
+          <Skeleton className="w-full h-40 mb-6 rounded-lg" />
           <div className="flex space-x-3 mb-8">
             <Skeleton className="h-16 w-32 rounded-md" />
             <Skeleton className="h-12 w-12 rounded-md" />
             <Skeleton className="h-12 w-12 rounded-md" />
             <Skeleton className="h-12 w-12 rounded-md" />
           </div>
-          <Skeleton className="w-full max-w-md h-12 mb-8 rounded-lg" />
-          <Skeleton className="w-full max-w-md h-64 rounded-lg" />
+          <Skeleton className="w-full h-12 mb-8 rounded-lg" />
+          <Skeleton className="w-full h-64 rounded-lg" />
+          <Skeleton className="w-full h-80 mt-8 rounded-lg" />
         </div>
       </main>
     );
+  }
+
+  const filterButtonLabel = (filter: TimeFilter): string => {
+    switch (filter) {
+      case 'today': return 'Today';
+      case 'thisWeek': return 'This Week';
+      case 'thisMonth': return 'This Month';
+      default: return '';
+    }
   }
 
   return (
@@ -135,6 +150,35 @@ export default function PomodoroPage() {
         )}
 
         <PomodoroLog log={pomodoroLog} onDeleteEntry={deleteLogEntry} />
+
+        <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center text-foreground">
+              <BarChart2 className="mr-2 h-5 w-5 text-primary" />
+              Time Insights
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Tracked time per project.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="flex justify-center space-x-2 mb-6">
+              {(['today', 'thisWeek', 'thisMonth'] as const).map((filterOption) => (
+                <Button
+                  key={filterOption}
+                  variant={activeFilter === filterOption ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveFilter(filterOption)}
+                  className="text-xs sm:text-sm px-3 py-1.5 h-auto"
+                >
+                  {filterButtonLabel(filterOption)}
+                </Button>
+              ))}
+            </div>
+            <ProjectTimeChart data={processedChartData} />
+          </CardContent>
+        </Card>
+
 
         <SettingsModal
           isOpen={isSettingsOpen}
