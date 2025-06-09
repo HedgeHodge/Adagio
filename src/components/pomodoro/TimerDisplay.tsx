@@ -21,6 +21,7 @@ const intervalLabels: Record<IntervalType, string> = {
 
 export function TimerDisplay({ formattedTime, intervalType, progress, isRunning }: TimerDisplayProps) {
   const animationKey = intervalType;
+  const isBreak = intervalType === 'shortBreak' || intervalType === 'longBreak';
 
   return (
     <motion.div
@@ -45,7 +46,7 @@ export function TimerDisplay({ formattedTime, intervalType, progress, isRunning 
         className={cn(
         "text-7xl md:text-8xl font-bold mb-4 transition-opacity duration-300",
         !isRunning && intervalType === 'work' ? "opacity-70" : "opacity-100",
-        intervalType === 'work' ? 'text-primary' : 'text-muted-foreground'
+        isBreak ? 'text-muted-foreground' : 'text-primary'
        )}
        initial={{ opacity: 0, scale: 0.9 }}
        animate={{ opacity: 1, scale: 1 }}
@@ -53,8 +54,11 @@ export function TimerDisplay({ formattedTime, intervalType, progress, isRunning 
       >
         {formattedTime}
       </motion.div>
-      <Progress value={progress} className="w-full h-3" />
+      <Progress 
+        value={progress} 
+        className="w-full h-3" 
+        indicatorClassName={isBreak ? 'bg-foreground/30' : 'bg-primary'}
+      />
     </motion.div>
   );
 }
-
