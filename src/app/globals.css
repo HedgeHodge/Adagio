@@ -41,7 +41,6 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --break-color: 210 60% 50%; /* Pleasant Blue for breaks */
   }
   .dark {
     --background: 0 0% 10%; /* Darker Greenish Grey */
@@ -76,7 +75,6 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --break-color: 210 70% 75%; /* Lighter Blue for dark mode breaks */
   }
 }
 
