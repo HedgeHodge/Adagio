@@ -45,7 +45,7 @@ export function TimerDisplay({ formattedTime, intervalType, progress, isRunning 
         className={cn(
         "text-7xl md:text-8xl font-bold mb-4 transition-opacity duration-300",
         !isRunning && intervalType === 'work' ? "opacity-70" : "opacity-100",
-        intervalType === 'work' ? 'text-primary' : 'text-accent-foreground'
+        intervalType === 'work' ? 'text-primary' : 'text-break'
        )}
        initial={{ opacity: 0, scale: 0.9 }}
        animate={{ opacity: 1, scale: 1 }}
