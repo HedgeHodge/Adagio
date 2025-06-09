@@ -28,9 +28,8 @@ export default function PomodoroPage() {
     startTimer,
     pauseTimer,
     resetTimer,
-    skipInterval,
+    switchMode, // Changed from skipInterval
     formatTime,
-    currentProgress,
     isClient,
     currentProject,
     setCurrentProject,
@@ -45,13 +44,20 @@ export default function PomodoroPage() {
 
   useEffect(() => {
     if (isClient && typeof document !== 'undefined') {
-      if (isRunning) {
-        document.title = `${formatTime(currentTime)} - ${currentInterval === 'work' ? 'Work' : 'Break'} | Adagio`;
+      let titlePrefix = formatTime(currentTime);
+      if (currentInterval === 'work') {
+        titlePrefix = currentProject ? `${currentProject} - ${titlePrefix}` : titlePrefix;
+        document.title = `${titlePrefix} | Adagio`;
+      } else if (currentInterval === 'shortBreak' || currentInterval === 'longBreak') {
+         document.title = `Break - ${titlePrefix} | Adagio`;
       } else {
-        document.title = "Adagio";
+         document.title = "Adagio";
+      }
+       if (!isRunning && currentTime === 0) {
+        document.title = "Adagio"; // Default title when idle
       }
     }
-  }, [currentTime, isRunning, currentInterval, formatTime, isClient]);
+  }, [currentTime, isRunning, currentInterval, formatTime, isClient, currentProject]);
 
 
   if (!isClient) {
@@ -107,7 +113,6 @@ export default function PomodoroPage() {
         <TimerDisplay
           formattedTime={formatTime(currentTime)}
           intervalType={currentInterval}
-          progress={currentProgress()}
           isRunning={isRunning}
         />
 
@@ -117,7 +122,7 @@ export default function PomodoroPage() {
           onStart={startTimer}
           onPause={pauseTimer}
           onReset={resetTimer}
-          onSkip={skipInterval}
+          onSwitchMode={switchMode} // Changed from onSkip
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
 

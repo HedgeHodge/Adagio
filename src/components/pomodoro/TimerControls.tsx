@@ -3,7 +3,7 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, SkipForward, Settings } from "lucide-react";
+import { Play, Pause, RotateCcw, Settings, Coffee, Briefcase } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +13,7 @@ interface TimerControlsProps {
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
-  onSkip: () => void;
+  onSwitchMode: () => void; // Renamed from onSkip
   onOpenSettings: () => void;
 }
 
@@ -29,10 +29,15 @@ export function TimerControls({
   onStart,
   onPause,
   onReset,
-  onSkip,
+  onSwitchMode,
   onOpenSettings,
 }: TimerControlsProps) {
   const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
+
+  const switchModeButtonIcon = isBreakInterval ? <Briefcase className="h-5 w-5" /> : <Coffee className="h-5 w-5" />;
+  const switchModeButtonText = isBreakInterval ? "Start Work" : "Take Break";
+  const switchModeButtonTooltip = isBreakInterval ? "End break and start working" : "Log work and take a break";
+
 
   return (
     <div className="flex space-x-3 mb-8 items-center">
@@ -56,7 +61,7 @@ export function TimerControls({
               size="lg"
               className={cn(
                 "px-8 py-6 text-lg shadow-md hover:shadow-lg transition-shadow",
-                isBreakInterval
+                 isBreakInterval
                   ? "border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   : "border-primary text-primary hover:bg-primary/10"
               )}
@@ -70,14 +75,21 @@ export function TimerControls({
       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
         <Button onClick={onReset} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
           <RotateCcw className="h-5 w-5" />
-          <span className="sr-only">Reset</span>
+          <span className="sr-only">Reset Current Timer</span>
         </Button>
       </motion.div>
 
       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
-        <Button onClick={onSkip} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
-          <SkipForward className="h-5 w-5" />
-          <span className="sr-only">Skip</span>
+        <Button 
+            onClick={onSwitchMode} 
+            variant="ghost" 
+            size="icon" 
+            className="h-12 w-12 text-lg hover:bg-muted"
+            aria-label={switchModeButtonTooltip}
+            title={switchModeButtonTooltip}
+        >
+          {switchModeButtonIcon}
+          <span className="sr-only">{switchModeButtonText}</span>
         </Button>
       </motion.div>
 

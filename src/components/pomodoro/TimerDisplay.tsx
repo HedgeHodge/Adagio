@@ -2,24 +2,22 @@
 "use client";
 
 import type { IntervalType } from '@/types/pomodoro';
-import { Progress } from "@/components/ui/progress";
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion'; 
 
 interface TimerDisplayProps {
   formattedTime: string;
   intervalType: IntervalType;
-  progress: number;
   isRunning: boolean;
 }
 
 const intervalLabels: Record<IntervalType, string> = {
-  work: "Work",
+  work: "Working On",
   shortBreak: "Short Break",
   longBreak: "Long Break",
 };
 
-export function TimerDisplay({ formattedTime, intervalType, progress, isRunning }: TimerDisplayProps) {
+export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDisplayProps) {
   const animationKey = intervalType;
   const isBreak = intervalType === 'shortBreak' || intervalType === 'longBreak';
 
@@ -31,7 +29,7 @@ export function TimerDisplay({ formattedTime, intervalType, progress, isRunning 
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={cn(
         "flex flex-col items-center justify-center p-8 rounded-lg shadow-xl w-full max-w-md mb-8 bg-card",
-        isRunning && intervalType === 'work' ? 'animate-pulse-bg' : ''
+        isRunning && intervalType === 'work' ? 'animate-pulse-bg' : '' // Subtle pulse for active work
       )}
     >
       <motion.h2 
@@ -54,11 +52,7 @@ export function TimerDisplay({ formattedTime, intervalType, progress, isRunning 
       >
         {formattedTime}
       </motion.div>
-      <Progress 
-        value={progress} 
-        className="w-full h-3" 
-        indicatorClassName={isBreak ? 'bg-foreground/30' : 'bg-primary'}
-      />
+      {/* Progress bar removed as timer now counts up indefinitely per session */}
     </motion.div>
   );
 }

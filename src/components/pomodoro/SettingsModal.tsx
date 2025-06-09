@@ -39,7 +39,6 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
     defaultValues: settings,
   });
 
-  // Update form defaultValues when settings prop changes (e.g., on initial load from localStorage)
   React.useEffect(() => {
     reset(settings);
   }, [settings, reset]);
@@ -56,13 +55,13 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
         <DialogHeader>
           <DialogTitle className="text-foreground">Settings</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Customize your Pomodoro timer durations (minutes).
+            Customize your Pomodoro suggestion durations (minutes). These will trigger notifications.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="workDuration" className="text-right text-foreground/80">
-              Work
+              Work Suggestion
             </Label>
             <Controller
               name="workDuration"
@@ -73,7 +72,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="shortBreakDuration" className="text-right text-foreground/80">
-              Short Break
+              Short Break Suggestion
             </Label>
             <Controller
               name="shortBreakDuration"
@@ -84,7 +83,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="longBreakDuration" className="text-right text-foreground/80">
-              Long Break
+              Long Break Suggestion
             </Label>
             <Controller
               name="longBreakDuration"
@@ -95,7 +94,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="pomodorosPerSet" className="text-right text-foreground/80">
-              Pomodoros / Set
+              Work Sessions / Set
             </Label>
             <Controller
               name="pomodorosPerSet"
