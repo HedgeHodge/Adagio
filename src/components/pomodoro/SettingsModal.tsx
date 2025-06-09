@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from "react";
 import type { PomodoroSettings } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
 import {
