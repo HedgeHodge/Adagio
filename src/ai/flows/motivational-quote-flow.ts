@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z}  from 'genkit';
 
-export const MotivationalQuoteOutputSchema = z.object({
+const MotivationalQuoteOutputSchema = z.object({
   quote: z.string().describe('A short, motivational quote related to productivity, focus, or well-being.'),
 });
 export type MotivationalQuoteOutput = z.infer<typeof MotivationalQuoteOutputSchema>;
