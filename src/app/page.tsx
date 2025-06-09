@@ -98,6 +98,7 @@ export default function PomodoroPage() {
 
         <TimerControls
           isRunning={isRunning}
+          currentInterval={currentInterval}
           onStart={startTimer}
           onPause={pauseTimer}
           onReset={resetTimer}
@@ -145,4 +146,3 @@ export default function PomodoroPage() {
     </>
   );
 }
-

@@ -1,12 +1,14 @@
 
 "use client";
 
+import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw, SkipForward, Settings } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TimerControlsProps {
   isRunning: boolean;
+  currentInterval: IntervalType;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -22,24 +24,37 @@ const buttonVariants = {
 
 export function TimerControls({
   isRunning,
+  currentInterval,
   onStart,
   onPause,
   onReset,
   onSkip,
   onOpenSettings,
 }: TimerControlsProps) {
+  const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
+
   return (
     <div className="flex space-x-3 mb-8 items-center">
       <AnimatePresence mode="wait">
         {!isRunning ? (
           <motion.div key="start" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
-            <Button onClick={onStart} size="lg" className="px-8 py-6 text-lg bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-shadow">
+            <Button 
+              onClick={onStart} 
+              size="lg" 
+              className="px-8 py-6 text-lg shadow-md hover:shadow-lg transition-shadow"
+              variant={isBreakInterval ? 'secondary' : 'default'}
+            >
               <Play className="mr-2 h-6 w-6" /> Start
             </Button>
           </motion.div>
         ) : (
           <motion.div key="pause" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
-            <Button onClick={onPause} variant="outline" size="lg" className="px-8 py-6 text-lg border-primary text-primary hover:bg-primary/10 shadow-md hover:shadow-lg transition-shadow">
+            <Button 
+              onClick={onPause} 
+              variant="outline" 
+              size="lg" 
+              className="px-8 py-6 text-lg border-primary text-primary hover:bg-primary/10 shadow-md hover:shadow-lg transition-shadow"
+            >
               <Pause className="mr-2 h-6 w-6" /> Pause
             </Button>
           </motion.div>
