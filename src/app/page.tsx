@@ -49,7 +49,7 @@ export default function PomodoroPage() {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
         <div className="flex flex-col items-center">
-          <Skeleton className="h-10 w-48 mb-6" />
+          <Skeleton className="h-16 w-64 mb-8" /> 
           <Skeleton className="w-full max-w-md h-20 mb-6 rounded-lg" />
           <Skeleton className="w-full max-w-md h-48 mb-8 rounded-lg" />
           <div className="flex space-x-3 mb-8">
@@ -67,7 +67,7 @@ export default function PomodoroPage() {
   return (
     <>
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
-        <h1 className="text-4xl font-bold mb-6 text-primary font-headline">Adagio</h1>
+        <h1 className="text-7xl font-headline font-bold mb-8 text-primary">Adagio</h1>
 
         <div className="w-full max-w-md mb-6">
           <Label htmlFor="project-input" className="text-sm font-medium text-foreground/80">
