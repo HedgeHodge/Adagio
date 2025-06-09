@@ -4,7 +4,7 @@
 import type { PomodoroSettings, PomodoroLogEntry, IntervalType } from '@/types/pomodoro';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { getMotivationalQuote } from '@/ai/flows/motivational-quote-flow';
+import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
@@ -25,7 +25,7 @@ export function usePomodoro() {
   const [pomodorosCompletedThisSet, setPomodorosCompletedThisSet] = useState<number>(0);
   const [pomodoroLog, setPomodoroLog] = useState<PomodoroLogEntry[]>([]);
   const [currentProject, setCurrentProjectState] = useState<string>('');
-  const [motivationalQuote, setMotivationalQuote] = useState<string | null>(null);
+  const [motivationalQuote, setMotivationalQuote] = useState<MotivationalQuoteOutput | null>(null);
   const [isFetchingQuote, setIsFetchingQuote] = useState<boolean>(false);
   const [isClient, setIsClient] = useState(false);
   
@@ -89,10 +89,10 @@ export function usePomodoro() {
     setMotivationalQuote(null); // Clear previous quote
     try {
       const result = await getMotivationalQuote();
-      setMotivationalQuote(result.quote);
+      setMotivationalQuote(result);
     } catch (error) {
       console.error("Failed to fetch motivational quote:", error);
-      setMotivationalQuote("Keep up the great work!"); // Fallback quote
+      setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio App" }); // Fallback quote
     } finally {
       setIsFetchingQuote(false);
     }
@@ -260,3 +260,4 @@ export function usePomodoro() {
     isFetchingQuote,
   };
 }
+

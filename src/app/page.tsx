@@ -110,16 +110,22 @@ export default function PomodoroPage() {
             {isFetchingQuote && (
               <Card className="bg-card shadow-md animate-pulse">
                 <CardContent className="p-4">
-                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-5 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2 ml-auto" />
                 </CardContent>
               </Card>
             )}
             {!isFetchingQuote && motivationalQuote && (
               <Card className="bg-card shadow-md animate-subtle-pop">
                 <CardContent className="p-4">
-                  <div className="flex items-center text-sm text-muted-foreground italic">
-                    <Quote className="h-4 w-4 mr-2 text-primary/70 shrink-0" />
-                    <p>{motivationalQuote}</p>
+                  <div className="flex items-start text-sm text-muted-foreground italic">
+                    <Quote className="h-4 w-4 mr-2 text-primary/70 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="mb-1">"{motivationalQuote.quote}"</p>
+                      {motivationalQuote.source && (
+                        <p className="text-xs text-muted-foreground/80 text-right">- {motivationalQuote.source}</p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -139,3 +145,4 @@ export default function PomodoroPage() {
     </>
   );
 }
+
