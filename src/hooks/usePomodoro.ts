@@ -33,7 +33,7 @@ export function usePomodoro() {
   const [lastWorkSessionStartTime, setLastWorkSessionStartTime] = useState<number | null>(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedLogEntryForEdit, setSelectedLogEntryForEdit] = useState<PomodoroLogEntry | null>(null);
+  const [entryToEdit, setEntryToEdit] = useState<PomodoroLogEntry | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -171,7 +171,7 @@ export function usePomodoro() {
           project: currentProject || undefined,
         };
         setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
-        toast({ title: "Work session logged!", description: `Duration: ${formatTime(currentTime)}` });
+        toast({ title: "Work entry logged!", description: `Duration: ${formatTime(currentTime)}` });
       }
 
       const newCompletedPomodoros = pomodorosCompletedThisSet + 1;
@@ -204,24 +204,24 @@ export function usePomodoro() {
 
   const deleteLogEntry = useCallback((id: string) => {
     setPomodoroLog(prevLog => prevLog.filter(entry => entry.id !== id));
-    toast({ title: "Session deleted", variant: "destructive" });
+    toast({ title: "Entry deleted", variant: "destructive" });
   }, [toast]);
 
   const openEditModal = useCallback((entry: PomodoroLogEntry) => {
-    setSelectedLogEntryForEdit(entry);
+    setEntryToEdit(entry);
     setIsEditModalOpen(true);
   }, []);
 
   const closeEditModal = useCallback(() => {
     setIsEditModalOpen(false);
-    setSelectedLogEntryForEdit(null);
+    setEntryToEdit(null);
   }, []);
 
   const updateLogEntry = useCallback((updatedEntry: PomodoroLogEntry) => {
     setPomodoroLog(prevLog => 
       prevLog.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
     );
-    toast({ title: "Session updated successfully!" });
+    toast({ title: "Entry updated successfully!" });
     closeEditModal();
   }, [toast, closeEditModal]);
 
@@ -325,7 +325,7 @@ export function usePomodoro() {
       const newUniqueEntries = validTestData.filter(e => !existingIds.has(e.id));
       return [...newUniqueEntries, ...prevLog];
     });
-    toast({ title: "Test Data Added", description: `${validTestData.length} sample sessions have been added to your log.` });
+    toast({ title: "Test Data Added", description: `${validTestData.length} sample entries have been added to your log.` });
   }, [toast]);
 
 
@@ -352,12 +352,10 @@ export function usePomodoro() {
     setActiveFilter,
     processedChartData,
     isEditModalOpen,
-    selectedLogEntryForEdit,
+    entryToEdit, // Renamed from selectedLogEntryForEdit
     openEditModal,
     closeEditModal,
     updateLogEntry,
     populateTestData,
   };
 }
-
-    

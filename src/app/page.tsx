@@ -7,7 +7,7 @@ import { usePomodoro } from '@/hooks/usePomodoro';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
 import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { SettingsModal } from '@/components/pomodoro/SettingsModal';
-import { EditSessionModal } from '@/components/pomodoro/EditSessionModal';
+import { EditEntryModal } from '@/components/pomodoro/EditSessionModal'; // Renamed import
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export default function PomodoroPage() {
     setActiveFilter,
     processedChartData,
     isEditModalOpen,
-    selectedLogEntryForEdit,
+    entryToEdit, // Renamed from selectedLogEntryForEdit
     openEditModal,
     closeEditModal,
     updateLogEntry,
@@ -208,15 +208,13 @@ export default function PomodoroPage() {
           settings={settings}
           onSave={updateSettings}
         />
-        <EditSessionModal
+        <EditEntryModal // Renamed component
           isOpen={isEditModalOpen}
           onClose={closeEditModal}
-          session={selectedLogEntryForEdit}
+          entry={entryToEdit} // Renamed prop
           onSave={updateLogEntry}
         />
       </main>
     </>
   );
 }
-
-    

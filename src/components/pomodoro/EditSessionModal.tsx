@@ -20,14 +20,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO, differenceInMinutes, isValid } from 'date-fns';
 
-interface EditSessionModalProps {
+interface EditEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  session: PomodoroLogEntry | null;
-  onSave: (updatedSession: PomodoroLogEntry) => void;
+  entry: PomodoroLogEntry | null;
+  onSave: (updatedEntry: PomodoroLogEntry) => void;
 }
 
-const editSessionSchema = z.object({
+const editEntrySchema = z.object({
   project: z.string().optional(),
   startTime: z.string().refine(val => isValid(parseISO(val)), {
     message: "Invalid start date",
@@ -40,7 +40,7 @@ const editSessionSchema = z.object({
   path: ["endTime"],
 });
 
-type EditSessionFormData = z.infer<typeof editSessionSchema>;
+type EditEntryFormData = z.infer<typeof editEntrySchema>;
 
 // Helper to format ISO date string to datetime-local input format
 const formatToDateTimeLocal = (isoString: string): string => {
@@ -48,37 +48,37 @@ const formatToDateTimeLocal = (isoString: string): string => {
   return format(parseISO(isoString), "yyyy-MM-dd'T'HH:mm");
 };
 
-export function EditSessionModal({ isOpen, onClose, session, onSave }: EditSessionModalProps) {
-  const { control, handleSubmit, formState: { errors }, reset, watch } = useForm<EditSessionFormData>({
-    resolver: zodResolver(editSessionSchema),
+export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModalProps) {
+  const { control, handleSubmit, formState: { errors }, reset, watch } = useForm<EditEntryFormData>({
+    resolver: zodResolver(editEntrySchema),
     defaultValues: {
-      project: session?.project || '',
-      startTime: session?.startTime ? formatToDateTimeLocal(session.startTime) : '',
-      endTime: session?.endTime ? formatToDateTimeLocal(session.endTime) : '',
+      project: entry?.project || '',
+      startTime: entry?.startTime ? formatToDateTimeLocal(entry.startTime) : '',
+      endTime: entry?.endTime ? formatToDateTimeLocal(entry.endTime) : '',
     },
   });
 
   React.useEffect(() => {
-    if (session) {
+    if (entry) {
       reset({
-        project: session.project || '',
-        startTime: formatToDateTimeLocal(session.startTime),
-        endTime: formatToDateTimeLocal(session.endTime),
+        project: entry.project || '',
+        startTime: formatToDateTimeLocal(entry.startTime),
+        endTime: formatToDateTimeLocal(entry.endTime),
       });
     } else {
       reset({ project: '', startTime: '', endTime: ''});
     }
-  }, [session, reset, isOpen]);
+  }, [entry, reset, isOpen]);
 
-  const onSubmit = (data: EditSessionFormData) => {
-    if (!session) return;
+  const onSubmit = (data: EditEntryFormData) => {
+    if (!entry) return;
 
     const parsedStartTime = parseISO(data.startTime);
     const parsedEndTime = parseISO(data.endTime);
     const newDuration = differenceInMinutes(parsedEndTime, parsedStartTime);
 
     onSave({
-      ...session,
+      ...entry,
       project: data.project || undefined,
       startTime: parsedStartTime.toISOString(),
       endTime: parsedEndTime.toISOString(),
@@ -97,19 +97,19 @@ export function EditSessionModal({ isOpen, onClose, session, onSave }: EditSessi
         return differenceInMinutes(end, start);
       }
     }
-    return session?.duration ?? 0;
-  }, [watchedStartTime, watchedEndTime, session?.duration]);
+    return entry?.duration ?? 0;
+  }, [watchedStartTime, watchedEndTime, entry?.duration]);
 
 
-  if (!session) return null;
+  if (!entry) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[480px] bg-card">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Edit Session</DialogTitle>
+          <DialogTitle className="text-foreground">Edit Entry</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Adjust the details for this logged session.
+            Adjust the details for this logged entry.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">

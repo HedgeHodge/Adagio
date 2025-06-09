@@ -31,8 +31,8 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProp
     return (
       <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Session Log</CardTitle>
-          <CardDescription className="text-muted-foreground">No sessions completed yet. Start working to see your progress!</CardDescription>
+          <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Entry Log</CardTitle>
+          <CardDescription className="text-muted-foreground">No entries completed yet. Start working to see your progress!</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -41,8 +41,8 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProp
   return (
     <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Session Log</CardTitle>
-        <CardDescription className="text-muted-foreground">Your completed work sessions.</CardDescription>
+        <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Entry Log</CardTitle>
+        <CardDescription className="text-muted-foreground">Your completed work entries.</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[200px] pr-4">
@@ -54,7 +54,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProp
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm text-foreground truncate">
-                    Session #{log.length - index} ({formatDuration(entry.duration)})
+                    Entry #{log.length - index} ({formatDuration(entry.duration)})
                   </div>
                   {entry.project && (
                     <div className="text-xs text-primary/90 flex items-center mt-1 truncate">
@@ -72,7 +72,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProp
                     size="icon"
                     className="p-1 rounded-md bg-muted/30 hover:bg-muted/70 text-foreground/70 hover:text-foreground transition-all shadow-sm hover:shadow-md opacity-50 group-hover:opacity-100 focus:opacity-100 h-7 w-7"
                     onClick={() => onEditEntry(entry)}
-                    aria-label="Edit session"
+                    aria-label="Edit entry"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -81,7 +81,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry }: PomodoroLogProp
                     size="icon"
                     className="p-1 rounded-md bg-destructive/10 hover:bg-destructive/30 text-destructive/70 hover:text-destructive transition-all shadow-sm hover:shadow-md opacity-50 group-hover:opacity-100 focus:opacity-100 h-7 w-7"
                     onClick={() => onDeleteEntry(entry.id)}
-                    aria-label="Delete session"
+                    aria-label="Delete entry"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
