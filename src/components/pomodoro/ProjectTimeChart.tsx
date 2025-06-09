@@ -10,24 +10,16 @@ interface ProjectTimeChartProps {
   data: ChartDataPoint[];
 }
 
-const formatMinutesToHoursAndMinutes = (totalMinutes: number): string => {
-  if (totalMinutes === 0) return "0m";
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  let result = "";
-  if (hours > 0) {
-    result += `${hours}h`;
-  }
-  if (minutes > 0) {
-    if (hours > 0) result += " "; // Add space if hours are also present
-    result += `${minutes}m`;
-  }
-  return result || "0m"; // Fallback for edge cases or if both are zero (though handled by initial check)
+const formatMinutesToDecimalHours = (totalMinutes: number): string => {
+  if (totalMinutes === 0) return "0h";
+  const hours = totalMinutes / 60;
+  // Show one decimal place if not a whole number, otherwise show no decimal.
+  return `${hours % 1 === 0 ? hours : hours.toFixed(1)}h`;
 };
 
 const chartConfig = {
   totalMinutes: {
-    label: "Time", // Changed from "Time (minutes)"
+    label: "Time (hours)", // Updated label
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
@@ -48,7 +40,7 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
         <BarChart
           accessibilityLayer
           data={data}
-          margin={{ top: 5, right: 5, left: -10, bottom: 20 }} // Adjusted left margin for Y-axis label
+          margin={{ top: 5, right: 5, left: -10, bottom: 20 }} 
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
           <XAxis
@@ -66,8 +58,8 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            width={70} // Adjusted width for potentially longer labels like "1h 30m"
-            tickFormatter={(value) => formatMinutesToHoursAndMinutes(value)}
+            width={70} 
+            tickFormatter={(value) => formatMinutesToDecimalHours(value)}
             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
           />
           <ChartTooltip
@@ -80,7 +72,7 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
                   if (item.dataKey === 'totalMinutes') {
                     return (
                       <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{formatMinutesToHoursAndMinutes(value as number)}</span>
+                        <span className="font-medium text-foreground">{formatMinutesToDecimalHours(value as number)}</span>
                         <span className="text-xs text-muted-foreground">{item.payload.name}</span>
                       </div>
                     );
@@ -96,3 +88,4 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
     </ChartContainer>
   );
 }
+
