@@ -1,0 +1,71 @@
+
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Play, Pause, RotateCcw, SkipForward, Settings } from "lucide-react";
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface TimerControlsProps {
+  isRunning: boolean;
+  onStart: () => void;
+  onPause: () => void;
+  onReset: () => void;
+  onSkip: () => void;
+  onOpenSettings: () => void;
+}
+
+const buttonVariants = {
+  initial: { opacity: 0, scale: 0.8, y: 10 },
+  animate: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 25 } },
+  exit: { opacity: 0, scale: 0.8, y: -10, transition: { duration: 0.2 } },
+};
+
+export function TimerControls({
+  isRunning,
+  onStart,
+  onPause,
+  onReset,
+  onSkip,
+  onOpenSettings,
+}: TimerControlsProps) {
+  return (
+    <div className="flex space-x-3 mb-8 items-center">
+      <AnimatePresence mode="wait">
+        {!isRunning ? (
+          <motion.div key="start" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
+            <Button onClick={onStart} size="lg" className="px-8 py-6 text-lg bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-shadow">
+              <Play className="mr-2 h-6 w-6" /> Start
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div key="pause" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
+            <Button onClick={onPause} variant="outline" size="lg" className="px-8 py-6 text-lg border-primary text-primary hover:bg-primary/10 shadow-md hover:shadow-lg transition-shadow">
+              <Pause className="mr-2 h-6 w-6" /> Pause
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
+        <Button onClick={onReset} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
+          <RotateCcw className="h-5 w-5" />
+          <span className="sr-only">Reset</span>
+        </Button>
+      </motion.div>
+      
+      <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
+        <Button onClick={onSkip} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
+          <SkipForward className="h-5 w-5" />
+          <span className="sr-only">Skip</span>
+        </Button>
+      </motion.div>
+       
+       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
+        <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
+          <Settings className="h-5 w-5" />
+          <span className="sr-only">Settings</span>
+        </Button>
+      </motion.div>
+    </div>
+  );
+}
