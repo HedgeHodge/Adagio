@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -67,7 +66,7 @@ export default function PomodoroPage() {
   return (
     <>
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
-        <h1 className="text-7xl font-headline font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-br from-primary to-accent">Adagio</h1>
+        <h1 className="text-7xl font-headline font-bold mb-8 text-primary">Adagio</h1>
 
         <div className="w-full max-w-md mb-6">
           <Label htmlFor="project-input" className="text-sm font-medium text-foreground/80">

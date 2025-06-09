@@ -20,8 +20,8 @@ body {
     --secondary-foreground: 0 0% 9%; /* Default secondary foreground */
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 147 50% 52%; /* Slightly Lighter Saturated Green for gradient */
-    --accent-foreground: 0 0% 98%; /* Light color for text on accent */
+    --accent: 0 0% 96.1%; /* Default accent, can adjust if needed */
+    --accent-foreground: 0 0% 9%; /* Default accent foreground */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
@@ -55,8 +55,8 @@ body {
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 147 50% 60%; /* Slightly Lighter Saturated Green for gradient in dark mode */
-    --accent-foreground: 0 0% 5%; /* Dark color for text on accent in dark mode */
+    --accent: 0 0% 14.9%; /* Dark accent */
+    --accent-foreground: 0 0% 98%; /* Dark accent foreground */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 20%;
