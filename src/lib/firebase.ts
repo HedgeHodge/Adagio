@@ -34,7 +34,7 @@ if (typeof window !== 'undefined') {
         app = undefined;
       }
     } else {
-      console.error("Firebase API key or Project ID is missing. Firebase App cannot be initialized.");
+      console.error("Firebase API key or Project ID is missing. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set in your .env.local file and that you've restarted your development server. Firebase App cannot be initialized.");
       app = undefined; // Ensure app is undefined
     }
   } else {
