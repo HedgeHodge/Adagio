@@ -33,5 +33,5 @@ export interface ActivePomodoroSession {
   currentInterval: IntervalType;
   pomodorosCompletedThisSet: number;
   lastWorkSessionStartTime: number | null; // timestamp for the current work interval of this session
-  // We'll use global settings for now
+  shouldLogWork?: boolean; // Flag to indicate this session's work interval needs to be logged
 }
