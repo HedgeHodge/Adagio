@@ -4,12 +4,15 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAnalytics, type Analytics, isSupported } from "firebase/analytics";
 
-// Firebase configuration sourced from environment variables
-// IMPORTANT: These variables must be prefixed with NEXT_PUBLIC_ to be available on the client.
+// Firebase configuration sourced from environment variables.
+// IMPORTANT: 
+// 1. These variables MUST be prefixed with NEXT_PUBLIC_ to be available on the client-side.
+// 2. They MUST be defined in a .env.local file in the root of your project.
+// 3. You MUST restart your development server after creating or modifying .env.local.
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, // e.g., NEXT_PUBLIC_FIREBASE_API_KEY="AIza..."
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, // e.g., NEXT_PUBLIC_FIREBASE_PROJECT_ID="my-project"
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
