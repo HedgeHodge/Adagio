@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 import withPWAInit from 'next-pwa';
 
 const pwaConfig = {
-  dest: 'public',
+  // dest: 'public', // Often not needed when register: true, next-pwa handles it.
   register: true,
   skipWaiting: true,
   disable: false, // Enabled PWA in development for testing install prompt

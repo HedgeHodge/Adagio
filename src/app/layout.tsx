@@ -33,18 +33,14 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    apple: '/icons/apple-touch-icon.png',
+    apple: '/icons/apple-touch-icon.png', // Ensure public/icons/apple-touch-icon.png exists
   },
   // themeColor is handled by the viewport export for PWA consistency
-  other: {
-    'msapplication-config': '/icons/browserconfig.xml', // You'll need to create public/icons/browserconfig.xml
-    'msapplication-TileColor': '#3CB371', // Often duplicated here, also in browserconfig.xml
-    'msapplication-tap-highlight': 'no',
-  }
+  // Removed other: { 'msapplication-config': ... } as browserconfig.xml might not exist and is less critical for install prompt
 };
 
 export const viewport: Viewport = {
-  themeColor: '#3CB371',
+  themeColor: '#3CB371', // This should match your manifest.json theme_color
   // viewportFit: 'cover', // Example: if needed for notch areas
   // width: 'device-width',
   // initialScale: 1,
