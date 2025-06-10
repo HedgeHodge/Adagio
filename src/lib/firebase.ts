@@ -38,18 +38,22 @@ if (typeof window !== 'undefined') {
 
 
   if (getApps().length === 0) {
-    // Check if essential config values are present
-    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+    // Check if essential config values are present, especially for Auth
+    if (firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId) {
       try {
         app = initializeApp(firebaseConfig);
         console.log('[Firebase Diagnostics] Firebase app initialized successfully.');
       } catch (error) {
         console.error("[Firebase Diagnostics] Firebase app initialization error:", error);
-        // To prevent downstream errors, ensure app is undefined if init fails
         app = undefined;
       }
     } else {
-      console.error("[Firebase Diagnostics] Firebase API key or Project ID is missing. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set in your .env.local file and that you've restarted your development server. Firebase App cannot be initialized.");
+      const missingKeys: string[] = [];
+      if (!firebaseConfig.apiKey) missingKeys.push("NEXT_PUBLIC_FIREBASE_API_KEY");
+      if (!firebaseConfig.authDomain) missingKeys.push("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN");
+      if (!firebaseConfig.projectId) missingKeys.push("NEXT_PUBLIC_FIREBASE_PROJECT_ID");
+      
+      console.error(`[Firebase Diagnostics] Critical Firebase configuration missing for app initialization or Auth: ${missingKeys.join(', ')}. Ensure these are correctly set in your .env.local file and that you've restarted your development server. Firebase App cannot be initialized.`);
       app = undefined; // Ensure app is undefined
     }
   } else {
@@ -61,7 +65,7 @@ if (typeof window !== 'undefined') {
     auth = getAuth(app);
     db = getFirestore(app);
     isSupported().then((supported) => {
-      if (supported && firebaseConfig.measurementId) { // Also check if measurementId is present
+      if (supported && firebaseConfig.measurementId) {
         analytics = getAnalytics(app);
         console.log('[Firebase Diagnostics] Firebase Analytics initialized.');
       } else if (supported && !firebaseConfig.measurementId) {
