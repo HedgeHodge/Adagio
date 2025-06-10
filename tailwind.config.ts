@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Dancing Script', 'cursive'],
+        body: ['var(--font-inter)', 'sans-serif'],
+        headline: ['var(--font-dancing-script)', 'cursive'],
         code: ['monospace'],
       },
       colors: {
