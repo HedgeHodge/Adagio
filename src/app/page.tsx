@@ -199,7 +199,7 @@ export default function PomodoroPage() {
 
   const renderInsightsContent = () => (
     <>
-      <Card className="w-full max-w-md bg-card shadow-lg">
+      <Card className="w-full max-w-md bg-card shadow-lg mt-8">
         <CardHeader>
           <CardTitle className="flex items-center text-foreground">
             <BarChart2 className="mr-2 h-5 w-5 text-primary" />
@@ -287,3 +287,4 @@ export default function PomodoroPage() {
     </>
   );
 }
+
