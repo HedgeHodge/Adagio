@@ -1,2 +1,0 @@
-Please add your notification.mp3 sound file to this 'public/sounds/' directory.
-This file is used by the usePomodoro hook for timer alerts.
