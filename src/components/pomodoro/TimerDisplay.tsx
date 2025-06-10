@@ -9,13 +9,13 @@ interface TimerDisplayProps {
   formattedTime: string;
   intervalType: IntervalType;
   isRunning: boolean;
-  currentProject?: string;
+  // project?: string; // Project name will be displayed by the parent card now
 }
 
-const getIntervalLabel = (intervalType: IntervalType, currentProject?: string): string => {
+const getIntervalLabelText = (intervalType: IntervalType): string => {
   switch (intervalType) {
     case 'work':
-      return currentProject ? `Working On: ${currentProject}` : "Working On";
+      return "Focusing"; // Simpler label as project name is outside
     case 'shortBreak':
       return "Short Break";
     case 'longBreak':
@@ -25,38 +25,38 @@ const getIntervalLabel = (intervalType: IntervalType, currentProject?: string): 
   }
 };
 
-export function TimerDisplay({ formattedTime, intervalType, isRunning, currentProject }: TimerDisplayProps) {
-  const animationKey = intervalType;
+export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDisplayProps) {
+  const animationKey = `${intervalType}-${isRunning}`; // Ensure re-animation on status change too
   const isBreak = intervalType === 'shortBreak' || intervalType === 'longBreak';
 
   return (
     <motion.div
       key={animationKey}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
-        "flex flex-col items-center justify-center p-8 rounded-lg shadow-xl w-full max-w-md mb-8 bg-card",
-        isRunning && intervalType === 'work' ? 'animate-pulse-bg' : '' // Subtle pulse for active work
+        "flex flex-col items-center justify-center p-4 rounded-lg w-full", // Removed shadow, mb, bg-card
+        isRunning && intervalType === 'work' ? 'animate-pulse-bg' : ''
       )}
     >
       <motion.h2 
-        className="text-xl md:text-2xl font-semibold mb-2 text-foreground/80 text-center px-2"
+        className="text-lg md:text-xl font-semibold mb-1 text-foreground/80 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
       >
-        {getIntervalLabel(intervalType, currentProject)}
+        {getIntervalLabelText(intervalType)}
       </motion.h2>
       <motion.div 
         className={cn(
-        "text-7xl md:text-8xl font-bold mb-4 transition-opacity duration-300",
+        "text-6xl md:text-7xl font-bold transition-opacity duration-300", // Smaller font for card context
         !isRunning && intervalType === 'work' ? "opacity-70" : "opacity-100",
         isBreak ? 'text-muted-foreground' : 'text-primary'
        )}
-       initial={{ opacity: 0, scale: 0.9 }}
+       initial={{ opacity: 0, scale: 0.95 }}
        animate={{ opacity: 1, scale: 1 }}
-       transition={{ delay: 0.1, duration: 0.4, type: "spring", stiffness: 200, damping: 15 }}
+       transition={{ delay: 0.05, duration: 0.3, type: "spring", stiffness: 200, damping: 20 }}
       >
         {formattedTime}
       </motion.div>

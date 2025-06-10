@@ -8,23 +8,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface TimerControlsProps {
+  sessionId: string; // Each control set is for a specific session
   isRunning: boolean;
   currentInterval: IntervalType;
-  onStart: () => void;
-  onPause: () => void;
-  onReset: () => void;
-  onSwitchMode: () => void;
-  onOpenSettings: () => void;
-  onEndCurrentWorkSession?: () => void; // Optional for now, will be used
+  onStart: () => void; // Specific to this session
+  onPause: () => void; // Specific to this session
+  onReset: () => void; // Specific to this session
+  onSwitchMode: () => void; // Specific to this session
+  onOpenSettings: () => void; // Settings are global
+  onEndCurrentWorkSession?: () => void; // Specific to this session
 }
 
 const buttonVariants = {
-  initial: { opacity: 0, scale: 0.8, y: 10 },
-  animate: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 25 } },
-  exit: { opacity: 0, scale: 0.8, y: -10, transition: { duration: 0.2 } },
+  initial: { opacity: 0, scale: 0.8, y: 5 },
+  animate: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 500, damping: 30 } },
+  exit: { opacity: 0, scale: 0.8, y: -5, transition: { duration: 0.15 } },
 };
 
 export function TimerControls({
+  sessionId, // unused in render but good for keying if needed
   isRunning,
   currentInterval,
   onStart,
@@ -36,38 +38,37 @@ export function TimerControls({
 }: TimerControlsProps) {
   const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
 
-  const switchModeButtonIcon = isBreakInterval ? <Briefcase className="h-5 w-5" /> : <Coffee className="h-5 w-5" />;
-  const switchModeButtonText = isBreakInterval ? "Start Work" : "Take Break";
-  const switchModeButtonTooltip = isBreakInterval ? "End break and start working" : "Log work and take a break";
+  const switchModeButtonIcon = isBreakInterval ? <Briefcase className="h-4 w-4" /> : <Coffee className="h-4 w-4" />; // Smaller icons
+  const switchModeButtonTooltip = isBreakInterval ? "Start Work" : "Take Break";
 
   return (
-    <div className="flex space-x-3 mb-8 items-center">
+    <div className="flex space-x-2 justify-center items-center mt-2"> {/* Smaller margin, justify center */}
       <AnimatePresence mode="wait">
         {!isRunning ? (
-          <motion.div key="start" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
+          <motion.div key={`start-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
             <Button
               onClick={onStart}
-              size="lg"
-              className="px-8 py-6 text-lg shadow-md hover:shadow-lg transition-shadow"
+              size="default" // Smaller button
+              className="px-6 py-3 text-base shadow-md hover:shadow-lg transition-shadow" // Adjusted padding
               variant={isBreakInterval ? 'secondary' : 'default'}
             >
-              <Play className="mr-2 h-6 w-6" /> Start
+              <Play className="mr-1.5 h-5 w-5" /> Start
             </Button>
           </motion.div>
         ) : (
-          <motion.div key="pause" variants={buttonVariants} initial="initial" animate="animate" exit="exit">
+          <motion.div key={`pause-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
             <Button
               onClick={onPause}
               variant="outline"
-              size="lg"
+              size="default" // Smaller button
               className={cn(
-                "px-8 py-6 text-lg shadow-md hover:shadow-lg transition-shadow",
+                "px-6 py-3 text-base shadow-md hover:shadow-lg transition-shadow", // Adjusted padding
                 isBreakInterval
                   ? "border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   : "border-primary text-primary hover:bg-primary/10"
               )}
             >
-              <Pause className="mr-2 h-6 w-6" /> Pause
+              <Pause className="mr-1.5 h-5 w-5" /> Pause
             </Button>
           </motion.div>
         )}
@@ -79,19 +80,19 @@ export function TimerControls({
             onClick={onEndCurrentWorkSession} 
             variant="destructive" 
             size="icon" 
-            className="h-12 w-12 text-lg"
+            className="h-10 w-10" // Adjusted size
             aria-label="End Current Tracking"
             title="End Current Tracking"
           >
-            <StopCircle className="h-5 w-5" />
+            <StopCircle className="h-4 w-4" />
           </Button>
         </motion.div>
       )}
 
       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
-        <Button onClick={onReset} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
-          <RotateCcw className="h-5 w-5" />
-          <span className="sr-only">Reset Current Timer</span>
+        <Button onClick={onReset} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted">
+          <RotateCcw className="h-4 w-4" />
+          <span className="sr-only">Reset Timer</span>
         </Button>
       </motion.div>
 
@@ -100,18 +101,18 @@ export function TimerControls({
             onClick={onSwitchMode} 
             variant="ghost" 
             size="icon" 
-            className="h-12 w-12 text-lg hover:bg-muted"
+            className="h-10 w-10 hover:bg-muted"
             aria-label={switchModeButtonTooltip}
             title={switchModeButtonTooltip}
         >
           {switchModeButtonIcon}
-          <span className="sr-only">{switchModeButtonText}</span>
+          <span className="sr-only">{switchModeButtonTooltip}</span>
         </Button>
       </motion.div>
 
        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
-        <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-12 w-12 text-lg hover:bg-muted">
-          <Settings className="h-5 w-5" />
+        <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted">
+          <Settings className="h-4 w-4" />
           <span className="sr-only">Settings</span>
         </Button>
       </motion.div>
