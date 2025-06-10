@@ -32,6 +32,36 @@ interface UserPomodoroData {
   lastUpdated?: Timestamp;
 }
 
+// Helper function to safely parse JSON from localStorage
+function parseJSONWithDefault<T>(jsonString: string | null, defaultValue: T): T {
+  if (jsonString === null) {
+    return defaultValue;
+  }
+  try {
+    const parsed = JSON.parse(jsonString);
+    // If parsed is null but default is not, prefer default (e.g. for objects/arrays)
+    if (parsed === null && defaultValue !== null) {
+      return defaultValue;
+    }
+    // Basic type check if not null and defaultValue is not null
+    if (defaultValue !== null && parsed !== null && typeof parsed !== typeof defaultValue && !Array.isArray(defaultValue)) {
+        // Allow for array defaultValues where parsed might be an array
+        if (Array.isArray(defaultValue) && !Array.isArray(parsed)) {
+            return defaultValue;
+        }
+        // If not array default and types don't match, return default.
+        if (!Array.isArray(defaultValue)){
+             return defaultValue;
+        }
+    }
+    return parsed;
+  } catch (e) {
+    console.warn("Failed to parse JSON from localStorage, using default value:", e);
+    return defaultValue;
+  }
+}
+
+
 export function usePomodoro() {
   const { currentUser } = useAuth();
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_SETTINGS);
@@ -57,36 +87,37 @@ export function usePomodoro() {
   const { toast } = useToast();
 
   const loadDataFromLocalStorage = useCallback(() => {
-    const storedSettings = localStorage.getItem(LOCAL_SETTINGS_KEY);
-    if (storedSettings) setSettings(JSON.parse(storedSettings));
-    else setSettings(DEFAULT_SETTINGS);
-
-    const storedLog = localStorage.getItem(LOCAL_LOG_KEY);
-    if (storedLog) setPomodoroLog(JSON.parse(storedLog));
-    else setPomodoroLog([]);
-
-    const storedProject = localStorage.getItem(LOCAL_PROJECT_KEY);
-    if (storedProject) setCurrentProjectState(storedProject);
-    else setCurrentProjectState('');
-
-    const storedRecentProjects = localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY);
-    if (storedRecentProjects) setRecentProjects(JSON.parse(storedRecentProjects));
-    else setRecentProjects([]);
+    setSettings(parseJSONWithDefault(localStorage.getItem(LOCAL_SETTINGS_KEY), DEFAULT_SETTINGS));
+    setPomodoroLog(parseJSONWithDefault(localStorage.getItem(LOCAL_LOG_KEY), []));
+    setCurrentProjectState(localStorage.getItem(LOCAL_PROJECT_KEY) || '');
+    setRecentProjects(parseJSONWithDefault(localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY), []));
   }, []);
 
   const saveDataToFirestore = useCallback(async (userId: string, data: Partial<UserPomodoroData>) => {
     if (!userId) return;
     try {
       const userDocRef = doc(db, 'users', userId);
-      // Fetch existing data to merge, or set new if doesn't exist
       const docSnap = await getDoc(userDocRef);
-      const existingData = docSnap.exists() ? docSnap.data() as UserPomodoroData : {};
-      
-      await setDoc(userDocRef, { 
+      const existingData = docSnap.exists() ? (docSnap.data() as UserPomodoroData) : {};
+
+      const combinedData = { 
         ...existingData, 
         ...data, 
         lastUpdated: Timestamp.now() 
-      }, { merge: true });
+      };
+
+      // Clean the payload: remove any keys with undefined values
+      const cleanedPayload: { [key: string]: any } = {};
+      for (const key in combinedData) {
+        if (Object.prototype.hasOwnProperty.call(combinedData, key)) {
+          const typedKey = key as keyof typeof combinedData;
+          if (combinedData[typedKey] !== undefined) {
+            cleanedPayload[key] = combinedData[typedKey];
+          }
+        }
+      }
+      
+      await setDoc(userDocRef, cleanedPayload, { merge: true });
     } catch (error) {
       console.error("Error saving data to Firestore:", error);
       toast({ title: "Sync Error", description: "Could not save data to cloud.", variant: "destructive" });
@@ -123,19 +154,24 @@ export function usePomodoro() {
             localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(cloudData.pomodoroLog || []));
             localStorage.setItem(LOCAL_PROJECT_KEY, cloudData.currentProject || '');
             localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(cloudData.recentProjects || []));
-            toast({ title: "Data Synced", description: "Your data has been loaded from the cloud." });
+            // toast({ title: "Data Synced", description: "Your data has been loaded from the cloud." });
           } else {
-            // No cloud data, check local storage and upload if present
-            const localSettings = localStorage.getItem(LOCAL_SETTINGS_KEY);
-            const localLog = localStorage.getItem(LOCAL_LOG_KEY);
-            const localProject = localStorage.getItem(LOCAL_PROJECT_KEY);
-            const localRecent = localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY);
+            // No cloud data, check local storage and prepare to upload if present
+            const localSettingsStr = localStorage.getItem(LOCAL_SETTINGS_KEY);
+            const localLogStr = localStorage.getItem(LOCAL_LOG_KEY);
+            const localProjectStr = localStorage.getItem(LOCAL_PROJECT_KEY);
+            const localRecentStr = localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY);
 
+            const s: PomodoroSettings = parseJSONWithDefault(localSettingsStr, DEFAULT_SETTINGS);
+            const l: PomodoroLogEntry[] = parseJSONWithDefault(localLogStr, []);
+            const p: string = localProjectStr || '';
+            const r: string[] = parseJSONWithDefault(localRecentStr, []);
+            
             const initialCloudData: UserPomodoroData = {
-                settings: localSettings ? JSON.parse(localSettings) : DEFAULT_SETTINGS,
-                pomodoroLog: localLog ? JSON.parse(localLog) : [],
-                currentProject: localProject || '',
-                recentProjects: localRecent ? JSON.parse(localRecent) : [],
+                settings: s,
+                pomodoroLog: l,
+                currentProject: p,
+                recentProjects: r,
             };
             
             setSettings(initialCloudData.settings);
@@ -144,8 +180,8 @@ export function usePomodoro() {
             setRecentProjects(initialCloudData.recentProjects);
 
             await saveDataToFirestore(currentUser.uid, initialCloudData);
-            if (localSettings || localLog || localProject || localRecent) {
-              toast({ title: "Data Uploaded", description: "Your local data has been saved to the cloud." });
+            if (localSettingsStr || localLogStr || localProjectStr || localRecentStr) {
+              // toast({ title: "Data Uploaded", description: "Your local data has been saved to the cloud." });
             }
           }
         } catch (error) {
@@ -425,3 +461,4 @@ export function usePomodoro() {
     closeEditModal, updateLogEntry, populateTestData, isDataLoading,
   };
 }
+
