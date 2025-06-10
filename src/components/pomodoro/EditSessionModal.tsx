@@ -28,7 +28,7 @@ interface EditEntryModalProps {
 }
 
 const editEntrySchema = z.object({
-  project: z.string().optional(),
+  project: z.string().optional(), // Project can be an empty string from input
   startTime: z.string().refine(val => isValid(parseISO(val)), {
     message: "Invalid start date",
   }),
@@ -42,7 +42,6 @@ const editEntrySchema = z.object({
 
 type EditEntryFormData = z.infer<typeof editEntrySchema>;
 
-// Helper to format ISO date string to datetime-local input format
 const formatToDateTimeLocal = (isoString: string): string => {
   if (!isoString || !isValid(parseISO(isoString))) return '';
   return format(parseISO(isoString), "yyyy-MM-dd'T'HH:mm");
@@ -77,13 +76,21 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
     const parsedEndTime = parseISO(data.endTime);
     const newDuration = differenceInMinutes(parsedEndTime, parsedStartTime);
 
-    onSave({
+    const updatedEntryData: PomodoroLogEntry = {
       ...entry,
-      project: data.project || undefined,
       startTime: parsedStartTime.toISOString(),
       endTime: parsedEndTime.toISOString(),
       duration: newDuration,
-    });
+    };
+
+    const projectValue = data.project ? data.project.trim() : "";
+    if (projectValue !== "") {
+      updatedEntryData.project = projectValue;
+    } else {
+      delete updatedEntryData.project; // Remove project field if it's empty
+    }
+
+    onSave(updatedEntryData);
     onClose();
   };
 
@@ -183,3 +190,4 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
     </Dialog>
   );
 }
+

@@ -23,7 +23,6 @@ const LOCAL_PROJECT_KEY = 'currentProject_local';
 const LOCAL_RECENT_PROJECTS_KEY = 'recentProjects_local';
 const MAX_RECENT_PROJECTS = 5;
 
-// Firestore data structure type
 interface UserPomodoroData {
   settings: PomodoroSettings;
   pomodoroLog: PomodoroLogEntry[];
@@ -32,24 +31,19 @@ interface UserPomodoroData {
   lastUpdated?: Timestamp;
 }
 
-// Helper function to safely parse JSON from localStorage
 function parseJSONWithDefault<T>(jsonString: string | null, defaultValue: T): T {
   if (jsonString === null) {
     return defaultValue;
   }
   try {
     const parsed = JSON.parse(jsonString);
-    // If parsed is null but default is not, prefer default (e.g. for objects/arrays)
     if (parsed === null && defaultValue !== null) {
       return defaultValue;
     }
-    // Basic type check if not null and defaultValue is not null
     if (defaultValue !== null && parsed !== null && typeof parsed !== typeof defaultValue && !Array.isArray(defaultValue)) {
-        // Allow for array defaultValues where parsed might be an array
         if (Array.isArray(defaultValue) && !Array.isArray(parsed)) {
             return defaultValue;
         }
-        // If not array default and types don't match, return default.
         if (!Array.isArray(defaultValue)){
              return defaultValue;
         }
@@ -79,18 +73,21 @@ export function usePomodoro() {
   const [lastWorkSessionStartTime, setLastWorkSessionStartTime] = useState<number | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<PomodoroLogEntry | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(true); // For initial data load indication
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationSentRef = useRef<Record<IntervalType, boolean>>({ work: false, shortBreak: false, longBreak: false });
   const { toast } = useToast();
 
-  const loadDataFromLocalStorage = useCallback(() => {
-    setSettings(parseJSONWithDefault(localStorage.getItem(LOCAL_SETTINGS_KEY), DEFAULT_SETTINGS));
-    setPomodoroLog(parseJSONWithDefault(localStorage.getItem(LOCAL_LOG_KEY), []));
-    setCurrentProjectState(localStorage.getItem(LOCAL_PROJECT_KEY) || '');
-    setRecentProjects(parseJSONWithDefault(localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY), []));
+  const formatTime = useCallback((timeInSeconds: number): string => {
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
+    const seconds = timeInSeconds % 60;
+    let formatted = '';
+    if (hours > 0) formatted += `${hours.toString().padStart(2, '0')}:`;
+    formatted += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return formatted;
   }, []);
 
   const saveDataToFirestore = useCallback(async (userId: string, data: Partial<UserPomodoroData>) => {
@@ -100,24 +97,42 @@ export function usePomodoro() {
       const docSnap = await getDoc(userDocRef);
       const existingData = docSnap.exists() ? (docSnap.data() as UserPomodoroData) : {};
 
-      const combinedData = { 
-        ...existingData, 
-        ...data, 
-        lastUpdated: Timestamp.now() 
+      const mergedData = {
+        ...existingData,
+        ...data,
       };
 
-      // Clean the payload: remove any keys with undefined values
-      const cleanedPayload: { [key: string]: any } = {};
-      for (const key in combinedData) {
-        if (Object.prototype.hasOwnProperty.call(combinedData, key)) {
-          const typedKey = key as keyof typeof combinedData;
-          if (combinedData[typedKey] !== undefined) {
-            cleanedPayload[key] = combinedData[typedKey];
-          }
+      const firestorePayload: { [key: string]: any } = {
+        ...mergedData,
+        lastUpdated: Timestamp.now()
+      };
+
+      for (const key in firestorePayload) {
+        if (firestorePayload[key] === undefined) {
+          delete firestorePayload[key];
         }
       }
       
-      await setDoc(userDocRef, cleanedPayload, { merge: true });
+      if (firestorePayload.pomodoroLog && Array.isArray(firestorePayload.pomodoroLog)) {
+        firestorePayload.pomodoroLog = firestorePayload.pomodoroLog.map((entry: any) => {
+          const cleanedEntry = { ...entry };
+          if (cleanedEntry.project === undefined || cleanedEntry.project === null || (typeof cleanedEntry.project === 'string' && cleanedEntry.project.trim() === '')) {
+            delete cleanedEntry.project;
+          }
+          return cleanedEntry;
+        });
+      }
+
+      if (firestorePayload.settings && typeof firestorePayload.settings === 'object') {
+        for (const settingKey in firestorePayload.settings) {
+            if (firestorePayload.settings[settingKey] === undefined) {
+                console.warn(`Undefined value found in settings for key: ${settingKey}. Removing before save.`);
+                delete firestorePayload.settings[settingKey];
+            }
+        }
+      }
+
+      await setDoc(userDocRef, firestorePayload, { merge: true });
     } catch (error) {
       console.error("Error saving data to Firestore:", error);
       toast({ title: "Sync Error", description: "Could not save data to cloud.", variant: "destructive" });
@@ -125,7 +140,26 @@ export function usePomodoro() {
   }, [toast]);
 
 
-  // Effect for initial client-side setup and auth-dependent data loading
+  const loadDataFromLocalStorage = useCallback(() => {
+    const localSettings = parseJSONWithDefault(localStorage.getItem(LOCAL_SETTINGS_KEY), DEFAULT_SETTINGS);
+    const localLog = parseJSONWithDefault(localStorage.getItem(LOCAL_LOG_KEY), []).map((entry: any) => {
+        const cleanedEntry = {...entry};
+        if (cleanedEntry.project === undefined || cleanedEntry.project === null || (typeof cleanedEntry.project === 'string' && cleanedEntry.project.trim() === '')) {
+            delete cleanedEntry.project;
+        }
+        return cleanedEntry as PomodoroLogEntry;
+    });
+    const localCurrentProject = localStorage.getItem(LOCAL_PROJECT_KEY) || '';
+    const localRecentProjects = parseJSONWithDefault(localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY), []);
+
+    setSettings(localSettings);
+    setPomodoroLog(localLog);
+    setCurrentProjectState(localCurrentProject);
+    setRecentProjects(localRecentProjects);
+    return { settings: localSettings, pomodoroLog: localLog, currentProject: localCurrentProject, recentProjects: localRecentProjects };
+  }, []);
+
+
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== 'undefined') {
@@ -145,52 +179,40 @@ export function usePomodoro() {
 
           if (docSnap.exists()) {
             const cloudData = docSnap.data() as UserPomodoroData;
+            
+            const cleanedCloudLog = (cloudData.pomodoroLog || []).map((entry: any) => {
+                const cleanedEntry = {...entry};
+                if (cleanedEntry.project === undefined || cleanedEntry.project === null || (typeof cleanedEntry.project === 'string' && cleanedEntry.project.trim() === '')) {
+                    delete cleanedEntry.project;
+                }
+                return cleanedEntry as PomodoroLogEntry;
+            });
+
             setSettings(cloudData.settings || DEFAULT_SETTINGS);
-            setPomodoroLog(cloudData.pomodoroLog || []);
+            setPomodoroLog(cleanedCloudLog);
             setCurrentProjectState(cloudData.currentProject || '');
             setRecentProjects(cloudData.recentProjects || []);
-            // Sync localStorage with cloud data
+            
             localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(cloudData.settings || DEFAULT_SETTINGS));
-            localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(cloudData.pomodoroLog || []));
+            localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(cleanedCloudLog));
             localStorage.setItem(LOCAL_PROJECT_KEY, cloudData.currentProject || '');
             localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(cloudData.recentProjects || []));
-            // toast({ title: "Data Synced", description: "Your data has been loaded from the cloud." });
           } else {
-            // No cloud data, check local storage and prepare to upload if present
-            const localSettingsStr = localStorage.getItem(LOCAL_SETTINGS_KEY);
-            const localLogStr = localStorage.getItem(LOCAL_LOG_KEY);
-            const localProjectStr = localStorage.getItem(LOCAL_PROJECT_KEY);
-            const localRecentStr = localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY);
-
-            const s: PomodoroSettings = parseJSONWithDefault(localSettingsStr, DEFAULT_SETTINGS);
-            const l: PomodoroLogEntry[] = parseJSONWithDefault(localLogStr, []);
-            const p: string = localProjectStr || '';
-            const r: string[] = parseJSONWithDefault(localRecentStr, []);
-            
+            const localData = loadDataFromLocalStorage(); // Gets cleaned data
             const initialCloudData: UserPomodoroData = {
-                settings: s,
-                pomodoroLog: l,
-                currentProject: p,
-                recentProjects: r,
+                settings: localData.settings,
+                pomodoroLog: localData.pomodoroLog, // Already cleaned by loadDataFromLocalStorage
+                currentProject: localData.currentProject,
+                recentProjects: localData.recentProjects,
             };
-            
-            setSettings(initialCloudData.settings);
-            setPomodoroLog(initialCloudData.pomodoroLog);
-            setCurrentProjectState(initialCloudData.currentProject);
-            setRecentProjects(initialCloudData.recentProjects);
-
             await saveDataToFirestore(currentUser.uid, initialCloudData);
-            if (localSettingsStr || localLogStr || localProjectStr || localRecentStr) {
-              // toast({ title: "Data Uploaded", description: "Your local data has been saved to the cloud." });
-            }
           }
         } catch (error) {
           console.error("Error loading data from Firestore:", error);
           toast({ title: "Sync Error", description: "Could not load data from cloud. Using local data.", variant: "destructive" });
-          loadDataFromLocalStorage(); // Fallback to local
+          loadDataFromLocalStorage();
         }
       } else {
-        // No user logged in, load from local storage
         loadDataFromLocalStorage();
       }
       setIsDataLoading(false);
@@ -199,9 +221,8 @@ export function usePomodoro() {
 
   }, [currentUser, isClient, loadDataFromLocalStorage, saveDataToFirestore, toast]);
   
-  // Save individual pieces of state to localStorage and Firestore
   useEffect(() => {
-    if (isClient && !isDataLoading) { // Ensure not to save during initial load from Firestore
+    if (isClient && !isDataLoading) {
       localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings));
       if (currentUser) saveDataToFirestore(currentUser.uid, { settings });
     }
@@ -253,8 +274,9 @@ export function usePomodoro() {
   const updateRecentProjects = useCallback((projectName?: string) => {
     if (!projectName || projectName.trim() === "") return;
     setRecentProjects(prevRecent => {
-      const filtered = prevRecent.filter(p => p !== projectName);
-      const updated = [projectName, ...filtered].slice(0, MAX_RECENT_PROJECTS);
+      const trimmedProjectName = projectName.trim();
+      const filtered = prevRecent.filter(p => p !== trimmedProjectName);
+      const updated = [trimmedProjectName, ...filtered].slice(0, MAX_RECENT_PROJECTS);
       return updated;
     });
   }, []);
@@ -315,15 +337,20 @@ export function usePomodoro() {
         endTime: new Date(now).toISOString(),
         type: 'work',
         duration: Math.round(currentTime / 60),
-        project: currentProject || undefined,
       };
+
+      const trimmedCurrentProject = currentProject.trim();
+      if (trimmedCurrentProject !== "") {
+        newLogEntry.project = trimmedCurrentProject;
+      }
+
       setPomodoroLog(prevLog => [newLogEntry, ...prevLog]);
       toast({ title: "Work entry logged!", description: `Duration: ${formatTime(currentTime)}` });
       if (newLogEntry.project) updateRecentProjects(newLogEntry.project);
       return newLogEntry;
     }
     return null;
-  }, [currentInterval, lastWorkSessionStartTime, currentTime, currentProject, toast, updateRecentProjects]);
+  }, [currentInterval, lastWorkSessionStartTime, currentTime, currentProject, toast, updateRecentProjects, formatTime]);
 
   const switchMode = useCallback(() => {
     setIsRunning(false);
@@ -375,21 +402,17 @@ export function usePomodoro() {
   }, []);
 
   const updateLogEntry = useCallback((updatedEntry: PomodoroLogEntry) => {
-    setPomodoroLog(prevLog => prevLog.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry));
-    if (updatedEntry.project) updateRecentProjects(updatedEntry.project);
+    const cleanedEntry = { ...updatedEntry };
+    if (cleanedEntry.project === undefined || cleanedEntry.project === null || (typeof cleanedEntry.project === 'string' && cleanedEntry.project.trim() === '')) {
+        delete cleanedEntry.project;
+    }
+
+    setPomodoroLog(prevLog => prevLog.map(entry => entry.id === cleanedEntry.id ? cleanedEntry : entry));
+    if (cleanedEntry.project) updateRecentProjects(cleanedEntry.project);
     toast({ title: "Entry updated successfully!" });
     closeEditModal();
   }, [toast, closeEditModal, updateRecentProjects]);
 
-  const formatTime = (timeInSeconds: number): string => {
-    const hours = Math.floor(timeInSeconds / 3600);
-    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-    const seconds = timeInSeconds % 60;
-    let formatted = '';
-    if (hours > 0) formatted += `${hours.toString().padStart(2, '0')}:`;
-    formatted += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    return formatted;
-  };
 
   const processedChartData = useMemo((): ChartDataPoint[] => {
     if (!isClient) return [];
@@ -420,7 +443,18 @@ export function usePomodoro() {
     startTime.setDate(baseTime.getDate() - daysAgo);
     startTime.setHours(hour, minute, 0, 0);
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
-    return { id: `${startTime.getTime()}-${idSuffix}`, startTime: startTime.toISOString(), endTime: endTime.toISOString(), type: 'work', duration: durationMinutes, project: project };
+    
+    const entry: PomodoroLogEntry = { 
+        id: `${startTime.getTime()}-${idSuffix}`, 
+        startTime: startTime.toISOString(), 
+        endTime: endTime.toISOString(), 
+        type: 'work', 
+        duration: durationMinutes
+    };
+    if (project && project.trim() !== "") {
+        entry.project = project.trim();
+    }
+    return entry;
   };
 
   const populateTestData = useCallback(() => {
@@ -438,7 +472,7 @@ export function usePomodoro() {
     let projectsToUpdateToRecent: string[] = [];
     validTestData.forEach(tdEntry => {
       if(!newLog.find(entry => entry.id === tdEntry.id)){
-        newLog.unshift(tdEntry);
+        newLog.unshift(tdEntry); // tdEntry is already cleaned by createTestDataEntry
         if(tdEntry.project) projectsToUpdateToRecent.push(tdEntry.project);
       }
     });
