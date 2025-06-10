@@ -2,7 +2,7 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getAnalytics, type Analytics } from "firebase/analytics";
+import { getAnalytics, type Analytics, isSupported } from "firebase/analytics";
 
 // Firebase configuration should be sourced from environment variables
 const firebaseConfig = {
@@ -15,47 +15,52 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID // Optional
 };
 
-let app: FirebaseApp;
+let app: FirebaseApp | undefined = undefined; // Initialize as undefined
 let auth: Auth;
 let db: Firestore;
 let analytics: Analytics | undefined;
 
-// Initialize Firebase App
-// Check if Firebase has already been initialized
-if (getApps().length === 0) {
-  if (firebaseConfig.apiKey) { // Ensure config is present before initializing
-    app = initializeApp(firebaseConfig);
-  } else {
-    console.error("Firebase API key is missing. Firebase App could not be initialized.");
-    // Throw an error or handle appropriately if app cannot be initialized
-    // For now, we'll let it proceed, but app-dependent services will fail.
-    // A better approach might be to prevent app usage if config is missing.
-  }
-} else {
-  app = getApps()[0]!;
-}
-
-// Initialize other Firebase services if the app was initialized
-// @ts-ignore app might be uninitialized if apiKey was missing
-if (app) {
-  auth = getAuth(app);
-  db = getFirestore(app);
-
-  if (typeof window !== 'undefined') {
-    try {
-      analytics = getAnalytics(app);
-    } catch (error) {
-      console.error("Firebase Analytics initialization error:", error);
+if (typeof window !== 'undefined') { // Ensure Firebase is initialized only on the client-side or where appropriate
+  if (getApps().length === 0) {
+    if (firebaseConfig.apiKey) {
+      try {
+        app = initializeApp(firebaseConfig);
+      } catch (error) {
+        console.error("Firebase app initialization error:", error);
+      }
+    } else {
+      console.error("Firebase API key is missing. Firebase App could not be initialized.");
     }
+  } else {
+    app = getApps()[0]!;
+  }
+
+  if (app) {
+    auth = getAuth(app);
+    db = getFirestore(app);
+    isSupported().then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      } else {
+        console.warn("Firebase Analytics is not supported in this environment.");
+      }
+    }).catch(error => {
+      console.error("Error checking Firebase Analytics support:", error);
+    });
+  } else {
+    // @ts-ignore
+    auth = {} as Auth;
+    // @ts-ignore
+    db = {} as Firestore;
+    console.warn("Firebase services (Auth, Firestore, Analytics) could not be initialized because Firebase App failed to initialize.");
   }
 } else {
-  // Fallback for auth and db if app is not initialized
-  // This is to prevent runtime errors if app initialization failed
+  // Fallback for server-side or non-browser environments if direct initialization is attempted
   // @ts-ignore
   auth = {} as Auth;
   // @ts-ignore
   db = {} as Firestore;
-  console.warn("Firebase services (Auth, Firestore, Analytics) could not be initialized because Firebase App failed to initialize.")
 }
+
 
 export { app, auth, db, analytics };
