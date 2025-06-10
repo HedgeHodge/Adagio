@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2 } from 'lucide-react';
+import { Quote, BarChart2, Loader2 } from 'lucide-react';
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
@@ -52,6 +52,7 @@ export default function PomodoroPage() {
     closeEditModal,
     updateLogEntry,
     populateTestData,
+    isDataLoading, // Added for auth data loading state
   } = pomodoroState;
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -69,34 +70,22 @@ export default function PomodoroPage() {
       } else {
          document.title = "Adagio";
       }
-       if (!isRunning && currentTime === 0 && activeMobileTab === 'timer') { // only reset title if timer tab is active
+       if (!isRunning && currentTime === 0 && activeMobileTab === 'timer') { 
         document.title = "Adagio"; 
       }
     }
   }, [currentTime, isRunning, currentInterval, formatTime, isClient, currentProject, activeMobileTab]);
 
 
-  if (!isClient) {
-    // Keep existing skeleton for initial load, it's generic enough
+  if (!isClient || isDataLoading) { // Show skeleton or loading indicator
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-        <div className="flex flex-col items-center w-full max-w-md">
-          <Skeleton className="h-16 w-64 mb-8" /> 
-          <Skeleton className="w-full h-12 mb-6 rounded-lg" />
-          <Skeleton className="w-full h-40 mb-6 rounded-lg" />
-          <div className="flex space-x-3 mb-8">
-            <Skeleton className="h-16 w-32 rounded-md" />
-            <Skeleton className="h-12 w-12 rounded-md" />
-            <Skeleton className="h-12 w-12 rounded-md" />
-            <Skeleton className="h-12 w-12 rounded-md" />
-          </div>
-          <Skeleton className="w-full h-12 mb-8 rounded-lg" />
-          <Skeleton className="w-full h-64 rounded-lg" />
-          <Skeleton className="w-full h-80 mt-8 rounded-lg" />
-        </div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading your Adagio experience...</p>
       </main>
     );
   }
+
 
   const filterButtonLabel = (filter: TimeFilter): string => {
     switch (filter) {
@@ -238,7 +227,7 @@ export default function PomodoroPage() {
   if (isMobile) {
     return (
       <>
-        <main className="flex flex-col items-center justify-start pt-4 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
+        <main className="flex flex-col items-center justify-start pt-20 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
           <h1 className="text-7xl font-headline font-bold mb-8 text-primary">Adagio</h1>
           {activeMobileTab === 'timer' && renderTimerContent()}
           {activeMobileTab === 'log' && renderLogContent()}
@@ -264,7 +253,7 @@ export default function PomodoroPage() {
   // Desktop layout
   return (
     <>
-      <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
+      <main className="flex flex-col items-center justify-start pt-20 min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
         <h1 className="text-7xl font-headline font-bold mb-8 text-primary">Adagio</h1>
         
         {renderTimerContent()}
@@ -287,4 +276,3 @@ export default function PomodoroPage() {
     </>
   );
 }
-
