@@ -23,6 +23,7 @@ const LOCAL_ACTIVE_SESSIONS_KEY = 'pomodoroActiveSessions_v2';
 const LOCAL_RECENT_PROJECTS_KEY = 'recentProjects_v2';
 
 const MAX_RECENT_PROJECTS = 5;
+const ACTIVE_SESSIONS_FIRESTORE_DEBOUNCE_MS = 2500;
 
 interface UserPomodoroData {
   settings?: PomodoroSettings;
@@ -36,6 +37,8 @@ function parseJSONWithDefault<T>(jsonString: string | null, defaultValue: T): T 
   if (jsonString === null) return defaultValue;
   try {
     const parsed = JSON.parse(jsonString);
+    // Ensure that if JSON.parse returns null but defaultValue is, for example, an empty array,
+    // we still return the defaultValue.
     return parsed === null && defaultValue !== null ? defaultValue : parsed;
   } catch (e) {
     console.warn("Failed to parse JSON from localStorage, using default value:", e);
@@ -53,7 +56,8 @@ const cleanLogEntry = (entry: any): PomodoroLogEntry => {
 
 const cleanActiveSession = (session: any): ActivePomodoroSession => {
     const cleanedSession = { ...session };
-    // Ensure essential fields have defaults if missing from older stored data
+    cleanedSession.id = cleanedSession.id ?? Date.now().toString(); // Ensure ID exists
+    cleanedSession.project = cleanedSession.project ?? 'Untitled Session'; // Ensure project name exists
     cleanedSession.currentTime = cleanedSession.currentTime ?? 0;
     cleanedSession.isRunning = cleanedSession.isRunning ?? false;
     cleanedSession.currentInterval = cleanedSession.currentInterval ?? 'work';
@@ -76,12 +80,15 @@ export function usePomodoro() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<PomodoroLogEntry | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const [inputProjectName, setInputProjectName] = useState(''); // For the new project input field
+  const [inputProjectName, setInputProjectName] = useState('');
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationSentRefs = useRef<Record<string, Record<IntervalType, boolean>>>({});
   const { toast } = useToast();
+  
+  const debouncedSaveActiveSessionsRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const formatTime = useCallback((timeInSeconds: number): string => {
     const hours = Math.floor(timeInSeconds / 3600);
@@ -104,7 +111,7 @@ export function usePomodoro() {
 
       Object.keys(firestorePayload).forEach(key => {
         if (firestorePayload[key] === undefined) {
-          firestorePayload[key] = deleteField(); // Use deleteField for Firestore
+          firestorePayload[key] = deleteField();
         }
       });
       
@@ -118,7 +125,10 @@ export function usePomodoro() {
       await setDoc(userDocRef, firestorePayload, { merge: true });
     } catch (error) {
       console.error("Error saving data to Firestore:", error);
-      toast({ title: "Sync Error", description: "Could not save data to cloud.", variant: "destructive" });
+      // Avoid toast for activeSessions saving errors if they are frequent due to debouncing
+      if (!data.activeSessions) {
+        toast({ title: "Sync Error", description: "Could not save data to cloud.", variant: "destructive" });
+      }
     }
   }, [toast]);
 
@@ -185,13 +195,6 @@ export function usePomodoro() {
 
   useEffect(() => {
     if (isClient && !isDataLoading) {
-      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(activeSessions.map(cleanActiveSession)));
-      if (currentUser) saveDataToFirestore(currentUser.uid, { activeSessions: activeSessions.map(cleanActiveSession) });
-    }
-  }, [activeSessions, isClient, currentUser, saveDataToFirestore, isDataLoading]);
-
-  useEffect(() => {
-    if (isClient && !isDataLoading) {
       localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(pomodoroLog.map(cleanLogEntry)));
       if (currentUser) saveDataToFirestore(currentUser.uid, { pomodoroLog: pomodoroLog.map(cleanLogEntry) });
     }
@@ -204,6 +207,54 @@ export function usePomodoro() {
     }
   }, [recentProjects, isClient, currentUser, saveDataToFirestore, isDataLoading]);
 
+  // Debounced function to persist active sessions to Firestore
+  const persistActiveSessionsToFirestore = useCallback((userId: string, sessions: ActivePomodoroSession[]) => {
+    if (debouncedSaveActiveSessionsRef.current) {
+      clearTimeout(debouncedSaveActiveSessionsRef.current);
+    }
+    debouncedSaveActiveSessionsRef.current = setTimeout(() => {
+      saveDataToFirestore(userId, { activeSessions: sessions.map(cleanActiveSession) });
+    }, ACTIVE_SESSIONS_FIRESTORE_DEBOUNCE_MS);
+  }, [saveDataToFirestore]); // saveDataToFirestore is stable
+
+  // Effect for persisting activeSessions: localStorage (frequent) & Firestore (debounced)
+  useEffect(() => {
+    if (isClient && !isDataLoading) {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(activeSessions.map(cleanActiveSession)));
+      if (currentUser) {
+        persistActiveSessionsToFirestore(currentUser.uid, activeSessions);
+      }
+    }
+  }, [activeSessions, isClient, currentUser, persistActiveSessionsToFirestore, isDataLoading]);
+
+  // Effect for handling page unload to attempt a final save
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (debouncedSaveActiveSessionsRef.current) {
+        clearTimeout(debouncedSaveActiveSessionsRef.current); // Cancel pending debounced save
+      }
+      // Attempt to save the latest active sessions from localStorage (most up-to-date)
+      if (isClient && !isDataLoading && currentUser) {
+        const sessionsJSON = localStorage.getItem(LOCAL_ACTIVE_SESSIONS_KEY);
+        const sessionsToSave = parseJSONWithDefault(sessionsJSON, []).map(cleanActiveSession);
+        if (sessionsToSave.length > 0) {
+          // This is a best-effort synchronous save attempt of what's in localStorage
+          // Firestore's saveDataToFirestore is async, so it might not complete fully,
+          // but it's better than nothing.
+          saveDataToFirestore(currentUser.uid, { activeSessions: sessionsToSave });
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Clear any pending timeout when the component unmounts (e.g., SPA navigation)
+      if (debouncedSaveActiveSessionsRef.current) {
+        clearTimeout(debouncedSaveActiveSessionsRef.current);
+      }
+    };
+  }, [isClient, isDataLoading, currentUser, saveDataToFirestore]); // Dependencies for setting up/tearing down listener
 
   const playNotificationSound = useCallback(() => {
     audioRef.current?.play().catch(error => console.warn("Audio play failed:", error));
@@ -212,7 +263,7 @@ export function usePomodoro() {
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
     setIsFetchingQuote(true);
-    setMotivationalQuote(null); // Clear previous quote
+    setMotivationalQuote(null);
     try {
       const result = await getMotivationalQuote();
       setMotivationalQuote(result);
@@ -242,7 +293,6 @@ export function usePomodoro() {
               prevSessions.map(s => {
                 if (s.id === session.id && s.isRunning) {
                   const newTime = s.currentTime + 1;
-                  // Notification logic
                   if (!notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
                   
                   if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
@@ -273,13 +323,13 @@ export function usePomodoro() {
       }
     });
 
-    return () => { // Cleanup on unmount or when activeSessions change identity
+    return () => {
       Object.values(timerRefs.current).forEach(timerId => {
         if (timerId) clearInterval(timerId);
       });
-      timerRefs.current = {}; // Reset refs if hook re-runs entirely
+      timerRefs.current = {}; 
     };
-  }, [activeSessions, settings, toast, playNotificationSound, formatTime]); // formatTime added to dep array if used in notifications
+  }, [activeSessions, settings, toast, playNotificationSound, formatTime]);
 
   const addSession = useCallback((projectName: string) => {
     const trimmedProjectName = projectName.trim();
@@ -287,18 +337,14 @@ export function usePomodoro() {
       toast({ title: "Project name cannot be empty", variant: "destructive" });
       return;
     }
-    const newSession: ActivePomodoroSession = {
+    const newSession: ActivePomodoroSession = cleanActiveSession({ // Use cleanActiveSession for consistency
       id: Date.now().toString(),
       project: trimmedProjectName,
-      currentTime: 0,
-      isRunning: false,
-      currentInterval: 'work',
-      pomodorosCompletedThisSet: 0,
-      lastWorkSessionStartTime: null,
-    };
+      // other fields will get defaults from cleanActiveSession
+    });
     setActiveSessions(prev => [...prev, newSession]);
     updateRecentProjects(trimmedProjectName);
-    setInputProjectName(''); // Clear input after adding
+    setInputProjectName(''); 
     if (!notificationSentRefs.current[newSession.id]) {
         notificationSentRefs.current[newSession.id] = { work: false, shortBreak: false, longBreak: false };
     }
@@ -335,11 +381,35 @@ export function usePomodoro() {
     }));
   }, []);
   
+  const logWorkEntry = useCallback((session: ActivePomodoroSession, isEndingSession: boolean = false) => {
+    const now = Date.now();
+    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime && session.currentTime > 0) {
+      const newLogEntry: PomodoroLogEntry = {
+        id: `${now}-${session.id}`,
+        startTime: new Date(session.lastWorkSessionStartTime).toISOString(),
+        endTime: new Date(now).toISOString(),
+        type: 'work',
+        duration: Math.round(session.currentTime / 60), 
+        project: session.project,
+        sessionId: session.id,
+      };
+      
+      const cleanedNewLogEntry = cleanLogEntry(newLogEntry);
+      setPomodoroLog(prevLog => [cleanedNewLogEntry, ...prevLog]);
+
+      if (!isEndingSession) { 
+          toast({ title: "Work entry logged!", description: `${session.project}: ${formatTime(session.currentTime)}` });
+      }
+      updateRecentProjects(session.project);
+      return cleanedNewLogEntry;
+    }
+    return null;
+  }, [toast, updateRecentProjects, formatTime]);
+
   const removeSession = useCallback((sessionId: string) => {
-    // Log current work if it was running
     const sessionToRemove = activeSessions.find(s => s.id === sessionId);
     if (sessionToRemove && sessionToRemove.currentInterval === 'work' && sessionToRemove.isRunning && sessionToRemove.lastWorkSessionStartTime && sessionToRemove.currentTime > 0) {
-        logWorkEntry(sessionToRemove, true); // true to indicate it's part of removal
+        logWorkEntry(sessionToRemove, true); 
     }
 
     setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
@@ -351,30 +421,7 @@ export function usePomodoro() {
         delete notificationSentRefs.current[sessionId];
     }
     toast({title: `Session "${sessionToRemove?.project}" removed`});
-  }, [activeSessions, toast]); // logWorkEntry will be added
-
-  const logWorkEntry = useCallback((session: ActivePomodoroSession, isEndingSession: boolean = false) => {
-    const now = Date.now();
-    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime && session.currentTime > 0) {
-      const newLogEntry: PomodoroLogEntry = {
-        id: `${now}-${session.id}`,
-        startTime: new Date(session.lastWorkSessionStartTime).toISOString(),
-        endTime: new Date(now).toISOString(),
-        type: 'work',
-        duration: Math.round(session.currentTime / 60), // Ensure duration is in minutes
-        project: session.project,
-        sessionId: session.id,
-      };
-      
-      setPomodoroLog(prevLog => [cleanLogEntry(newLogEntry), ...prevLog]);
-      if (!isEndingSession) { // Don't toast if this is part of removing a session and auto-logging
-          toast({ title: "Work entry logged!", description: `${session.project}: ${formatTime(session.currentTime)}` });
-      }
-      updateRecentProjects(session.project);
-      return newLogEntry;
-    }
-    return null;
-  }, [toast, updateRecentProjects, formatTime]);
+  }, [activeSessions, toast, logWorkEntry]);
 
   const switchMode = useCallback((sessionId: string) => {
     setActiveSessions(prevSessions => prevSessions.map(s => {
@@ -387,7 +434,7 @@ export function usePomodoro() {
           logWorkEntry(updatedSession);
           newCompletedPomodoros++;
           nextInterval = (newCompletedPomodoros % settings.pomodorosPerSet === 0) ? 'longBreak' : 'shortBreak';
-          if (!motivationalQuote && !isFetchingQuote) fetchAndSetQuote(); // Fetch quote if any timer goes to break
+          if (!motivationalQuote && !isFetchingQuote) fetchAndSetQuote(); 
         } else {
           nextInterval = 'work';
           if (updatedSession.currentInterval === 'longBreak') newCompletedPomodoros = 0;
@@ -412,7 +459,7 @@ export function usePomodoro() {
   const endCurrentWorkSession = useCallback((sessionId: string) => {
     setActiveSessions(prevSessions => prevSessions.map(s => {
       if (s.id === sessionId && s.currentInterval === 'work' && s.isRunning) {
-        logWorkEntry(s, true); // Log as part of ending
+        logWorkEntry(s, true); 
          if (notificationSentRefs.current[s.id]) {
            notificationSentRefs.current[s.id].work = false;
         }
@@ -433,7 +480,7 @@ export function usePomodoro() {
   }, [toast]);
 
   const openEditModal = useCallback((entry: PomodoroLogEntry) => {
-    setEntryToEdit(entry);
+    setEntryToEdit(cleanLogEntry(entry)); // Ensure entry being edited is clean
     setIsEditModalOpen(true);
   }, []);
 
@@ -491,7 +538,7 @@ export function usePomodoro() {
   const populateTestData = useCallback(() => {
     const now = new Date();
     const testData: PomodoroLogEntry[] = [
-      createTestDataEntry('td1', now, 0, 9, 0, 25, 'Project Phoenix', 'session1'), createTestDataEntry('td2', now, 0, 10, 30, 50, 'Project Phoenix', 'session1'), createTestDataEntry('td3', now, 0, 14, 0, 45, 'Uncategorized Task', 'session2'),
+      createTestDataEntry('td1', now, 0, 9, 0, 25, 'Project Phoenix', 'session1'), createTestDataEntry('td2', now, 0, 10, 30, 50, 'Project Phoenix', 'session1'), createTestDataEntry('td3', now, 0, 14, 0, 45, undefined, 'session2'), // Test "No Project"
       createTestDataEntry('yd1', now, 1, 11, 0, 60, 'Project Chimera', 'session3'), createTestDataEntry('yd2', now, 1, 15, 0, 30, 'Project Phoenix', 'session1'),
       createTestDataEntry('tw1', now, 3, 10, 0, 90, 'Adagio App Dev', 'session4'), createTestDataEntry('tw2', now, 4, 16, 0, 55, 'Client Meeting Prep', 'session5'),
       createTestDataEntry('lw1', now, 8, 9, 30, 120, 'Project Chimera', 'session3'), createTestDataEntry('lw2', now, 10, 14,0, 40, 'Research', 'session6'),
@@ -503,11 +550,11 @@ export function usePomodoro() {
     let projectsToUpdateToRecent: string[] = [];
     validTestData.forEach(tdEntry => {
       if(!newLog.find(entry => entry.id === tdEntry.id)){
-        newLog.unshift(tdEntry);
+        newLog.unshift(tdEntry); // tdEntry is already cleaned by createTestDataEntry
         if(tdEntry.project) projectsToUpdateToRecent.push(tdEntry.project);
       }
     });
-    setPomodoroLog(newLog.map(cleanLogEntry));
+    setPomodoroLog(newLog); // newLog contains already cleaned entries
     if (projectsToUpdateToRecent.length > 0) {
       const uniqueNewProjects = [...new Set(projectsToUpdateToRecent)];
       setRecentProjects(prevRecent => {
@@ -518,22 +565,17 @@ export function usePomodoro() {
     toast({ title: "Test Data Added", description: `${validTestData.length} sample entries have been added/updated.` });
   }, [toast, pomodoroLog]);
 
-  // Add missing dependency for removeSession
-  useEffect(() => {
-    // This is a placeholder to ensure logWorkEntry is memoized correctly if removeSession uses it.
-    // The actual call is inside removeSession, but its definition might depend on logWorkEntry.
-  }, [logWorkEntry]);
-
 
   return {
     settings, updateSettings, activeSessions, pomodoroLog,
-    addSession, removeSession, // New methods for managing sessions
-    startTimer, pauseTimer, resetTimer, switchMode, endCurrentWorkSession, // These now take sessionId
+    addSession, removeSession, 
+    startTimer, pauseTimer, resetTimer, switchMode, endCurrentWorkSession, 
     deleteLogEntry, formatTime,
     isClient, recentProjects, motivationalQuote, isFetchingQuote,
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, populateTestData, isDataLoading,
-    inputProjectName, setInputProjectName, // For the input field
-    updateRecentProjects, // Expose if needed by UI directly for project selection
+    inputProjectName, setInputProjectName, 
+    updateRecentProjects, 
   };
 }
+
