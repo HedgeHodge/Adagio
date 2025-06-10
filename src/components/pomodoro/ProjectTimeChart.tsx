@@ -32,6 +32,27 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
     );
   }
 
+  // Calculate y-axis ticks and domain
+  const maxTotalMinutes = data.length > 0 ? Math.max(0, ...data.map(d => d.totalMinutes)) : 0;
+  let yAxisTicks: number[];
+  let yAxisDomain: [number, number];
+
+  if (maxTotalMinutes > 0) {
+    const maxHours = Math.ceil(maxTotalMinutes / 60);
+    // Ensure at least one hour tick if maxTotalMinutes is small but > 0
+    const numberOfTicks = Math.max(1, maxHours) + 1; // +1 for the 0h tick
+    yAxisTicks = Array.from({ length: numberOfTicks }, (_, i) => i * 60);
+    
+    // Ensure domain covers the highest tick or actual dataMax, plus some padding
+    const domainUpperValue = Math.max(yAxisTicks[yAxisTicks.length - 1], maxTotalMinutes);
+    yAxisDomain = [0, domainUpperValue + 30]; // Add 30 minutes padding
+  } else {
+    // Default for no data or all zero values
+    yAxisTicks = [0, 60]; // Ticks for 0h and 1h
+    yAxisDomain = [0, 60]; // Domain up to 1h
+  }
+
+
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <ResponsiveContainer width="100%" height={250}>
@@ -59,6 +80,10 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
             width={70} 
             tickFormatter={(value) => formatMinutesToWholeHours(value)}
             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            ticks={yAxisTicks}
+            domain={yAxisDomain}
+            interval={0} // Make sure all our specified ticks are considered
+            allowDecimals={false}
           />
           <ChartTooltip
             cursor={{ fill: 'hsl(var(--accent))', radius: 4 }}
@@ -68,9 +93,17 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
                 hideLabel
                 formatter={(value, name, item) => {
                   if (item.dataKey === 'totalMinutes') {
+                    const hours = Math.floor((value as number) / 60);
+                    const minutes = (value as number) % 60;
+                    let formattedTime = "";
+                    if (hours > 0) formattedTime += `${hours}h `;
+                    if (minutes > 0 || hours === 0) formattedTime += `${minutes}m`;
+                    if (formattedTime.trim() === "") formattedTime = "0m";
+
+
                     return (
                       <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{formatMinutesToWholeHours(value as number)}</span>
+                        <span className="font-medium text-foreground">{formattedTime.trim()}</span>
                         <span className="text-xs text-muted-foreground">{item.payload.name}</span>
                       </div>
                     );
