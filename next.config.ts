@@ -6,7 +6,7 @@ const pwaConfig = {
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable PWA in development for faster reloads
+  disable: false, // Enabled PWA in development for testing install prompt
   // You can add more PWA options here, like runtime caching strategies
   // fallbacks: {
   //   document: '/offline', // Example: specify a custom offline fallback page
