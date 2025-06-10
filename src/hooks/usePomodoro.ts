@@ -61,7 +61,7 @@ const cleanActiveSession = (session: any): ActivePomodoroSession => {
     cleanedSession.currentInterval = cleanedSession.currentInterval ?? 'work';
     cleanedSession.pomodorosCompletedThisSet = cleanedSession.pomodorosCompletedThisSet ?? 0;
     cleanedSession.lastWorkSessionStartTime = cleanedSession.lastWorkSessionStartTime ?? null;
-    cleanedSession.shouldLogWork = cleanedSession.shouldLogWork ?? false; // Initialize new flag
+    cleanedSession.shouldLogWork = cleanedSession.shouldLogWork ?? false;
     return cleanedSession as ActivePomodoroSession;
 };
 
@@ -146,6 +146,11 @@ export function usePomodoro() {
     if (typeof window !== 'undefined') {
       const audioPath = '/sounds/notification.mp3';
       audioRef.current = new Audio(audioPath);
+      try {
+        audioRef.current.load(); // Preload the audio
+      } catch (e) {
+        console.warn("Audio preloading may not be supported or failed.", e);
+      }
     }
   }, []);
 
@@ -262,7 +267,10 @@ export function usePomodoro() {
   }, [isClient, isDataLoading, currentUser, saveDataToFirestore]);
 
   const playNotificationSound = useCallback(() => {
-    audioRef.current?.play().catch(error => console.warn("Audio play failed:", error));
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0; // Rewind to start
+      audioRef.current.play().catch(error => console.warn("Audio play failed:", error));
+    }
   }, []);
 
   const fetchAndSetQuote = useCallback(async () => {
@@ -388,52 +396,53 @@ export function usePomodoro() {
     }));
   }, []);
 
-  const logWorkEntry = useCallback((session: ActivePomodoroSession, isEndingSession: boolean = false) => {
+  const logWorkEntry = useCallback((session: ActivePomodoroSession) => {
     const now = Date.now();
-    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime && session.currentTime > 0) {
-      const workSessionISOStartTime = new Date(session.lastWorkSessionStartTime).toISOString();
 
-      const existingEntry = pomodoroLog.find(entry =>
-        entry.sessionId === session.id &&
-        entry.startTime === workSessionISOStartTime &&
-        entry.type === 'work'
-      );
-
-      if (existingEntry) {
-        console.warn(`Log entry for session ${session.id} starting at ${workSessionISOStartTime} already exists. Skipping duplicate.`);
-        return existingEntry;
-      }
-
-      const newLogEntry: PomodoroLogEntry = {
-        id: `${now}-${session.id}-${Math.random().toString(36).substring(2, 7)}`,
-        startTime: workSessionISOStartTime,
-        endTime: new Date(now).toISOString(),
-        type: 'work',
-        duration: Math.round(session.currentTime / 60),
-        project: session.project,
-        sessionId: session.id,
-      };
-
-      const cleanedNewLogEntry = cleanLogEntry(newLogEntry);
-      setPomodoroLog(prevLog => [cleanedNewLogEntry, ...prevLog]);
-
-      if (!isEndingSession) {
-          toast({ title: "Work entry logged!", description: `${session.project}: ${formatTime(session.currentTime)}` });
-      }
-      updateRecentProjects(session.project);
-      return cleanedNewLogEntry;
+    if (!session.lastWorkSessionStartTime) {
+      console.warn(`logWorkEntry called for session ${session.id} ('${session.project}') without a valid lastWorkSessionStartTime. Skipping.`);
+      return null;
     }
-    return null;
-  }, [toast, updateRecentProjects, formatTime, setPomodoroLog, pomodoroLog]);
+
+    const workSessionISOStartTime = new Date(session.lastWorkSessionStartTime).toISOString();
+    const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
+    
+    const existingEntry = pomodoroLog.find(entry =>
+      entry.sessionId === session.id &&
+      entry.startTime === workSessionISOStartTime &&
+      entry.type === 'work'
+    );
+
+    if (existingEntry) {
+      console.warn(`Log entry for session ${session.id} ('${session.project}') starting at ${workSessionISOStartTime} already exists (duration: ${existingEntry.duration}m). Skipping duplicate.`);
+      return existingEntry;
+    }
+
+    const newLogEntry: PomodoroLogEntry = {
+      id: `${now}-${session.id}-${Math.random().toString(36).substring(2, 7)}`,
+      startTime: workSessionISOStartTime,
+      endTime: new Date(now).toISOString(),
+      type: 'work',
+      duration: calculatedDurationMinutes,
+      project: session.project,
+      sessionId: session.id,
+    };
+
+    const cleanedNewLogEntry = cleanLogEntry(newLogEntry);
+    setPomodoroLog(prevLog => [cleanedNewLogEntry, ...prevLog]);
+
+    toast({ title: "Work entry logged!", description: `${cleanedNewLogEntry.project || 'Work'}: ${formatTime(cleanedNewLogEntry.duration * 60)}` });
+    updateRecentProjects(cleanedNewLogEntry.project);
+    return cleanedNewLogEntry;
+  }, [pomodoroLog, setPomodoroLog, toast, updateRecentProjects, formatTime]);
 
   const endCurrentWorkSession = useCallback((sessionId: string) => {
     setActiveSessions(prevSessions =>
       prevSessions.map(s => {
         if (s.id === sessionId && s.currentInterval === 'work' && s.isRunning) {
           if (notificationSentRefs.current[s.id]) {
-            notificationSentRefs.current[s.id].work = false; // Reset notification for this work interval
+            notificationSentRefs.current[s.id].work = false;
           }
-          // Preserve lastWorkSessionStartTime for logging, flag for logging
           return { ...s, isRunning: false, currentTime: 0, shouldLogWork: true };
         }
         return s;
@@ -444,20 +453,20 @@ export function usePomodoro() {
   const switchMode = useCallback((sessionId: string) => {
     setActiveSessions(prevSessions => prevSessions.map(s => {
       if (s.id === sessionId) {
-        const updatedSessionBase = { ...s, isRunning: false }; // Pause before switching
+        const updatedSessionBase = { ...s, isRunning: false };
         let nextInterval: IntervalType;
         let newCompletedPomodoros = updatedSessionBase.pomodorosCompletedThisSet;
-        let newShouldLogWork = false;
+        let newShouldLogWork = updatedSessionBase.shouldLogWork; // Preserve existing flag
         let newLastWorkSessionStartTime = updatedSessionBase.lastWorkSessionStartTime;
 
         if (updatedSessionBase.currentInterval === 'work') {
-          newShouldLogWork = true; // Flag for logging, LWSST preserved for now
+          newShouldLogWork = true; // Explicitly set for logging the work session that just ended
           newCompletedPomodoros++;
           nextInterval = (newCompletedPomodoros % settings.pomodorosPerSet === 0) ? 'longBreak' : 'shortBreak';
           if (!motivationalQuote && !isFetchingQuote) fetchAndSetQuote();
-        } else { // Switching from a break to work
+        } else {
           nextInterval = 'work';
-          newLastWorkSessionStartTime = Date.now(); // Set new start time for work
+          newLastWorkSessionStartTime = Date.now();
           if (updatedSessionBase.currentInterval === 'longBreak') newCompletedPomodoros = 0;
         }
 
@@ -479,26 +488,25 @@ export function usePomodoro() {
   }, [settings.pomodorosPerSet, motivationalQuote, isFetchingQuote, fetchAndSetQuote]);
 
 
-  // Effect to handle logging for sessions flagged with shouldLogWork
   useEffect(() => {
-    const sessionsToLogAndUpdate: ActivePomodoroSession[] = [];
+    const sessionsThatWereLogged: string[] = [];
     activeSessions.forEach(session => {
-      if (session.shouldLogWork && session.currentInterval === 'work' && !session.isRunning && session.lastWorkSessionStartTime && session.currentTime === 0) {
-        const loggedEntry = logWorkEntry(session, true); // logWorkEntry is idempotent
-        if (loggedEntry) { // Only proceed if logging actually happened (or was skipped due to idempotency)
-            sessionsToLogAndUpdate.push(session);
+      if (session.shouldLogWork && session.lastWorkSessionStartTime && session.currentTime === 0 && !session.isRunning) {
+        const loggedEntry = logWorkEntry(session);
+        if (loggedEntry) {
+            sessionsThatWereLogged.push(session.id);
         } else if (!loggedEntry && session.lastWorkSessionStartTime) {
-            // If logWorkEntry returned null (e.g. currentTime was 0 but no lastWorkSessionStartTime),
-            // or if it was skipped due to idempotency but we still need to clear the flag
-            sessionsToLogAndUpdate.push(session);
+            // If logWorkEntry returned null (e.g. idempotency check or other valid skip),
+            // but it was an attempt to log, still mark it for flag reset.
+            sessionsThatWereLogged.push(session.id);
         }
       }
     });
 
-    if (sessionsToLogAndUpdate.length > 0) {
+    if (sessionsThatWereLogged.length > 0) {
       setActiveSessions(prev =>
         prev.map(s => {
-          if (sessionsToLogAndUpdate.find(loggedSession => loggedSession.id === s.id)) {
+          if (sessionsThatWereLogged.includes(s.id)) {
             return { ...s, shouldLogWork: false, lastWorkSessionStartTime: null };
           }
           return s;
@@ -511,7 +519,7 @@ export function usePomodoro() {
   const removeSession = useCallback((sessionId: string) => {
     let sessionToLogManually: ActivePomodoroSession | undefined;
     const currentSession = activeSessions.find(s => s.id === sessionId);
-    const projectNameForToast = currentSession?.project || 'Unknown';
+    const projectNameForToast = currentSession?.project || 'Untitled Session';
 
     if (currentSession && currentSession.currentInterval === 'work' && currentSession.isRunning && currentSession.lastWorkSessionStartTime && currentSession.currentTime > 0) {
       sessionToLogManually = { ...currentSession };
@@ -522,7 +530,7 @@ export function usePomodoro() {
     );
 
     if (sessionToLogManually) {
-      logWorkEntry(sessionToLogManually, true); // Direct call, as it's outside setState updater
+      logWorkEntry(sessionToLogManually);
     }
 
     if (timerRefs.current[sessionId]) {
@@ -644,3 +652,4 @@ export function usePomodoro() {
     updateRecentProjects,
   };
 }
+
