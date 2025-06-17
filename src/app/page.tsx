@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles } from 'lucide-react'; // Added Sparkles for premium button
+import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks } from 'lucide-react'; // Added Sparkles for premium button and ListChecks
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
@@ -369,3 +369,5 @@ export default function PomodoroPage() {
     </>
   );
 }
+
+    
