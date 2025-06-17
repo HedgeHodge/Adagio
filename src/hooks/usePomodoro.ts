@@ -115,10 +115,6 @@ export function usePomodoro() {
       await setDoc(userDocRef, firestorePayload, { merge: true });
     } catch (error) {
       console.error("Error saving data to Firestore:", error);
-      // const isOnlyActiveSessions = Object.keys(data).length === 1 && data.activeSessions !== undefined;
-      // if (!isOnlyActiveSessions) {
-      //    toast({ title: "Sync Error", description: "Could not save some data to cloud.", variant: "destructive" });
-      // }
     }
   }, []);
 
@@ -183,7 +179,7 @@ export function usePomodoro() {
                 pomodoroLog: localData.pomodoroLog,
                 activeSessions: localData.activeSessions,
                 recentProjects: localData.recentProjects,
-                isPremium: isPremium
+                isPremium: isPremium // Persist initial premium status
             });
           }
         } catch (error) {
@@ -258,35 +254,28 @@ export function usePomodoro() {
     };
   }, [isClient, isDataLoading, currentUser, saveDataToFirestore]);
 
-  const playNotificationSound = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(error => console.warn("Audio play failed:", error));
-    }
-  }, []);
 
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
-
-    setIsFetchingQuote(true); // Set fetching true at the start
+    setIsFetchingQuote(true);
 
     if (!isPremium) {
       setMotivationalQuote({ quote: "Unlock motivational quotes with Adagio Premium!", source: "Adagio App" });
-      setIsFetchingQuote(false); // Ensure it's reset
+      setIsFetchingQuote(false);
       return;
     }
 
-    setMotivationalQuote(null); // Clear previous quote for premium users
+    setMotivationalQuote(null);
     try {
       const result = await getMotivationalQuote();
       setMotivationalQuote(result);
     } catch (error) {
       console.error("Failed to fetch motivational quote:", error);
-      setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio App" }); // Fallback for premium users on error
+      setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio App" });
     } finally {
-      setIsFetchingQuote(false); // Reset in finally block for all paths
+      setIsFetchingQuote(false);
     }
-  }, [isFetchingQuote, isPremium, setMotivationalQuote]); // getMotivationalQuote is stable from import
+  }, [isFetchingQuote, isPremium, setMotivationalQuote]);
 
   useEffect(() => {
     const anySessionOnBreak = activeSessions.some(
@@ -294,8 +283,7 @@ export function usePomodoro() {
     );
 
     if (anySessionOnBreak) {
-      // Fetch if no quote, or if it's the default upgrade message, and not already fetching.
-      const needsFreshQuote = !motivationalQuote || motivationalQuote.source === "Adagio App";
+      const needsFreshQuote = !motivationalQuote || (motivationalQuote.source === "Adagio App" && isPremium);
       if (needsFreshQuote && !isFetchingQuote) {
         fetchAndSetQuote();
       }
@@ -325,15 +313,15 @@ export function usePomodoro() {
 
                   if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
                     toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` });
-                    playNotificationSound();
+                    if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
                     notificationSentRefs.current[s.id].work = true;
                   } else if (s.currentInterval === 'shortBreak' && !notificationSentRefs.current[s.id].shortBreak && newTime >= settings.shortBreakDuration * 60) {
                     toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.shortBreakDuration}-min break is up.` });
-                    playNotificationSound();
+                    if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
                     notificationSentRefs.current[s.id].shortBreak = true;
                   } else if (s.currentInterval === 'longBreak' && !notificationSentRefs.current[s.id].longBreak && newTime >= settings.longBreakDuration * 60) {
                     toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.longBreakDuration}-min break is up.` });
-                    playNotificationSound();
+                    if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
                     notificationSentRefs.current[s.id].longBreak = true;
                   }
                   return { ...s, currentTime: newTime };
@@ -357,7 +345,7 @@ export function usePomodoro() {
       });
       timerRefs.current = {};
     };
-  }, [activeSessions, settings, toast, playNotificationSound, setActiveSessions]);
+  }, [activeSessions, settings, toast, setActiveSessions]);
 
   const addSession = useCallback((projectName: string) => {
     const trimmedProjectName = projectName.trim();
@@ -429,12 +417,12 @@ export function usePomodoro() {
     );
 
     if (existingEntry) {
-      console.warn(`Log entry for session ${session.id} ('${session.project}') starting at ${workSessionISOStartTime} already exists (duration: ${existingEntry.duration}m). Skipping duplicate.`);
+      console.warn(`Log entry for session ${session.id} ('${session.project}') starting at ${workSessionISOStartTime} (duration: ${existingEntry.duration}m) already exists. Skipping duplicate.`);
       return existingEntry;
     }
     
     if (calculatedDurationMinutes <= 0) {
-        console.info(`Skipping log for session ${session.id} ('${session.project}') due to zero or negative duration.`);
+        console.info(`Skipping log for session ${session.id} ('${session.project}') due to zero or negative duration based on current time vs start time.`);
         return null;
     }
 
@@ -464,7 +452,6 @@ export function usePomodoro() {
           if (notificationSentRefs.current[s.id]) {
             notificationSentRefs.current[s.id].work = false;
           }
-          // Preserve lastWorkSessionStartTime for logging, mark for logging
           return { ...s, isRunning: false, currentTime: 0, shouldLogWork: true };
         }
         return s;
@@ -478,18 +465,18 @@ export function usePomodoro() {
         const updatedSessionBase = { ...s, isRunning: false };
         let nextInterval: IntervalType;
         let newCompletedPomodoros = updatedSessionBase.pomodorosCompletedThisSet;
-        let newShouldLogWork = updatedSessionBase.shouldLogWork; // Preserve existing flag
+        let newShouldLogWork = updatedSessionBase.shouldLogWork;
         let newLastWorkSessionStartTime = updatedSessionBase.lastWorkSessionStartTime;
 
         if (updatedSessionBase.currentInterval === 'work') {
-          newShouldLogWork = true; // Flag this work session for logging
+          newShouldLogWork = true;
           newCompletedPomodoros++;
           nextInterval = (newCompletedPomodoros % settings.pomodorosPerSet === 0) ? 'longBreak' : 'shortBreak';
         } else {
-          // Switching from break to work
           nextInterval = 'work';
-          newLastWorkSessionStartTime = Date.now(); // New work session starts now
+          newLastWorkSessionStartTime = Date.now();
           if (updatedSessionBase.currentInterval === 'longBreak') newCompletedPomodoros = 0;
+          newShouldLogWork = false;
         }
 
         if (notificationSentRefs.current[updatedSessionBase.id]) {
@@ -500,7 +487,7 @@ export function usePomodoro() {
           ...updatedSessionBase,
           currentInterval: nextInterval,
           pomodorosCompletedThisSet: newCompletedPomodoros,
-          currentTime: 0, // Reset timer for new interval
+          currentTime: 0,
           lastWorkSessionStartTime: newLastWorkSessionStartTime,
           shouldLogWork: newShouldLogWork,
         };
@@ -511,6 +498,8 @@ export function usePomodoro() {
 
 
   useEffect(() => {
+    if (isDataLoading) return; // Guard against running during initial data load
+
     const sessionsThatNeedLogging = activeSessions.filter(
       s => s.shouldLogWork && s.lastWorkSessionStartTime && s.currentTime === 0 && !s.isRunning
     );
@@ -519,10 +508,11 @@ export function usePomodoro() {
       let anyLogAttempted = false;
       sessionsThatNeedLogging.forEach(sessionToLog => {
         const loggedEntry = logWorkEntry(sessionToLog);
-        if(loggedEntry !== null) { // if logWorkEntry decided to log (or found existing)
+        if(loggedEntry !== null) {
             anyLogAttempted = true;
         } else if (loggedEntry === null && sessionToLog.lastWorkSessionStartTime) {
-            // Even if logWorkEntry returned null (e.g. zero duration), we still consumed the 'shouldLogWork' intent
+             // This case means logWorkEntry decided not to log (e.g. zero duration, or already exists)
+             // but we still processed the intent to log.
             anyLogAttempted = true;
         }
       });
@@ -538,7 +528,7 @@ export function usePomodoro() {
         );
       }
     }
-  }, [activeSessions, logWorkEntry, setActiveSessions]);
+  }, [activeSessions, logWorkEntry, setActiveSessions, isDataLoading]);
 
 
   const removeSession = useCallback((sessionId: string) => {
@@ -547,7 +537,7 @@ export function usePomodoro() {
     const projectNameForToast = currentSession?.project || 'Untitled Session';
 
     if (currentSession && currentSession.currentInterval === 'work' && currentSession.isRunning && currentSession.lastWorkSessionStartTime && currentSession.currentTime > 0) {
-      sessionToLogManually = { ...currentSession, isRunning: false, currentTime: 0, shouldLogWork: false }; // Simulate stopping it first
+      sessionToLogManually = { ...currentSession }; 
     }
 
     setActiveSessions(prevActiveSessions =>
