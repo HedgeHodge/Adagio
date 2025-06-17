@@ -3,58 +3,59 @@
 
 import type { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase'; // Import db
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; // Import Firestore functions
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AuthContextType {
   currentUser: User | null;
+  isPremium: boolean; // Added for premium status
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  upgradeUserToPremium: () => Promise<void>; // Added for "upgrading"
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean>(false); // State for premium status
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const isMobile = useIsMobile(); // Determine if mobile
+  const isMobile = useIsMobile();
+
+  const fetchUserPremiumStatus = async (userId: string) => {
+    const userDocRef = doc(db, 'users', userId);
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists() && docSnap.data()?.isPremium === true) {
+      setIsPremium(true);
+    } else {
+      setIsPremium(false);
+    }
+  };
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
       if (isMobile) {
         await signInWithRedirect(auth, provider);
-        // For redirects, errors are typically handled by getRedirectResult or on the IdP page.
-        // The user will be navigated away, so onAuthStateChanged and getRedirectResult will handle user state.
       } else {
         await signInWithPopup(auth, provider);
-        // For popups, onAuthStateChanged will handle setting the user.
       }
     } catch (error: any) {
-      if (!isMobile) { // Popup specific error handling
+      if (!isMobile) {
         if (error.code === 'auth/popup-closed-by-user') {
           console.info("Google sign-in popup closed by user.");
         } else if (error.code === 'auth/cancelled-popup-request') {
-          console.info("Google sign-in popup request cancelled. This can happen if multiple popups were opened.");
+          console.info("Google sign-in popup request cancelled.");
         } else {
           console.error("Error signing in with Google (popup):", error);
-          // toast({
-          //   title: "Sign-In Error",
-          //   description: "Could not sign in with Google. Please try again.",
-          //   variant: "destructive",
-          // });
         }
-      } else { // Redirect specific error handling (less common here, mostly in getRedirectResult)
+      } else {
          console.error("Error initiating Google sign-in (redirect):", error);
-         // toast({
-         //   title: "Sign-In Error",
-         //   description: "Could not start the sign-in process. Please try again.",
-         //   variant: "destructive",
-         // });
       }
     }
   };
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      setIsPremium(false); // Reset premium status on sign out
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -72,13 +74,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const upgradeUserToPremium = async () => {
+    if (!currentUser) {
+      toast({ title: "Not signed in", description: "You need to be signed in to upgrade.", variant: "destructive" });
+      return;
+    }
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { isPremium: true, lastUpdated: Timestamp.now() }, { merge: true });
+      setIsPremium(true);
+      toast({ title: "Upgrade Successful!", description: "You now have access to premium features." });
+    } catch (error) {
+      console.error("Error upgrading to premium:", error);
+      toast({ title: "Upgrade Failed", description: "Could not upgrade to premium. Please try again.", variant: "destructive" });
+    }
+  };
+
   useEffect(() => {
     if (!auth || typeof auth.onAuthStateChanged !== 'function') {
         console.warn("[AuthContext] Firebase Auth not fully initialized yet, delaying onAuthStateChanged listener setup.");
         const timer = setTimeout(() => {
             if (auth && typeof auth.onAuthStateChanged === 'function') {
-                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                const unsubscribe = onAuthStateChanged(auth, async (user) => {
                     setCurrentUser(user);
+                    if (user) {
+                      await fetchUserPremiumStatus(user.uid);
+                    } else {
+                      setIsPremium(false);
+                    }
                     setLoading(false);
                 });
                 return () => unsubscribe();
@@ -90,47 +113,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(timer);
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      if (user) {
+        await fetchUserPremiumStatus(user.uid);
+      } else {
+        setIsPremium(false);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []); // Empty dependency array is correct for onAuthStateChanged setup
+  }, []);
 
   useEffect(() => {
-    // This effect handles the result of a redirect sign-in attempt.
-    // It runs after the initial loading is complete.
     if (!loading && auth && typeof auth.onAuthStateChanged === 'function') {
       getRedirectResult(auth)
-        .then((result) => {
-          if (result) {
-            // const user = result.user;
-            // `onAuthStateChanged` should have already updated `currentUser`.
-            // You can add a success toast here if desired.
-            // toast({ title: "Signed in successfully!" });
+        .then(async (result) => {
+          if (result && result.user) {
+            // User object is available in result.user
+            // onAuthStateChanged will also fire, so premium status might be set there.
+            // We can ensure it's fetched here too if needed, or rely on onAuthStateChanged.
+            await fetchUserPremiumStatus(result.user.uid);
             console.log("Google sign-in redirect processed for user:", result.user.displayName);
           }
-          // If result is null, it means no redirect operation was pending or it was already handled.
         })
         .catch((error) => {
           console.error("Error processing Google sign-in redirect:", error);
-          // Avoid showing toast for common non-errors like redirect cancelled by navigation.
           if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-            // toast({
-            //   title: "Sign-In Failed",
-            //   description: "Could not complete sign-in after redirect. " + error.message,
-            //   variant: "destructive",
-            // });
+            // toast for other errors
           }
         });
     }
-  }, [loading]); // Run when `loading` state changes, specifically after it becomes false. `auth` is stable.
+  }, [loading]);
 
   const value = {
     currentUser,
+    isPremium,
     loading,
     signInWithGoogle,
     signOut,
+    upgradeUserToPremium,
   };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;

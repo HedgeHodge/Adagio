@@ -35,3 +35,12 @@ export interface ActivePomodoroSession {
   lastWorkSessionStartTime: number | null; // timestamp for the current work interval of this session
   shouldLogWork?: boolean; // Flag to indicate this session's work interval needs to be logged
 }
+
+export interface UserPomodoroData {
+  settings?: PomodoroSettings;
+  pomodoroLog?: PomodoroLogEntry[];
+  activeSessions?: ActivePomodoroSession[];
+  recentProjects?: string[];
+  isPremium?: boolean; // Added for premium features
+  lastUpdated?: import('firebase/firestore').Timestamp;
+}
