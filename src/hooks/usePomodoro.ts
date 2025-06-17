@@ -59,7 +59,7 @@ const cleanActiveSession = (session: any): ActivePomodoroSession => {
 
 
 export function usePomodoro() {
-  const { currentUser, isPremium } = useAuth(); // Added isPremium
+  const { currentUser, isPremium } = useAuth();
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_SETTINGS);
   const [activeSessions, setActiveSessions] = useState<ActivePomodoroSession[]>([]);
   const [pomodoroLog, setPomodoroLog] = useState<PomodoroLogEntry[]>([]);
@@ -115,10 +115,10 @@ export function usePomodoro() {
       await setDoc(userDocRef, firestorePayload, { merge: true });
     } catch (error) {
       console.error("Error saving data to Firestore:", error);
-      const isOnlyActiveSessions = Object.keys(data).length === 1 && data.activeSessions !== undefined;
-      if (!isOnlyActiveSessions) {
-         // toast({ title: "Sync Error", description: "Could not save some data to cloud.", variant: "destructive" });
-      }
+      // const isOnlyActiveSessions = Object.keys(data).length === 1 && data.activeSessions !== undefined;
+      // if (!isOnlyActiveSessions) {
+      //    toast({ title: "Sync Error", description: "Could not save some data to cloud.", variant: "destructive" });
+      // }
     }
   }, []);
 
@@ -162,9 +162,6 @@ export function usePomodoro() {
           const docSnap = await getDoc(userDocRef);
           if (docSnap.exists()) {
             const cloudData = docSnap.data() as UserPomodoroData;
-
-            // AuthContext handles isPremium, so we don't overwrite it here from cloudData directly.
-            // We primarily sync pomodoro-specific data.
             const effectiveSettings = cloudData.settings || localData.settings;
             const effectiveLog = (cloudData.pomodoroLog || localData.pomodoroLog).map(cleanLogEntry);
             const effectiveActiveSessions = (cloudData.activeSessions || localData.activeSessions).map(cleanActiveSession);
@@ -181,13 +178,12 @@ export function usePomodoro() {
             localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(effectiveRecentProjects));
 
           } else {
-            // New user in Firestore, save local data and ensure isPremium is set (defaults to false if not set by AuthContext)
             await saveDataToFirestore(currentUser.uid, {
                 settings: localData.settings,
                 pomodoroLog: localData.pomodoroLog,
                 activeSessions: localData.activeSessions,
                 recentProjects: localData.recentProjects,
-                isPremium: isPremium // Save the current premium state from AuthContext
+                isPremium: isPremium
             });
           }
         } catch (error) {
@@ -272,14 +268,15 @@ export function usePomodoro() {
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
 
+    setIsFetchingQuote(true); // Set fetching true at the start
+
     if (!isPremium) {
       setMotivationalQuote({ quote: "Unlock motivational quotes with Adagio Premium!", source: "Adagio App" });
-      setIsFetchingQuote(false);
+      setIsFetchingQuote(false); // Ensure it's reset
       return;
     }
 
-    setIsFetchingQuote(true);
-    setMotivationalQuote(null); // Clear previous quote
+    setMotivationalQuote(null); // Clear previous quote for premium users
     try {
       const result = await getMotivationalQuote();
       setMotivationalQuote(result);
@@ -287,9 +284,24 @@ export function usePomodoro() {
       console.error("Failed to fetch motivational quote:", error);
       setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio App" }); // Fallback for premium users on error
     } finally {
-      setIsFetchingQuote(false);
+      setIsFetchingQuote(false); // Reset in finally block for all paths
     }
-  }, [isFetchingQuote, isPremium]);
+  }, [isFetchingQuote, isPremium, setMotivationalQuote]); // getMotivationalQuote is stable from import
+
+  useEffect(() => {
+    const anySessionOnBreak = activeSessions.some(
+      s => s.currentInterval === 'shortBreak' || s.currentInterval === 'longBreak'
+    );
+
+    if (anySessionOnBreak) {
+      // Fetch if no quote, or if it's the default upgrade message, and not already fetching.
+      const needsFreshQuote = !motivationalQuote || motivationalQuote.source === "Adagio App";
+      if (needsFreshQuote && !isFetchingQuote) {
+        fetchAndSetQuote();
+      }
+    }
+  }, [activeSessions, isPremium, motivationalQuote, isFetchingQuote, fetchAndSetQuote]);
+
 
   const updateRecentProjects = useCallback((projectName?: string) => {
     if (!projectName || projectName.trim() === "") return;
@@ -345,7 +357,7 @@ export function usePomodoro() {
       });
       timerRefs.current = {};
     };
-  }, [activeSessions, settings, toast, playNotificationSound]);
+  }, [activeSessions, settings, toast, playNotificationSound, setActiveSessions]);
 
   const addSession = useCallback((projectName: string) => {
     const trimmedProjectName = projectName.trim();
@@ -363,7 +375,7 @@ export function usePomodoro() {
     if (!notificationSentRefs.current[newSession.id]) {
         notificationSentRefs.current[newSession.id] = { work: false, shortBreak: false, longBreak: false };
     }
-  }, [toast, updateRecentProjects]);
+  }, [toast, updateRecentProjects, setActiveSessions]);
 
   const startTimer = useCallback((sessionId: string) => {
     setActiveSessions(prev => prev.map(s => {
@@ -380,11 +392,11 @@ export function usePomodoro() {
       }
       return s;
     }));
-  }, []);
+  }, [setActiveSessions]);
 
   const pauseTimer = useCallback((sessionId: string) => {
     setActiveSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRunning: false } : s));
-  }, []);
+  }, [setActiveSessions]);
 
   const resetTimer = useCallback((sessionId: string) => {
     setActiveSessions(prev => prev.map(s => {
@@ -397,23 +409,18 @@ export function usePomodoro() {
       }
       return s;
     }));
-  }, []);
+  }, [setActiveSessions]);
 
  const logWorkEntry = useCallback((session: ActivePomodoroSession) => {
-    const now = Date.now();
-    let calculatedDurationMinutes = 0;
-
     if (!session.lastWorkSessionStartTime) {
-      console.warn(`logWorkEntry called for session ${session.id} ('${session.project}') without a valid lastWorkSessionStartTime. Logging with 0 duration or current time.`);
-      // If no start time, but there is current time, log that. Otherwise, 0.
-      calculatedDurationMinutes = Math.max(0, Math.round(session.currentTime / 60));
-    } else {
-      calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
+      console.warn(`logWorkEntry called for session ${session.id} ('${session.project}') without a valid lastWorkSessionStartTime. Skipping log.`);
+      return null;
     }
-    
-    const workSessionISOStartTime = session.lastWorkSessionStartTime 
-        ? new Date(session.lastWorkSessionStartTime).toISOString() 
-        : new Date(now - session.currentTime * 1000).toISOString(); // Fallback start time if needed
+
+    const now = Date.now();
+    let calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
+
+    const workSessionISOStartTime = new Date(session.lastWorkSessionStartTime).toISOString();
 
     const existingEntry = pomodoroLog.find(entry =>
       entry.sessionId === session.id &&
@@ -426,11 +433,10 @@ export function usePomodoro() {
       return existingEntry;
     }
     
-    if (calculatedDurationMinutes <= 0 && session.currentTime <=0) {
-        console.info(`Skipping log for session ${session.id} ('${session.project}') due to zero or negative duration and no active current time.`);
+    if (calculatedDurationMinutes <= 0) {
+        console.info(`Skipping log for session ${session.id} ('${session.project}') due to zero or negative duration.`);
         return null;
     }
-
 
     const newLogEntry: PomodoroLogEntry = {
       id: `${now}-${session.id}-${Math.random().toString(36).substring(2, 7)}`,
@@ -458,12 +464,13 @@ export function usePomodoro() {
           if (notificationSentRefs.current[s.id]) {
             notificationSentRefs.current[s.id].work = false;
           }
+          // Preserve lastWorkSessionStartTime for logging, mark for logging
           return { ...s, isRunning: false, currentTime: 0, shouldLogWork: true };
         }
         return s;
       })
     );
-  }, []);
+  }, [setActiveSessions]);
 
   const switchMode = useCallback((sessionId: string) => {
     setActiveSessions(prevSessions => prevSessions.map(s => {
@@ -471,21 +478,17 @@ export function usePomodoro() {
         const updatedSessionBase = { ...s, isRunning: false };
         let nextInterval: IntervalType;
         let newCompletedPomodoros = updatedSessionBase.pomodorosCompletedThisSet;
-        let newShouldLogWork = updatedSessionBase.shouldLogWork;
+        let newShouldLogWork = updatedSessionBase.shouldLogWork; // Preserve existing flag
         let newLastWorkSessionStartTime = updatedSessionBase.lastWorkSessionStartTime;
 
         if (updatedSessionBase.currentInterval === 'work') {
-          newShouldLogWork = true;
+          newShouldLogWork = true; // Flag this work session for logging
           newCompletedPomodoros++;
           nextInterval = (newCompletedPomodoros % settings.pomodorosPerSet === 0) ? 'longBreak' : 'shortBreak';
-          if (isPremium && !motivationalQuote && !isFetchingQuote) { // Check isPremium before fetching
-             fetchAndSetQuote();
-          } else if (!isPremium && (!motivationalQuote || motivationalQuote.source !== "Adagio App")){
-             fetchAndSetQuote(); // This will set the upgrade message
-          }
         } else {
+          // Switching from break to work
           nextInterval = 'work';
-          newLastWorkSessionStartTime = Date.now();
+          newLastWorkSessionStartTime = Date.now(); // New work session starts now
           if (updatedSessionBase.currentInterval === 'longBreak') newCompletedPomodoros = 0;
         }
 
@@ -497,45 +500,45 @@ export function usePomodoro() {
           ...updatedSessionBase,
           currentInterval: nextInterval,
           pomodorosCompletedThisSet: newCompletedPomodoros,
-          currentTime: 0,
+          currentTime: 0, // Reset timer for new interval
           lastWorkSessionStartTime: newLastWorkSessionStartTime,
           shouldLogWork: newShouldLogWork,
         };
       }
       return s;
     }));
-  }, [settings.pomodorosPerSet, motivationalQuote, isFetchingQuote, fetchAndSetQuote, isPremium]);
+  }, [settings.pomodorosPerSet, setActiveSessions]);
 
 
   useEffect(() => {
-    const sessionsThatWereLogged: string[] = [];
-    activeSessions.forEach(session => {
-      if (
-        session.shouldLogWork &&
-        session.lastWorkSessionStartTime &&
-        session.currentTime === 0 &&
-        !session.isRunning
-      ) {
-        const loggedEntry = logWorkEntry(session);
-        if (loggedEntry) {
-            sessionsThatWereLogged.push(session.id);
-        } else if (!loggedEntry && session.lastWorkSessionStartTime) {
-            sessionsThatWereLogged.push(session.id);
-        }
-      }
-    });
+    const sessionsThatNeedLogging = activeSessions.filter(
+      s => s.shouldLogWork && s.lastWorkSessionStartTime && s.currentTime === 0 && !s.isRunning
+    );
 
-    if (sessionsThatWereLogged.length > 0) {
-      setActiveSessions(prev =>
-        prev.map(s => {
-          if (sessionsThatWereLogged.includes(s.id)) {
-            return { ...s, shouldLogWork: false, lastWorkSessionStartTime: null };
-          }
-          return s;
-        })
-      );
+    if (sessionsThatNeedLogging.length > 0) {
+      let anyLogAttempted = false;
+      sessionsThatNeedLogging.forEach(sessionToLog => {
+        const loggedEntry = logWorkEntry(sessionToLog);
+        if(loggedEntry !== null) { // if logWorkEntry decided to log (or found existing)
+            anyLogAttempted = true;
+        } else if (loggedEntry === null && sessionToLog.lastWorkSessionStartTime) {
+            // Even if logWorkEntry returned null (e.g. zero duration), we still consumed the 'shouldLogWork' intent
+            anyLogAttempted = true;
+        }
+      });
+
+      if (anyLogAttempted) {
+        setActiveSessions(prev =>
+          prev.map(s => {
+            if (sessionsThatNeedLogging.find(loggedSess => loggedSess.id === s.id)) {
+              return { ...s, shouldLogWork: false, lastWorkSessionStartTime: null };
+            }
+            return s;
+          })
+        );
+      }
     }
-  }, [activeSessions, logWorkEntry]);
+  }, [activeSessions, logWorkEntry, setActiveSessions]);
 
 
   const removeSession = useCallback((sessionId: string) => {
@@ -544,7 +547,7 @@ export function usePomodoro() {
     const projectNameForToast = currentSession?.project || 'Untitled Session';
 
     if (currentSession && currentSession.currentInterval === 'work' && currentSession.isRunning && currentSession.lastWorkSessionStartTime && currentSession.currentTime > 0) {
-      sessionToLogManually = { ...currentSession };
+      sessionToLogManually = { ...currentSession, isRunning: false, currentTime: 0, shouldLogWork: false }; // Simulate stopping it first
     }
 
     setActiveSessions(prevActiveSessions =>
@@ -563,7 +566,7 @@ export function usePomodoro() {
         delete notificationSentRefs.current[sessionId];
     }
     toast({title: `Session "${projectNameForToast}" removed`});
-  }, [activeSessions, toast, logWorkEntry]);
+  }, [activeSessions, toast, logWorkEntry, setActiveSessions]);
 
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => {
