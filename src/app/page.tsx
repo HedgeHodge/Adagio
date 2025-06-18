@@ -18,13 +18,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks } from 'lucide-react';
+import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon } from 'lucide-react';
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
 export default function PomodoroPage() {
   const pomodoroState = usePomodoro();
-  const { currentUser, isPremium, upgradeUserToPremium } = useAuth(); // Get premium status and upgrade function
+  const { currentUser, isPremium, upgradeUserToPremium, togglePremiumStatus } = useAuth();
   const {
     settings,
     updateSettings,
@@ -124,7 +124,7 @@ export default function PomodoroPage() {
             onChange={(e) => setInputProjectName(e.target.value)}
             className="bg-card border-border shadow-sm flex-grow"
             onKeyPress={(e) => e.key === 'Enter' && handleAddSession()}
-            disabled={!currentUser} // Disable if not logged in
+            disabled={!currentUser}
           />
           <Button onClick={handleAddSession} size="icon" aria-label="Add session" disabled={!currentUser}>
             <PlusCircle className="h-5 w-5" />
@@ -304,7 +304,10 @@ export default function PomodoroPage() {
               <Sparkles className="mr-2 h-5 w-5" /> Upgrade to Adagio Premium
             </Button>
           )}
-          <Button onClick={populateTestData} variant="outline" size="sm">
+           <Button onClick={togglePremiumStatus} variant="secondary" size="sm" className="mt-2">
+            <RefreshCwIcon className="mr-2 h-4 w-4" /> Toggle Premium (Test): {isPremium ? 'ON' : 'OFF'}
+          </Button>
+          <Button onClick={populateTestData} variant="outline" size="sm" className="mt-2">
             Populate Test Data
           </Button>
         </div>
@@ -341,7 +344,6 @@ export default function PomodoroPage() {
     );
   }
 
-  // Desktop layout
   return (
     <>
       <main className="flex flex-col items-center justify-start pt-12 sm:pt-20 min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
@@ -369,7 +371,3 @@ export default function PomodoroPage() {
     </>
   );
 }
-
-    
-
-    

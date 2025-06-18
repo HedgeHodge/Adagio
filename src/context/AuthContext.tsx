@@ -11,18 +11,19 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AuthContextType {
   currentUser: User | null;
-  isPremium: boolean; // Added for premium status
+  isPremium: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  upgradeUserToPremium: () => Promise<void>; // Added for "upgrading"
+  upgradeUserToPremium: () => Promise<void>;
+  togglePremiumStatus: () => Promise<void>; // New function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isPremium, setIsPremium] = useState<boolean>(false); // State for premium status
+  const [isPremium, setIsPremium] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -63,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      setIsPremium(false); // Reset premium status on sign out
+      setIsPremium(false);
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -87,6 +88,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error upgrading to premium:", error);
       toast({ title: "Upgrade Failed", description: "Could not upgrade to premium. Please try again.", variant: "destructive" });
+    }
+  };
+
+  const togglePremiumStatus = async () => {
+    if (!currentUser) {
+      toast({ title: "Not signed in", description: "You need to be signed in to toggle premium status.", variant: "destructive" });
+      return;
+    }
+    const newPremiumStatus = !isPremium;
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { isPremium: newPremiumStatus, lastUpdated: Timestamp.now() }, { merge: true });
+      setIsPremium(newPremiumStatus);
+      toast({ title: "Premium Status Toggled", description: `You are now on the ${newPremiumStatus ? 'Premium' : 'Free'} tier.` });
+    } catch (error) {
+      console.error("Error toggling premium status:", error);
+      toast({ title: "Toggle Failed", description: "Could not toggle premium status. Please try again.", variant: "destructive" });
     }
   };
 
@@ -130,9 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getRedirectResult(auth)
         .then(async (result) => {
           if (result && result.user) {
-            // User object is available in result.user
-            // onAuthStateChanged will also fire, so premium status might be set there.
-            // We can ensure it's fetched here too if needed, or rely on onAuthStateChanged.
             await fetchUserPremiumStatus(result.user.uid);
             console.log("Google sign-in redirect processed for user:", result.user.displayName);
           }
@@ -153,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     signOut,
     upgradeUserToPremium,
+    togglePremiumStatus, // Expose new function
   };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
