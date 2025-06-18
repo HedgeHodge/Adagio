@@ -18,7 +18,7 @@ export function ThemeToggleButton() {
     // Render a placeholder or nothing to avoid hydration mismatch.
     // For a button, it's often fine to render it disabled or as a placeholder icon.
     // Using a consistent size avoids layout shifts.
-    return <Button variant="ghost" size="icon" className="h-8 w-8" disabled><Sun className="h-4 w-4 opacity-50" /></Button>;
+    return <Button variant="ghost" size="icon" className="h-8 w-8" disabled><Sun className="h-5 w-5 opacity-50" /></Button>;
   }
 
   return (
@@ -31,10 +31,11 @@ export function ThemeToggleButton() {
       title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
     >
       {theme === 'light' ? (
-        <Moon className="h-4 w-4" />
+        <Moon className="h-5 w-5" />
       ) : (
-        <Sun className="h-4 w-4" />
+        <Sun className="h-5 w-5" />
       )}
     </Button>
   );
 }
+
