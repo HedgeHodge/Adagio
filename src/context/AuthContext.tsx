@@ -3,9 +3,18 @@
 
 import type { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { auth, db } from '@/lib/firebase'; // Import db
-import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; // Import Firestore functions
+import { auth, db } from '@/lib/firebase'; 
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  signOut as firebaseSignOut, 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; 
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -16,7 +25,9 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   upgradeUserToPremium: () => Promise<void>;
-  togglePremiumStatus: () => Promise<void>; // New function
+  togglePremiumStatus: () => Promise<void>;
+  signUpWithEmailPassword: (email: string, password: string) => Promise<void>; 
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,36 +46,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPremium(true);
     } else {
       setIsPremium(false);
+      // If user doc exists but no isPremium field, or it's false, ensure it's set to false
+      if (docSnap.exists() && docSnap.data()?.isPremium !== true) {
+         await setDoc(userDocRef, { isPremium: false }, { merge: true });
+      }
     }
   };
 
   const signInWithGoogle = async () => {
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       if (isMobile) {
         await signInWithRedirect(auth, provider);
       } else {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        // Check if user doc exists, if not, create it
+        const userDocRef = doc(db, 'users', result.user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (!docSnap.exists()) {
+          await setDoc(userDocRef, { 
+            isPremium: false, 
+            email: result.user.email, 
+            displayName: result.user.displayName, 
+            photoURL: result.user.photoURL,
+            createdAt: Timestamp.now() 
+          }, { merge: true });
+           setIsPremium(false);
+        }
+        // onAuthStateChanged will handle setting current user and fetching premium status
       }
     } catch (error: any) {
       if (!isMobile) {
-        if (error.code === 'auth/popup-closed-by-user') {
-          console.info("Google sign-in popup closed by user.");
-        } else if (error.code === 'auth/cancelled-popup-request') {
-          console.info("Google sign-in popup request cancelled.");
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+          console.info("Google sign-in popup cancelled/closed by user.");
         } else {
           console.error("Error signing in with Google (popup):", error);
+          toast({ title: "Google Sign-In Error", description: error.message || "An error occurred.", variant: "destructive" });
         }
       } else {
          console.error("Error initiating Google sign-in (redirect):", error);
+         toast({ title: "Google Sign-In Error", description: error.message || "An error occurred.", variant: "destructive" });
       }
+      // setLoading(false); // Re-throw to be caught by modal or calling UI
+      throw error;
     }
+    // setLoading is primarily handled by onAuthStateChanged
   };
 
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      setIsPremium(false);
+      // onAuthStateChanged will set currentUser to null and loading to false.
+      // isPremium will be set to false by onAuthStateChanged.
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -108,6 +142,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signUpWithEmailPassword = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      await setDoc(userDocRef, { 
+        isPremium: false, 
+        email: userCredential.user.email, 
+        createdAt: Timestamp.now() 
+      }, { merge: true });
+      // setIsPremium(false); // onAuthStateChanged will call fetchUserPremiumStatus
+      toast({ title: "Account Created!", description: "Welcome to Adagio!" });
+      // onAuthStateChanged will set user and loading status
+    } catch (error: any) {
+      console.error("Error signing up with email/password:", error);
+      let message = "An unexpected error occurred during sign up.";
+      if (error.code === 'auth/email-already-in-use') {
+        message = 'This email address is already in use.';
+      } else if (error.code === 'auth/weak-password') {
+        message = 'The password is too weak.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'The email address is not valid.';
+      }
+      toast({ title: "Sign Up Failed", description: message, variant: "destructive" });
+      // setLoading(false); // Re-throw for modal to handle
+      throw error; 
+    }
+  };
+
+  const signInWithEmailPassword = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle user state and premium status.
+    } catch (error: any) {
+      console.error("Error signing in with email/password:", error);
+      let message = "Failed to sign in. Please check your email and password.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
+        message = 'Invalid email or password.';
+      }
+      toast({ title: "Sign In Failed", description: message, variant: "destructive" });
+      // setLoading(false); // Re-throw for modal to handle
+      throw error;
+    }
+  };
+
   useEffect(() => {
     if (!auth || typeof auth.onAuthStateChanged !== 'function') {
         console.warn("[AuthContext] Firebase Auth not fully initialized yet, delaying onAuthStateChanged listener setup.");
@@ -144,22 +224,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading && auth && typeof auth.onAuthStateChanged === 'function') {
+    // Process redirect result for Google Sign-In (mobile)
+    // setLoading(true) here could interfere if onAuthStateChanged already ran.
+    // We rely on onAuthStateChanged to set initial loading state.
+    if (auth && typeof auth.onAuthStateChanged === 'function') { // Ensure auth is ready
       getRedirectResult(auth)
         .then(async (result) => {
           if (result && result.user) {
-            await fetchUserPremiumStatus(result.user.uid);
+            // User signed in via redirect
+            // Ensure user document exists
+            const userDocRef = doc(db, 'users', result.user.uid);
+            const docSnap = await getDoc(userDocRef);
+            if (!docSnap.exists()) {
+                await setDoc(userDocRef, { 
+                    isPremium: false, 
+                    email: result.user.email, 
+                    displayName: result.user.displayName, 
+                    photoURL: result.user.photoURL,
+                    createdAt: Timestamp.now() 
+                }, { merge: true });
+            }
+            // onAuthStateChanged should pick up this user if not already, 
+            // and fetchUserPremiumStatus will be called there.
             console.log("Google sign-in redirect processed for user:", result.user.displayName);
           }
+          // No specific setLoading(false) here; onAuthStateChanged handles overall loading state.
         })
         .catch((error) => {
           console.error("Error processing Google sign-in redirect:", error);
           if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-            // toast for other errors
+            toast({ title: "Google Sign-In Error", description: error.message || "An error occurred during redirect.", variant: "destructive" });
           }
+          // No specific setLoading(false) here.
         });
     }
-  }, [loading]);
+  }, [isMobile, toast]); // Rerun if isMobile changes, though auth readiness is more critical
 
   const value = {
     currentUser,
@@ -168,10 +267,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     signOut,
     upgradeUserToPremium,
-    togglePremiumStatus, // Expose new function
+    togglePremiumStatus,
+    signUpWithEmailPassword, 
+    signInWithEmailPassword, 
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -181,3 +282,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
