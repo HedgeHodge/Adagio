@@ -5,6 +5,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
 import { AuthStatus } from '@/components/layout/AuthStatus';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,22 +28,26 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'default', // or 'black-translucent' for dark mode
     title: 'Adagio',
   },
   formatDetection: {
     telephone: false,
   },
   icons: {
-    apple: '/icons/apple-touch-icon.png', // Ensure public/icons/apple-touch-icon.png exists
+    apple: '/icons/apple-touch-icon.png',
   },
-  // themeColor is handled by the viewport export for PWA consistency
-  // Removed other: { 'msapplication-config': ... } as browserconfig.xml might not exist and is less critical for install prompt
+  // themeColor is now handled by the viewport export for more robust PWA theming
 };
 
 export const viewport: Viewport = {
-  themeColor: '#3CB371', // This should match your manifest.json theme_color
-  // viewportFit: 'cover', // Example: if needed for notch areas
+  // themeColor defines the color of the browser toolbar.
+  // Using an array allows specifying different colors for light and dark modes.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F0FFF0' }, // Example: Light background
+    { media: '(prefers-color-scheme: dark)', color: '#1A1A1A' },  // Example: Dark background
+  ],
+  // Other viewport settings as needed
   // width: 'device-width',
   // initialScale: 1,
 };
@@ -52,21 +58,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${dancingScript.variable}`}>
+    // Add suppressHydrationWarning to <html> due to client-side theme class manipulation
+    <html lang="en" className={`${inter.variable} ${dancingScript.variable}`} suppressHydrationWarning>
       {/*
-        The <head> tag is automatically managed by Next.js using the `metadata` and `viewport` exports.
-        Do not add a manual <head> tag here.
-        Google Font <link> tags are replaced by the `next/font` setup above.
+        The <head> tag is automatically managed by Next.js.
         PWA meta tags are handled by the `metadata` and `viewport` objects.
+        The ThemeProvider will manage the 'dark' class on this <html> tag.
       */}
-      <body className="font-body antialiased">
-        <AuthProvider>
-          <header className="fixed top-0 right-0 p-4 z-50">
-            <AuthStatus />
-          </header>
-          {children}
-          <Toaster />
-        </AuthProvider>
+      <body className="font-body antialiased bg-background text-foreground transition-colors duration-300">
+        <ThemeProvider>
+          <AuthProvider>
+            <header className="fixed top-0 right-0 p-4 z-50 flex items-center space-x-2">
+              <ThemeToggleButton />
+              <AuthStatus />
+            </header>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
