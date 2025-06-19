@@ -26,15 +26,20 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
           key={tab.name}
           variant="ghost"
           className={cn(
-            'flex h-full flex-1 flex-col items-center justify-center rounded-none px-2 py-1 text-xs',
+            'flex h-full flex-1 flex-col items-center justify-center rounded-none px-2 py-1 text-xs transition-all duration-300 ease-out', // Added transition
             activeTab === tab.name
               ? 'text-primary bg-primary/10'
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
           )}
           onClick={() => onTabChange(tab.name)}
         >
-          <tab.icon className={cn('mb-0.5 h-5 w-5', activeTab === tab.name ? 'text-primary' : '')} />
-          {tab.label}
+          <tab.icon className={cn(
+            'mb-0.5 h-5 w-5 transition-transform duration-300 ease-out', // Added transition-transform
+            activeTab === tab.name ? 'text-primary scale-110' : '' // Added scale-110 for active
+          )} />
+          <span className={cn(activeTab === tab.name && 'font-medium')}> {/* Added font-medium for active label */}
+            {tab.label}
+          </span>
         </Button>
       ))}
     </nav>
