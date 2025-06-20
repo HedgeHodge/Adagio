@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon } from 'lucide-react';
+import Link from 'next/link';
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
@@ -319,8 +320,16 @@ export default function PomodoroPage() {
   if (isMobile) {
     return (
       <>
+        <div className="fixed top-4 left-4 z-40">
+          <Link href="/" aria-label="Adagio Home Page">
+            <h1 className="text-5xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
+              A
+            </h1>
+          </Link>
+        </div>
+
         <main className="flex flex-col items-center justify-start pt-20 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
-          <h1 className="text-7xl font-headline font-bold mb-8 text-primary">Adagio</h1>
+          {/* The large centered "Adagio" h1 is removed for mobile */}
           {activeMobileTab === 'timer' && renderTimerContent()}
           {activeMobileTab === 'log' && renderLogContent()}
           {activeMobileTab === 'insights' && renderInsightsContent()}
@@ -347,7 +356,11 @@ export default function PomodoroPage() {
   return (
     <>
       <main className="flex flex-col items-center justify-start pt-12 sm:pt-20 min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
-        <h1 className="text-6xl sm:text-7xl font-headline font-bold mb-6 sm:mb-8 text-primary">Adagio</h1>
+        <Link href="/" aria-label="Adagio Home Page">
+            <h1 className="text-6xl sm:text-7xl font-headline font-bold mb-6 sm:mb-8 text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                Adagio
+            </h1>
+        </Link>
         
         {renderTimerContent()}
         {renderLogContent()}
