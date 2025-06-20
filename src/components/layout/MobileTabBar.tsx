@@ -2,7 +2,7 @@
 "use client";
 
 import { Clock, ListChecks, BarChart2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+// Removed Button import from shadcn, will use raw button for custom styling
 import { cn } from '@/lib/utils';
 
 type MobileTab = 'timer' | 'log' | 'insights';
@@ -20,28 +20,30 @@ const tabs: { name: MobileTab; label: string; icon: React.ElementType }[] = [
 
 export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t border-border bg-background shadow-md">
-      {tabs.map((tab) => (
-        <Button
-          key={tab.name}
-          variant="ghost"
-          className={cn(
-            'flex h-full flex-1 flex-col items-center justify-center rounded-none px-2 py-1 text-xs transition-all duration-300 ease-out', // Added transition
-            activeTab === tab.name
-              ? 'text-primary bg-primary/10'
-              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-          )}
-          onClick={() => onTabChange(tab.name)}
-        >
-          <tab.icon className={cn(
-            'mb-0.5 h-5 w-5 transition-transform duration-300 ease-out', // Added transition-transform
-            activeTab === tab.name ? 'text-primary scale-110' : '' // Added scale-110 for active
-          )} />
-          <span className={cn(activeTab === tab.name && 'font-medium')}> {/* Added font-medium for active label */}
-            {tab.label}
-          </span>
-        </Button>
-      ))}
+    <nav className="fixed bottom-0 inset-x-0 pb-3 pt-2 flex justify-center pointer-events-none print:hidden z-50">
+      <div className="flex items-center justify-around p-1.5 bg-background/80 dark:bg-background/70 border border-border/70 rounded-full shadow-xl pointer-events-auto gap-1 backdrop-blur-sm">
+        {tabs.map((tab) => (
+          <button
+            key={tab.name}
+            type="button"
+            onClick={() => onTabChange(tab.name)}
+            aria-label={tab.label}
+            className={cn(
+              'relative flex flex-col items-center justify-center h-14 w-14 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              activeTab === tab.name
+                ? 'text-primary'
+                : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+            )}
+          >
+            <tab.icon className="h-6 w-6" />
+            {activeTab === tab.name && (
+              <span
+                className="absolute bottom-1.5 left-1/2 h-[3px] w-5 -translate-x-1/2 rounded-full bg-primary transition-all duration-200"
+              />
+            )}
+          </button>
+        ))}
+      </div>
     </nav>
   );
 }
