@@ -21,7 +21,7 @@ const tabs: { name: MobileTab; label: string; icon: React.ElementType }[] = [
 export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
   return (
     <nav className="fixed bottom-0 inset-x-0 pb-3 pt-2 flex justify-center pointer-events-none print:hidden z-50">
-      <div className="flex items-center justify-around p-1.5 bg-background/80 dark:bg-background/70 border border-border/70 rounded-full shadow-xl pointer-events-auto gap-1 backdrop-blur-sm">
+      <div className="flex items-center justify-around p-1.5 bg-background/80 dark:bg-background/70 border border-border/70 rounded-full shadow-xl pointer-events-auto gap-1 backdrop-blur-sm w-3/4 max-w-md">
         {tabs.map((tab) => (
           <button
             key={tab.name}
