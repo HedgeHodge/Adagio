@@ -57,7 +57,7 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
             {activeTab === tab.name && (
               <motion.span
                 layoutId="activeTabIndicator" // Added for potential shared layout animation if desired
-                className="absolute bottom-1.5 left-1/2 h-[3px] w-5 -translate-x-1/2 rounded-full bg-primary ml-[1px]"
+                className="absolute bottom-1.5 left-1/2 h-[3px] w-5 -translate-x-1/2 rounded-full bg-primary ml-[-9px]"
                 initial={false} // Prevents initial animation if not needed
                 animate={{ opacity: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
