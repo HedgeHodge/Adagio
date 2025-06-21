@@ -125,16 +125,14 @@ export default function PomodoroPage() {
             onChange={(e) => setInputProjectName(e.target.value)}
             className="bg-card border-border shadow-sm flex-grow"
             onKeyPress={(e) => e.key === 'Enter' && handleAddSession()}
-            disabled={!currentUser}
           />
-          <Button onClick={handleAddSession} size="icon" aria-label="Add session" disabled={!currentUser}>
+          <Button onClick={handleAddSession} size="icon" aria-label="Add session">
             <PlusCircle className="h-5 w-5" />
           </Button>
         </div>
-         {!currentUser && <p className="text-xs text-muted-foreground mt-1">Please sign in to add and track sessions.</p>}
       </div>
       
-      {currentUser && recentProjects && recentProjects.length > 0 && (
+      {recentProjects && recentProjects.length > 0 && (
         <div className="w-full max-w-md mb-6 mt-2 flex flex-wrap gap-2">
           {recentProjects.map((project) => (
             <Button
@@ -158,9 +156,9 @@ export default function PomodoroPage() {
           ))}
         </div>
       )}
-      {currentUser && (!recentProjects || recentProjects.length === 0) && <div className="mb-6"></div>}
+      {(!recentProjects || recentProjects.length === 0) && <div className="mb-6"></div>}
 
-      {currentUser && activeSessions.length === 0 && (
+      {activeSessions.length === 0 && (
         <Card className="w-full max-w-md mb-8 bg-card shadow-md">
           <CardContent className="p-6 text-center text-muted-foreground">
             No active sessions. Add a project above to get started!
@@ -169,7 +167,7 @@ export default function PomodoroPage() {
       )}
 
       <div className="w-full max-w-md space-y-6">
-        {currentUser && activeSessions.map((session) => (
+        {activeSessions.map((session) => (
           <Card key={session.id} className="bg-card shadow-lg overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
               <CardTitle className="text-lg text-foreground truncate flex-1 pr-2">

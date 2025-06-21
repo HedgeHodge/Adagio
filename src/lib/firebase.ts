@@ -20,50 +20,47 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp | undefined = undefined;
-let auth: Auth;
-let db: Firestore;
-let analytics: Analytics | undefined;
 
-// Ensure Firebase is initialized only on the client-side
-if (typeof window !== 'undefined') {
-  // Diagnostic log to show what environment variables are being read on the client
-  console.log('[Firebase Diagnostics] Attempting to initialize Firebase. Environment variable values:');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_API_KEY:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'SET' : 'NOT SET');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:', process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'SET' : 'NOT SET');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'SET' : 'NOT SET');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:', process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ? 'SET' : 'NOT SET');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:', process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ? 'SET' : 'NOT SET');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_APP_ID:', process.env.NEXT_PUBLIC_FIREBASE_APP_ID ? 'SET' : 'NOT SET');
-  console.log('[Firebase Diagnostics] NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID:', process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ? 'SET (Optional)' : 'NOT SET (Optional)');
+function getFirebaseServices() {
+  if (typeof window === 'undefined') {
+    console.warn("[Firebase Services] Attempted to access Firebase services on server-side. Returning dummy objects.");
+    return { auth: {} as Auth, db: {} as Firestore, analytics: undefined };
+  }
 
-
-  if (getApps().length === 0) {
-    // Check if essential config values are present, especially for Auth
-    if (firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId) {
-      try {
-        app = initializeApp(firebaseConfig);
-        console.log('[Firebase Diagnostics] Firebase app initialized successfully.');
-      } catch (error) {
-        console.error("[Firebase Diagnostics] Firebase app initialization error:", error);
-        app = undefined;
+  if (!app) {
+    if (getApps().length === 0) {
+      if (firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId) {
+        try {
+          app = initializeApp(firebaseConfig);
+          console.log('[Firebase Diagnostics] Firebase app initialized successfully.');
+        } catch (error) {
+          console.error("[Firebase Diagnostics] Firebase app initialization error:", error);
+          return { auth: {} as Auth, db: {} as Firestore, analytics: undefined };
+        }
+      } else {
+        app = getApps()[0]!;
+        console.log('[Firebase Diagnostics] Firebase app was already initialized.');
       }
     } else {
       const missingKeys: string[] = [];
       if (!firebaseConfig.apiKey) missingKeys.push("NEXT_PUBLIC_FIREBASE_API_KEY");
       if (!firebaseConfig.authDomain) missingKeys.push("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN");
       if (!firebaseConfig.projectId) missingKeys.push("NEXT_PUBLIC_FIREBASE_PROJECT_ID");
-      
-      console.error(`[Firebase Diagnostics] Critical Firebase configuration missing for app initialization or Auth: ${missingKeys.join(', ')}. Ensure these are correctly set in your .env.local file and that you've restarted your development server. Firebase App cannot be initialized.`);
-      app = undefined; // Ensure app is undefined
+
+      console.error(`[Firebase Diagnostics] Critical Firebase configuration missing: ${missingKeys.join(', ')}. Firebase App cannot be initialized.`);
+      return { auth: {} as Auth, db: {} as Firestore, analytics: undefined };
     }
-  } else {
-    app = getApps()[0]!; // Use the already initialized app
-    console.log('[Firebase Diagnostics] Firebase app was already initialized.');
   }
 
-  if (app) {
-    auth = getAuth(app);
-    db = getFirestore(app);
+  if (!app) {
+    console.warn("[Firebase Diagnostics] Firebase App is not initialized. Returning dummy services.");
+    return { auth: {} as Auth, db: {} as Firestore, analytics: undefined };
+  }
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let analytics: Analytics | undefined = undefined;
+
     isSupported().then((supported) => {
       if (supported && firebaseConfig.measurementId) {
         analytics = getAnalytics(app);
@@ -78,19 +75,14 @@ if (typeof window !== 'undefined') {
     });
   } else {
     console.warn("[Firebase Diagnostics] Firebase App is not initialized. Firebase services (Auth, Firestore, Analytics) will not be available.");
-    // Assign fallback typed objects to prevent runtime errors if accessed,
-    // though ideally consumers should check if services are truly available.
-    auth = {} as Auth; // Fallback
-    db = {} as Firestore; // Fallback
     analytics = undefined;
   }
 } else {
   // Server-side or non-browser environment
-  // console.log('[Firebase Diagnostics] Firebase initialization skipped (not in browser).');
-  // Assign fallback typed objects
-  auth = {} as Auth; // Fallback
-  db = {} as Firestore; // Fallback
   analytics = undefined;
 }
 
-export { app, auth, db, analytics };
+  return { auth, db, analytics };
+}
+
+export { getFirebaseServices };
