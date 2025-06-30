@@ -12,6 +12,7 @@ import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { SettingsModal } from '@/components/pomodoro/SettingsModal';
 import { EditEntryModal } from '@/components/pomodoro/EditSessionModal';
 import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
+import { EditActiveSessionModal } from '@/components/pomodoro/EditActiveSessionModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon } from 'lucide-react';
+import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,6 +59,11 @@ export default function PomodoroPage() {
     addManualLogEntry,
     populateTestData,
     isDataLoading,
+    isEditActiveSessionModalOpen,
+    activeSessionToEdit,
+    openEditActiveSessionModal,
+    closeEditActiveSessionModal,
+    updateActiveSessionStartTime,
     inputProjectName,
     setInputProjectName,
     updateRecentProjects,
@@ -178,15 +184,36 @@ export default function PomodoroPage() {
               <CardTitle className="text-lg text-foreground truncate flex-1 pr-2">
                 {session.project}
               </CardTitle>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                onClick={() => removeSession(session.id)}
-                aria-label={`Remove ${session.project} session`}
-              >
-                <XCircle className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    if (session.lastWorkSessionStartTime && session.currentInterval === 'work') {
+                      openEditActiveSessionModal(session);
+                    } else {
+                      toast({
+                        title: "Cannot Edit Start Time",
+                        description: "You can only edit the start time of an active work session.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  aria-label={`Edit ${session.project} session start time`}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeSession(session.id)}
+                  aria-label={`Remove ${session.project} session`}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <TimerDisplay
@@ -374,6 +401,14 @@ export default function PomodoroPage() {
             onSave={updateLogEntry}
           />
         )}
+        {activeSessionToEdit && (
+          <EditActiveSessionModal
+            isOpen={isEditActiveSessionModalOpen}
+            onClose={closeEditActiveSessionModal}
+            session={activeSessionToEdit}
+            onSave={updateActiveSessionStartTime}
+          />
+        )}
       </>
     );
   }
@@ -408,6 +443,14 @@ export default function PomodoroPage() {
             onClose={closeEditModal}
             entry={entryToEdit}
             onSave={updateLogEntry}
+          />
+        )}
+        {activeSessionToEdit && (
+          <EditActiveSessionModal
+            isOpen={isEditActiveSessionModalOpen}
+            onClose={closeEditActiveSessionModal}
+            session={activeSessionToEdit}
+            onSave={updateActiveSessionStartTime}
           />
         )}
       </main>

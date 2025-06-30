@@ -83,6 +83,8 @@ export function usePomodoro() {
   const [activeFilter, setActiveFilter] = useState<TimeFilter>('today');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<PomodoroLogEntry | null>(null);
+  const [isEditActiveSessionModalOpen, setIsEditActiveSessionModalOpen] = useState(false);
+  const [activeSessionToEdit, setActiveSessionToEdit] = useState<ActivePomodoroSession | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [inputProjectName, setInputProjectName] = useState('');
 
@@ -659,6 +661,36 @@ export function usePomodoro() {
     }
     toast({ title: "Manual entry added!" });
   }, [setPomodoroLog, isPremium, filterLogForFreeTier, updateRecentProjects, toast]);
+  
+  const openEditActiveSessionModal = useCallback((session: ActivePomodoroSession) => {
+    setActiveSessionToEdit(cleanActiveSession(session));
+    setIsEditActiveSessionModalOpen(true);
+  }, []);
+  
+  const closeEditActiveSessionModal = useCallback(() => {
+    setIsEditActiveSessionModalOpen(false);
+    setActiveSessionToEdit(null);
+  }, []);
+
+  const updateActiveSessionStartTime = useCallback((sessionId: string, newStartTime: number) => {
+    setActiveSessions(prev =>
+      prev.map(s => {
+        if (s.id === sessionId && s.lastWorkSessionStartTime !== null) {
+          const now = Date.now();
+          const newCurrentTime = Math.max(0, Math.round((now - newStartTime) / 1000));
+          
+          if (notificationSentRefs.current[s.id]) {
+            notificationSentRefs.current[s.id].work = false;
+          }
+
+          return { ...s, lastWorkSessionStartTime: newStartTime, currentTime: newCurrentTime };
+        }
+        return s;
+      })
+    );
+    closeEditActiveSessionModal();
+    toast({ title: "Start time updated!" });
+  }, [setActiveSessions, closeEditActiveSessionModal, toast]);
 
   const processedChartData = useMemo((): ChartDataPoint[] => {
     if (!isClient || isDataLoading) return [];
@@ -760,6 +792,7 @@ export function usePomodoro() {
     isClient, recentProjects, motivationalQuote, isFetchingQuote,
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
+    isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
     inputProjectName, setInputProjectName,
     updateRecentProjects,
   };
