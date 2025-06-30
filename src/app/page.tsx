@@ -5,12 +5,13 @@ import type { TimeFilter, ActivePomodoroSession } from '@/types/pomodoro';
 import { useState, useEffect } from 'react';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { useAuth } from '@/context/AuthContext';
 import { MobileTabBar } from '@/components/layout/MobileTabBar';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
 import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { SettingsModal } from '@/components/pomodoro/SettingsModal';
 import { EditEntryModal } from '@/components/pomodoro/EditSessionModal';
+import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
 import { Button } from '@/components/ui/button';
@@ -20,12 +21,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
 export default function PomodoroPage() {
   const pomodoroState = usePomodoro();
   const { currentUser, isPremium, upgradeUserToPremium, togglePremiumStatus } = useAuth();
+  const { toast } = useToast();
   const {
     settings,
     updateSettings,
@@ -52,6 +55,7 @@ export default function PomodoroPage() {
     openEditModal,
     closeEditModal,
     updateLogEntry,
+    addManualLogEntry,
     populateTestData,
     isDataLoading,
     inputProjectName,
@@ -60,6 +64,7 @@ export default function PomodoroPage() {
   } = pomodoroState;
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>('timer');
 
@@ -246,20 +251,38 @@ export default function PomodoroPage() {
   );
 
   const renderLogContent = () => (
-    currentUser ? (
-      <PomodoroLog 
-        log={pomodoroLog} 
+    <>
+      <PomodoroLog
+        log={pomodoroLog}
         onDeleteEntry={deleteLogEntry}
-        onEditEntry={openEditModal}
+        onEditEntry={(entry) => {
+          if (currentUser) {
+            openEditModal(entry);
+          } else {
+            toast({
+              title: "Please Sign In",
+              description: "Editing log entries requires an account to sync changes.",
+            });
+          }
+        }}
+        onAddEntry={() => setIsAddModalOpen(true)}
       />
-    ) : (
-      <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Entry Log</CardTitle>
-          <CardDescription className="text-muted-foreground">Please sign in to view your logged entries.</CardDescription>
-        </CardHeader>
-      </Card>
-    )
+      {!currentUser && (
+        <Card className="w-full max-w-md mt-4 bg-card shadow-lg border-primary/20">
+          <CardHeader className="p-4">
+            <div className="flex items-center">
+              <ListChecks className="mr-3 h-5 w-5 text-primary shrink-0" />
+              <div>
+                <CardTitle className="text-sm font-semibold text-foreground">Sync Your Log</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Your log is saved on this device. Sign in to sync your history.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+    </>
   );
 
   const renderInsightsContent = () => (
@@ -327,7 +350,6 @@ export default function PomodoroPage() {
         </div>
 
         <main className="flex flex-col items-center justify-start pt-20 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
-          {/* The large centered "Adagio" h1 is removed for mobile */}
           {activeMobileTab === 'timer' && renderTimerContent()}
           {activeMobileTab === 'log' && renderLogContent()}
           {activeMobileTab === 'insights' && renderInsightsContent()}
@@ -339,7 +361,12 @@ export default function PomodoroPage() {
           settings={settings}
           onSave={updateSettings}
         />
-        {currentUser && entryToEdit && (
+        <AddEntryModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={addManualLogEntry}
+        />
+        {entryToEdit && (
           <EditEntryModal
             isOpen={isEditModalOpen}
             onClose={closeEditModal}
@@ -370,7 +397,12 @@ export default function PomodoroPage() {
           settings={settings}
           onSave={updateSettings}
         />
-         {currentUser && entryToEdit && (
+        <AddEntryModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={addManualLogEntry}
+        />
+        {entryToEdit && (
           <EditEntryModal
             isOpen={isEditModalOpen}
             onClose={closeEditModal}

@@ -626,6 +626,30 @@ export function usePomodoro() {
     closeEditModal();
   }, [toast, closeEditModal, updateRecentProjects, setPomodoroLog, isPremium, filterLogForFreeTier]);
 
+  const addManualLogEntry = useCallback((newEntryData: Omit<PomodoroLogEntry, 'id' | 'type' | 'sessionId'>) => {
+    const newEntry: PomodoroLogEntry = {
+      ...newEntryData,
+      id: `${Date.now()}-manual-${Math.random().toString(36).substring(2, 7)}`,
+      type: 'work',
+      // sessionId is not applicable for manual entries
+    };
+
+    const cleanedNewEntry = cleanLogEntry(newEntry);
+    
+    setPomodoroLog(prevLog => {
+      const newFullLog = [cleanedNewEntry, ...prevLog]
+        .map(cleanLogEntry)
+        .sort((a,b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
+
+      return isPremium ? newFullLog : filterLogForFreeTier(newFullLog);
+    });
+
+    if (cleanedNewEntry.project) {
+      updateRecentProjects(cleanedNewEntry.project);
+    }
+    toast({ title: "Manual entry added!" });
+  }, [setPomodoroLog, isPremium, filterLogForFreeTier, updateRecentProjects, toast]);
+
   const processedChartData = useMemo((): ChartDataPoint[] => {
     if (!isClient || isDataLoading) return [];
     
@@ -725,7 +749,7 @@ export function usePomodoro() {
     deleteLogEntry, formatTime,
     isClient, recentProjects, motivationalQuote, isFetchingQuote,
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
-    closeEditModal, updateLogEntry, populateTestData, isDataLoading,
+    closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     inputProjectName, setInputProjectName,
     updateRecentProjects,
   };
