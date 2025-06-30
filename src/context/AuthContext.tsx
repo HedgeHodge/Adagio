@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User } from 'firebase/auth';
@@ -61,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signInWithRedirect(auth, provider);
       } else {
         const result = await signInWithPopup(auth, provider);
-        // Check if user doc exists, if not, create it
         const userDocRef = doc(db, 'users', result.user.uid);
         const docSnap = await getDoc(userDocRef);
         if (!docSnap.exists()) {
@@ -74,7 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, { merge: true });
            setIsPremium(false);
         }
-        // onAuthStateChanged will handle setting current user and fetching premium status
       }
     } catch (error: any) {
       if (!isMobile) {
@@ -88,17 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          console.error("Error initiating Google sign-in (redirect):", error);
          toast({ title: "Google Sign-In Error", description: error.message || "An error occurred.", variant: "destructive" });
       }
-      // setLoading(false); // Re-throw to be caught by modal or calling UI
+      setLoading(false);
       throw error;
     }
-    // setLoading is primarily handled by onAuthStateChanged
   };
 
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // onAuthStateChanged will set currentUser to null and loading to false.
-      // isPremium will be set to false by onAuthStateChanged.
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -152,9 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: userCredential.user.email, 
         createdAt: Timestamp.now() 
       }, { merge: true });
-      // setIsPremium(false); // onAuthStateChanged will call fetchUserPremiumStatus
       toast({ title: "Account Created!", description: "Welcome to Adagio!" });
-      // onAuthStateChanged will set user and loading status
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
       let message = "An unexpected error occurred during sign up.";
@@ -166,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message = 'The email address is not valid.';
       }
       toast({ title: "Sign Up Failed", description: message, variant: "destructive" });
-      // setLoading(false); // Re-throw for modal to handle
+      setLoading(false);
       throw error; 
     }
   };
@@ -175,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle user state and premium status.
     } catch (error: any) {
       console.error("Error signing in with email/password:", error);
       let message = "Failed to sign in. Please check your email and password.";
@@ -183,34 +176,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message = 'Invalid email or password.';
       }
       toast({ title: "Sign In Failed", description: message, variant: "destructive" });
-      // setLoading(false); // Re-throw for modal to handle
+      setLoading(false);
       throw error;
     }
   };
 
+  // This effect runs once on mount to handle the initial auth state
+  // and process any pending redirect results.
   useEffect(() => {
-    if (!auth || typeof auth.onAuthStateChanged !== 'function') {
-        console.warn("[AuthContext] Firebase Auth not fully initialized yet, delaying onAuthStateChanged listener setup.");
-        const timer = setTimeout(() => {
-            if (auth && typeof auth.onAuthStateChanged === 'function') {
-                const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                    setCurrentUser(user);
-                    if (user) {
-                      await fetchUserPremiumStatus(user.uid);
-                    } else {
-                      setIsPremium(false);
-                    }
-                    setLoading(false);
-                });
-                return () => unsubscribe();
-            } else {
-                 setLoading(false);
-                 console.error("[AuthContext] Firebase Auth failed to initialize properly after delay.");
-            }
-        }, 1000);
-        return () => clearTimeout(timer);
-    }
+    // Process the redirect result from Google Sign-In
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          // A user just signed in via redirect.
+          // The onAuthStateChanged listener below will handle setting the user state.
+          // We just need to ensure their database record is created if it's their first time.
+          const userDocRef = doc(db, 'users', result.user.uid);
+          const docSnap = await getDoc(userDocRef);
+          if (!docSnap.exists()) {
+            await setDoc(userDocRef, {
+              isPremium: false,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL,
+              createdAt: Timestamp.now(),
+            }, { merge: true });
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Error processing Google sign-in redirect:", error);
+        if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
+          toast({ title: "Google Sign-In Error", description: error.message || "An error occurred during redirect.", variant: "destructive" });
+        }
+      });
 
+    // Set up the listener for ongoing authentication state changes.
+    // This is the single source of truth for the user's login state.
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
@@ -220,45 +222,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
-  }, []);
 
-  useEffect(() => {
-    // Process redirect result for Google Sign-In (mobile)
-    // setLoading(true) here could interfere if onAuthStateChanged already ran.
-    // We rely on onAuthStateChanged to set initial loading state.
-    if (auth && typeof auth.onAuthStateChanged === 'function') { // Ensure auth is ready
-      getRedirectResult(auth)
-        .then(async (result) => {
-          if (result && result.user) {
-            // User signed in via redirect
-            // Ensure user document exists
-            const userDocRef = doc(db, 'users', result.user.uid);
-            const docSnap = await getDoc(userDocRef);
-            if (!docSnap.exists()) {
-                await setDoc(userDocRef, { 
-                    isPremium: false, 
-                    email: result.user.email, 
-                    displayName: result.user.displayName, 
-                    photoURL: result.user.photoURL,
-                    createdAt: Timestamp.now() 
-                }, { merge: true });
-            }
-            // onAuthStateChanged should pick up this user if not already, 
-            // and fetchUserPremiumStatus will be called there.
-            console.log("Google sign-in redirect processed for user:", result.user.displayName);
-          }
-          // No specific setLoading(false) here; onAuthStateChanged handles overall loading state.
-        })
-        .catch((error) => {
-          console.error("Error processing Google sign-in redirect:", error);
-          if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-            toast({ title: "Google Sign-In Error", description: error.message || "An error occurred during redirect.", variant: "destructive" });
-          }
-          // No specific setLoading(false) here.
-        });
-    }
-  }, [isMobile, toast]); // Rerun if isMobile changes, though auth readiness is more critical
+    // Cleanup the listener on unmount
+    return () => unsubscribe();
+  }, [toast]);
+
 
   const value = {
     currentUser,
