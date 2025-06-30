@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -42,7 +41,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
-  const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle, loading } = useAuth();
+  const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle, loading, isMobile } = useAuth();
   const [activeTab, setActiveTab] = useState<'signIn' | 'signUp'>('signIn');
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +79,9 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     setError(null);
     try {
       await signInWithGoogle();
-      onOpenChange(false); 
+      if (!isMobile) {
+        onOpenChange(false); 
+      }
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google.");
     }
@@ -238,5 +239,3 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     </Dialog>
   );
 }
-
-    

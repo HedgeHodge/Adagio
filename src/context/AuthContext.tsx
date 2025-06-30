@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { User } from 'firebase/auth';
@@ -22,6 +21,7 @@ interface AuthContextType {
   currentUser: User | null;
   isPremium: boolean;
   loading: boolean;
+  isMobile: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   upgradeUserToPremium: () => Promise<void>;
@@ -264,6 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentUser,
     isPremium,
     loading,
+    isMobile,
     signInWithGoogle,
     signOut,
     upgradeUserToPremium,
@@ -282,5 +283,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    
