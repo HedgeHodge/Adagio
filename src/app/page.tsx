@@ -185,25 +185,6 @@ export default function PomodoroPage() {
                 {session.project}
               </CardTitle>
               <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    if (session.lastWorkSessionStartTime && session.currentInterval === 'work') {
-                      openEditActiveSessionModal(session);
-                    } else {
-                      toast({
-                        title: "Cannot Edit Start Time",
-                        description: "You can only edit the start time of an active work session.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  aria-label={`Edit ${session.project} session start time`}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -231,6 +212,8 @@ export default function PomodoroPage() {
                 onSwitchMode={() => switchMode(session.id)}
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onEndCurrentWorkSession={session.currentInterval === 'work' && session.isRunning ? () => endCurrentWorkSession(session.id) : undefined}
+                onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
+                lastWorkSessionStartTime={session.lastWorkSessionStartTime}
               />
             </CardContent>
           </Card>

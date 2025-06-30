@@ -3,7 +3,7 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Settings, Coffee, Briefcase, StopCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Settings, Coffee, Briefcase, StopCircle, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,8 @@ interface TimerControlsProps {
   onSwitchMode: () => void; // Specific to this session
   onOpenSettings: () => void; // Settings are global
   onEndCurrentWorkSession?: () => void; // Specific to this session
+  onOpenEditActiveSessionModal: () => void; // Specific to this session
+  lastWorkSessionStartTime: number | null; // To determine if edit is allowed
 }
 
 const buttonVariants = {
@@ -35,6 +37,8 @@ export function TimerControls({
   onSwitchMode,
   onOpenSettings,
   onEndCurrentWorkSession,
+  onOpenEditActiveSessionModal,
+  lastWorkSessionStartTime
 }: TimerControlsProps) {
   const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
 
@@ -95,8 +99,23 @@ export function TimerControls({
           <span className="sr-only">Reset Timer</span>
         </Button>
       </motion.div>
+      
+      {currentInterval === 'work' && lastWorkSessionStartTime && (
+         <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
+            <Button 
+                onClick={onOpenEditActiveSessionModal} 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 hover:bg-muted"
+                aria-label="Edit start time"
+                title="Edit start time"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+        </motion.div>
+      )}
 
-      <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
+      <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
         <Button 
             onClick={onSwitchMode} 
             variant="ghost" 
@@ -110,7 +129,7 @@ export function TimerControls({
         </Button>
       </motion.div>
 
-       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
+       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.25 }}>
         <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted">
           <Settings className="h-4 w-4" />
           <span className="sr-only">Settings</span>

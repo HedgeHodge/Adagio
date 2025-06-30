@@ -556,7 +556,6 @@ export function usePomodoro() {
             toast({
               title: "Work entry logged!",
               description: `${loggedEntry.project || 'Work'}: ${formatTime(loggedEntry.duration * 60)}`,
-              action: React.createElement(ToastAction, { altText: "Edit", onClick: () => openEditModal(loggedEntry) }, "Edit"),
             });
         }
       });
@@ -594,7 +593,6 @@ export function usePomodoro() {
          toast({
             title: "Work entry logged!",
             description: `${loggedEntry.project || 'Work'}: ${formatTime(loggedEntry.duration * 60)}`,
-            action: React.createElement(ToastAction, { altText: "Edit", onClick: () => openEditModal(loggedEntry) }, "Edit"),
           });
       }
     }
