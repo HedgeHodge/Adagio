@@ -2,13 +2,13 @@
 import type {NextConfig} from 'next';
 import withPWAInit from 'next-pwa';
 
-const isTurbopack = !!process.env.TURBOPACK;
+const isDev = process.env.NODE_ENV === 'development';
 
 const pwaConfig = {
   // dest: 'public', // Often not needed when register: true, next-pwa handles it.
   register: true,
   skipWaiting: true,
-  disable: isTurbopack, // Disable PWA when using Turbopack to avoid conflicts
+  disable: isDev, // Disable PWA in development
   // You can add more PWA options here, like runtime caching strategies
   // fallbacks: {
   //   document: '/offline', // Example: specify a custom offline fallback page
