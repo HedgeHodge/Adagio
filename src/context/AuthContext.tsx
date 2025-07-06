@@ -45,8 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     try {
       if (isMobile) {
+        // This will navigate away. If it fails, the catch block will handle it.
+        // If it succeeds, the page reloads and the redirect result is handled in useEffect.
         await signInWithRedirect(auth, provider);
       } else {
+        // For desktop, we use a popup.
         const result = await signInWithPopup(auth, provider);
         const userDocRef = doc(db, 'users', result.user.uid);
         const docSnap = await getDoc(userDocRef);
@@ -59,20 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             createdAt: Timestamp.now() 
           }, { merge: true });
         }
+        // If successful, onAuthStateChanged will handle the rest.
+        // We can set loading to false here as the flow is complete.
+        setLoading(false);
       }
     } catch (error: any) {
-      if (!isMobile) {
-        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-          console.info("Google sign-in popup cancelled/closed by user.");
-        } else {
-          console.error("Error signing in with Google (popup):", error);
-          toast({ title: "Google Sign-In Error", description: error.message || "An error occurred.", variant: "destructive" });
-        }
-      } else {
-         console.error("Error initiating Google sign-in (redirect):", error);
-         toast({ title: "Google Sign-In Error", description: error.message || "An error occurred.", variant: "destructive" });
-      }
+      // If any error occurs during the sign-in initiation, stop loading and re-throw the error
+      // so the calling component (AuthModal) can handle it.
       setLoading(false);
+      throw error;
     }
   };
 

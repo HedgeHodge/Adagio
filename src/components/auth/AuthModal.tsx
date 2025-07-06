@@ -88,13 +88,20 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     setError(null);
     try {
       await signInWithGoogle();
+      // If signInWithRedirect was called, the page will navigate away, and this won't be reached.
+      // If signInWithPopup succeeded, we can close the modal.
       if (!isMobile) {
-        onOpenChange(false); 
+        onOpenChange(false);
       }
     } catch (err: any) {
+      // Handle specific errors thrown from the AuthContext
       if (err.code === 'auth/unauthorized-domain') {
         setError("This domain is not authorized for sign-in. Please add it to your Firebase project settings.");
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // User intentionally closed the popup, so we don't show an error.
+        console.info("Google sign-in flow cancelled by user.");
       } else {
+        // Handle other potential errors
         setError(err.message || "Failed to sign in with Google.");
       }
     }
