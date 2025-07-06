@@ -15,4 +15,8 @@ if (!apiKey) {
 export const ai = genkit({
   plugins: [googleAI({apiKey: apiKey})],
   model: 'googleai/gemini-2.0-flash',
+  telemetry: {
+    instrumentation: false,
+    logger: false,
+  },
 });
