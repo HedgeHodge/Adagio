@@ -43,7 +43,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
-  const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle, isMobile } = useAuth();
+  const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle } = useAuth();
   const [activeTab, setActiveTab] = useState<'signIn' | 'signUp'>('signIn');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +75,8 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
       let message = "Failed to sign in. Please check your email and password.";
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-email') {
         message = 'Invalid email or password.';
+      } else if (err.code === 'auth/unauthorized-domain') {
+        message = `Sign-in from this domain (${hostname}) is not authorized for sign-in. Please contact the administrator.`;
       }
       setError(message);
     } finally {
@@ -96,6 +98,8 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
         message = 'The password is too weak.';
       } else if (err.code === 'auth/invalid-email') {
         message = 'The email address is not valid.';
+      } else if (err.code === 'auth/unauthorized-domain') {
+        message = `Sign-up from this domain (${hostname}) is not authorized for sign-in. Please contact the administrator.`;
       }
       setError(message);
     } finally {
@@ -106,24 +110,10 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   const handleGoogleSignIn = async () => {
     setError(null);
     setIsSubmitting(true);
-    try {
-      await signInWithGoogle();
-      if (!isMobile) {
-        onOpenChange(false);
-      }
-    } catch (err: any) {
-      if (err.code === 'auth/unauthorized-domain') {
-        setError("This domain is not authorized for sign-in. Please add it to your Firebase project settings.");
-      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        console.info("Google sign-in flow cancelled by user.");
-      } else {
-        setError(err.message || "Failed to sign in with Google.");
-      }
-    } finally {
-      if (!isMobile) {
-        setIsSubmitting(false);
-      }
-    }
+    // signInWithGoogle will cause a page redirect. Errors are handled
+    // by getRedirectResult in AuthContext. The `isSubmitting` state will
+    // be reset when the page reloads.
+    await signInWithGoogle();
   };
 
   const handleModalOpenChange = (open: boolean) => {
@@ -275,7 +265,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
           )}
         </Button>
         
-        {hostname && error?.includes("not authorized") && (
+        {hostname && error?.includes("not authorized for sign-in") && (
           <Alert className="mt-4">
             <Info className="h-4 w-4" />
             <AlertTitle>Configuration Help</AlertTitle>

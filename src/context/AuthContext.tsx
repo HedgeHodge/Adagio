@@ -6,7 +6,6 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { auth, db } from '@/lib/firebase';
 import { 
   GoogleAuthProvider, 
-  signInWithPopup, 
   signInWithRedirect, 
   getRedirectResult, 
   signOut as firebaseSignOut, 
@@ -16,13 +15,11 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; 
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AuthContextType {
   currentUser: User | null;
   isPremium: boolean;
   loading: boolean;
-  isMobile: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   upgradeUserToPremium: () => Promise<void>;
@@ -38,15 +35,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const isMobile = useIsMobile();
+
+  const handleUser = useCallback(async (user: User | null) => {
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists() && docSnap.data()) {
+        setIsPremium(docSnap.data().isPremium === true);
+      } else {
+        // Create user doc if it doesn't exist
+        await setDoc(userDocRef, { 
+          isPremium: false, 
+          email: user.email, 
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          createdAt: Timestamp.now() 
+        }, { merge: true });
+        setIsPremium(false);
+      }
+      setCurrentUser(user);
+    } else {
+      setCurrentUser(null);
+      setIsPremium(false);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // This is the primary auth state listener.
+    const unsubscribe = onAuthStateChanged(auth, handleUser);
+
+    // This specifically handles the result of a redirect sign-in.
+    // It only runs once on component mount.
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User has signed in or linked a credential.
+          // The onAuthStateChanged listener above will handle the user object.
+          toast({
+            title: "Signed In Successfully",
+            description: `Welcome back, ${result.user.displayName || result.user.email}!`,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error during Google sign-in redirect:", error);
+        let title = "Google Sign-In Error";
+        let description = "An unknown error occurred during sign-in. Please try again.";
+
+        if (error.code === 'auth/unauthorized-domain') {
+          title = "Domain Not Authorized";
+          description = "This app's domain is not authorized for sign-in. Please ask the administrator to add it to the Firebase project's 'Authorized domains' list.";
+        } else if (error.code === 'auth/account-exists-with-different-credential') {
+          title = "Account Exists";
+          description = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
+        } else if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
+          description = error.message || description;
+        }
+
+        if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
+            toast({ title, description, variant: "destructive" });
+        }
+      });
+    
+    return () => unsubscribe();
+  }, [handleUser, toast]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    if (isMobile) {
-      await signInWithRedirect(auth, provider);
-    } else {
-      await signInWithPopup(auth, provider);
-    }
+    // Always use redirect for a more robust flow that works across all browsers
+    // and avoids issues with pop-up blockers.
+    await signInWithRedirect(auth, provider);
   };
 
   const signOut = async () => {
@@ -97,64 +156,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmailPassword = async (email: string, password: string) => {
     await createUserWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will handle the rest
     toast({ title: "Account Created!", description: "Welcome to Adagio!" });
   };
 
   const signInWithEmailPassword = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will handle the rest
   };
-  
-  const handleUser = useCallback(async (user: User | null) => {
-    if (user) {
-      const userDocRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists() && docSnap.data()) {
-        setIsPremium(docSnap.data().isPremium === true);
-      } else {
-        await setDoc(userDocRef, { 
-          isPremium: false, 
-          email: user.email, 
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          createdAt: Timestamp.now() 
-        }, { merge: true });
-        setIsPremium(false);
-      }
-      setCurrentUser(user);
-    } else {
-      setCurrentUser(null);
-      setIsPremium(false);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, handleUser);
-
-    getRedirectResult(auth)
-      .catch((error) => {
-        console.error("Error processing Google sign-in redirect:", error);
-        if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-          toast({
-            title: "Google Sign-In Error",
-            description: error.message || "An error occurred during redirect.",
-            variant: "destructive"
-          });
-        }
-        setLoading(false); // Ensure loading stops on redirect error
-      });
-    
-    return () => unsubscribe();
-  }, [handleUser, toast]);
-
 
   const value = {
     currentUser,
     isPremium,
     loading,
-    isMobile,
     signInWithGoogle,
     signOut,
     upgradeUserToPremium,
