@@ -3,7 +3,7 @@
 
 import type { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { auth, db } from '@/lib/firebase'; 
+import { auth, db } from '@/lib/firebase';
 import { 
   GoogleAuthProvider, 
   signInWithPopup, 
@@ -41,36 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
 
   const signInWithGoogle = async () => {
-    setLoading(true);
     const provider = new GoogleAuthProvider();
-    try {
-      if (isMobile) {
-        // This will navigate away. If it fails, the catch block will handle it.
-        // If it succeeds, the page reloads and the redirect result is handled in useEffect.
-        await signInWithRedirect(auth, provider);
-      } else {
-        // For desktop, we use a popup.
-        const result = await signInWithPopup(auth, provider);
-        const userDocRef = doc(db, 'users', result.user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (!docSnap.exists()) {
-          await setDoc(userDocRef, { 
-            isPremium: false, 
-            email: result.user.email, 
-            displayName: result.user.displayName, 
-            photoURL: result.user.photoURL,
-            createdAt: Timestamp.now() 
-          }, { merge: true });
-        }
-        // If successful, onAuthStateChanged will handle the rest.
-        // We can set loading to false here as the flow is complete.
-        setLoading(false);
-      }
-    } catch (error: any) {
-      // If any error occurs during the sign-in initiation, stop loading and re-throw the error
-      // so the calling component (AuthModal) can handle it.
-      setLoading(false);
-      throw error;
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await signInWithPopup(auth, provider);
     }
   };
 
@@ -121,57 +96,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpWithEmailPassword = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
-      await setDoc(userDocRef, { 
-        isPremium: false, 
-        email: userCredential.user.email, 
-        createdAt: Timestamp.now() 
-      }, { merge: true });
-      toast({ title: "Account Created!", description: "Welcome to Adagio!" });
-    } catch (error: any) {
-      console.error("Error signing up with email/password:", error);
-      let message = "An unexpected error occurred during sign up.";
-      if (error.code === 'auth/email-already-in-use') {
-        message = 'This email address is already in use.';
-      } else if (error.code === 'auth/weak-password') {
-        message = 'The password is too weak.';
-      } else if (error.code === 'auth/invalid-email') {
-        message = 'The email address is not valid.';
-      }
-      toast({ title: "Sign Up Failed", description: message, variant: "destructive" });
-      throw error; 
-    } finally {
-        setLoading(false);
-    }
+    await createUserWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged will handle the rest
+    toast({ title: "Account Created!", description: "Welcome to Adagio!" });
   };
 
   const signInWithEmailPassword = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      console.error("Error signing in with email/password:", error);
-      let message = "Failed to sign in. Please check your email and password.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
-        message = 'Invalid email or password.';
-      }
-      toast({ title: "Sign In Failed", description: message, variant: "destructive" });
-      throw error;
-    } finally {
-        setLoading(false);
-    }
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged will handle the rest
   };
-
+  
   const handleUser = useCallback(async (user: User | null) => {
     if (user) {
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists() && docSnap.data()?.isPremium === true) {
-        setIsPremium(true);
+      if (docSnap.exists() && docSnap.data()) {
+        setIsPremium(docSnap.data().isPremium === true);
       } else {
+        await setDoc(userDocRef, { 
+          isPremium: false, 
+          email: user.email, 
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          createdAt: Timestamp.now() 
+        }, { merge: true });
         setIsPremium(false);
       }
       setCurrentUser(user);
@@ -186,21 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, handleUser);
 
     getRedirectResult(auth)
-      .then(async (result) => {
-        if (result?.user) {
-          const userDocRef = doc(db, 'users', result.user.uid);
-          const docSnap = await getDoc(userDocRef);
-          if (!docSnap.exists()) {
-            await setDoc(userDocRef, {
-              isPremium: false,
-              email: result.user.email,
-              displayName: result.user.displayName,
-              photoURL: result.user.photoURL,
-              createdAt: Timestamp.now(),
-            }, { merge: true });
-          }
-        }
-      })
       .catch((error) => {
         console.error("Error processing Google sign-in redirect:", error);
         if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
@@ -210,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             variant: "destructive"
           });
         }
+        setLoading(false); // Ensure loading stops on redirect error
       });
     
     return () => unsubscribe();

@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { AlertCircle, Info } from 'lucide-react';
+import { AlertCircle, Info, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const signInSchema = z.object({
@@ -43,8 +43,9 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
-  const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle, loading, isMobile } = useAuth();
+  const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle, isMobile } = useAuth();
   const [activeTab, setActiveTab] = useState<'signIn' | 'signUp'>('signIn');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hostname, setHostname] = useState<string>('');
 
@@ -66,43 +67,61 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
   const handleSignIn: SubmitHandler<SignInFormData> = async (data) => {
     setError(null);
+    setIsSubmitting(true);
     try {
       await signInWithEmailPassword(data.email, data.password);
       onOpenChange(false); 
     } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please check your credentials.");
+      let message = "Failed to sign in. Please check your email and password.";
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-email') {
+        message = 'Invalid email or password.';
+      }
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSignUp: SubmitHandler<SignUpFormData> = async (data) => {
     setError(null);
+    setIsSubmitting(true);
     try {
       await signUpWithEmailPassword(data.email, data.password);
       onOpenChange(false); 
     } catch (err: any) {
-      setError(err.message || "Failed to sign up. The email might already be in use.");
+      let message = "Failed to sign up. The email might already be in use.";
+       if (err.code === 'auth/email-already-in-use') {
+        message = 'This email address is already in use.';
+      } else if (err.code === 'auth/weak-password') {
+        message = 'The password is too weak.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'The email address is not valid.';
+      }
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setIsSubmitting(true);
     try {
       await signInWithGoogle();
-      // If signInWithRedirect was called, the page will navigate away, and this won't be reached.
-      // If signInWithPopup succeeded, we can close the modal.
       if (!isMobile) {
         onOpenChange(false);
       }
     } catch (err: any) {
-      // Handle specific errors thrown from the AuthContext
       if (err.code === 'auth/unauthorized-domain') {
         setError("This domain is not authorized for sign-in. Please add it to your Firebase project settings.");
       } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        // User intentionally closed the popup, so we don't show an error.
         console.info("Google sign-in flow cancelled by user.");
       } else {
-        // Handle other potential errors
         setError(err.message || "Failed to sign in with Google.");
+      }
+    } finally {
+      if (!isMobile) {
+        setIsSubmitting(false);
       }
     }
   };
@@ -152,7 +171,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   {...signInForm.register('email')}
                   className="mt-1 bg-background"
                   placeholder="you@example.com"
-                  disabled={loading}
+                  disabled={isSubmitting}
                 />
                 {signInForm.formState.errors.email && (
                   <p className="text-sm text-destructive mt-1">{signInForm.formState.errors.email.message}</p>
@@ -166,14 +185,14 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   {...signInForm.register('password')}
                   className="mt-1 bg-background"
                   placeholder="••••••••"
-                  disabled={loading}
+                  disabled={isSubmitting}
                 />
                 {signInForm.formState.errors.password && (
                   <p className="text-sm text-destructive mt-1">{signInForm.formState.errors.password.message}</p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing In...' : 'Sign In'}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Sign In'}
               </Button>
             </form>
           </TabsContent>
@@ -188,7 +207,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   {...signUpForm.register('email')}
                   className="mt-1 bg-background"
                   placeholder="you@example.com"
-                  disabled={loading}
+                  disabled={isSubmitting}
                 />
                 {signUpForm.formState.errors.email && (
                   <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.email.message}</p>
@@ -202,7 +221,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   {...signUpForm.register('password')}
                   className="mt-1 bg-background"
                   placeholder="••••••••"
-                  disabled={loading}
+                  disabled={isSubmitting}
                 />
                 {signUpForm.formState.errors.password && (
                   <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.password.message}</p>
@@ -216,14 +235,14 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   {...signUpForm.register('confirmPassword')}
                   className="mt-1 bg-background"
                   placeholder="••••••••"
-                  disabled={loading}
+                  disabled={isSubmitting}
                 />
                 {signUpForm.formState.errors.confirmPassword && (
                   <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.confirmPassword.message}</p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing Up...' : 'Sign Up'}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                 {isSubmitting ? <Loader2 className="animate-spin" /> : 'Sign Up'}
               </Button>
             </form>
           </TabsContent>
@@ -247,9 +266,13 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
           </div>
         </div>
 
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
-          <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-          Google
+        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="animate-spin" /> : (
+            <>
+              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+              Google
+            </>
+          )}
         </Button>
         
         {hostname && error?.includes("not authorized") && (
