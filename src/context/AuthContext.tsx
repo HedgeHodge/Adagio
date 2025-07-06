@@ -2,7 +2,7 @@
 "use client";
 
 import type { User } from 'firebase/auth';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { auth, db } from '@/lib/firebase'; 
 import { 
   GoogleAuthProvider, 
@@ -40,20 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const fetchUserPremiumStatus = async (userId: string) => {
-    const userDocRef = doc(db, 'users', userId);
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists() && docSnap.data()?.isPremium === true) {
-      setIsPremium(true);
-    } else {
-      setIsPremium(false);
-      // If user doc exists but no isPremium field, or it's false, ensure it's set to false
-      if (docSnap.exists() && docSnap.data()?.isPremium !== true) {
-         await setDoc(userDocRef, { isPremium: false }, { merge: true });
-      }
-    }
-  };
-
   const signInWithGoogle = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
@@ -72,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: result.user.photoURL,
             createdAt: Timestamp.now() 
           }, { merge: true });
-           setIsPremium(false);
         }
       }
     } catch (error: any) {
@@ -88,7 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
          toast({ title: "Google Sign-In Error", description: error.message || "An error occurred.", variant: "destructive" });
       }
       setLoading(false);
-      throw error;
     }
   };
 
@@ -160,8 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message = 'The email address is not valid.';
       }
       toast({ title: "Sign Up Failed", description: message, variant: "destructive" });
-      setLoading(false);
       throw error; 
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -176,21 +161,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message = 'Invalid email or password.';
       }
       toast({ title: "Sign In Failed", description: message, variant: "destructive" });
-      setLoading(false);
       throw error;
+    } finally {
+        setLoading(false);
     }
   };
 
-  // This effect runs once on mount to handle the initial auth state
-  // and process any pending redirect results.
+  const handleUser = useCallback(async (user: User | null) => {
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists() && docSnap.data()?.isPremium === true) {
+        setIsPremium(true);
+      } else {
+        setIsPremium(false);
+      }
+      setCurrentUser(user);
+    } else {
+      setCurrentUser(null);
+      setIsPremium(false);
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
-    // Process the redirect result from Google Sign-In
+    const unsubscribe = onAuthStateChanged(auth, handleUser);
+
     getRedirectResult(auth)
       .then(async (result) => {
-        if (result && result.user) {
-          // A user just signed in via redirect.
-          // The onAuthStateChanged listener below will handle setting the user state.
-          // We just need to ensure their database record is created if it's their first time.
+        if (result?.user) {
           const userDocRef = doc(db, 'users', result.user.uid);
           const docSnap = await getDoc(userDocRef);
           if (!docSnap.exists()) {
@@ -207,25 +206,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch((error) => {
         console.error("Error processing Google sign-in redirect:", error);
         if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-          toast({ title: "Google Sign-In Error", description: error.message || "An error occurred during redirect.", variant: "destructive" });
+          toast({
+            title: "Google Sign-In Error",
+            description: error.message || "An error occurred during redirect.",
+            variant: "destructive"
+          });
         }
       });
-
-    // Set up the listener for ongoing authentication state changes.
-    // This is the single source of truth for the user's login state.
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        await fetchUserPremiumStatus(user.uid);
-      } else {
-        setIsPremium(false);
-      }
-      setLoading(false);
-    });
-
-    // Cleanup the listener on unmount
+    
     return () => unsubscribe();
-  }, [toast]);
+  }, [handleUser, toast]);
 
 
   const value = {
