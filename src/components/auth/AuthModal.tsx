@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const signInSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -44,6 +46,13 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   const { signInWithEmailPassword, signUpWithEmailPassword, signInWithGoogle, loading, isMobile } = useAuth();
   const [activeTab, setActiveTab] = useState<'signIn' | 'signUp'>('signIn');
   const [error, setError] = useState<string | null>(null);
+  const [hostname, setHostname] = useState<string>('');
+
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      setHostname(window.location.hostname);
+    }
+  }, [isOpen]);
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -83,7 +92,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
         onOpenChange(false); 
       }
     } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google.");
+      if (err.code === 'auth/unauthorized-domain') {
+        setError("This domain is not authorized for sign-in. Please add it to your Firebase project settings.");
+      } else {
+        setError(err.message || "Failed to sign in with Google.");
+      }
     }
   };
 
@@ -231,6 +244,16 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
           <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
           Google
         </Button>
+        
+        {hostname && error?.includes("not authorized") && (
+          <Alert className="mt-4">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Configuration Help</AlertTitle>
+            <AlertDescription>
+              To enable sign-in, add your app's domain (<strong>{hostname}</strong>) to the "Authorized domains" list in your Firebase project's Authentication settings.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <DialogFooter className="mt-2 pt-4 text-center text-xs text-muted-foreground">
           By continuing, you agree to Adagio's Terms of Service and Privacy Policy.
