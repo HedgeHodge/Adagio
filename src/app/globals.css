@@ -112,3 +112,8 @@ body {
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
 }
+
+.content-fade-top {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 100px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 100px); /* Safari compatibility */
+}

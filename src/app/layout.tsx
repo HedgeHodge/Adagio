@@ -83,7 +83,7 @@ export default function RootLayout({
                 <AuthStatus />
               </div>
             </header>
-            <main className="pt-20">
+            <main className="pt-20 content-fade-top">
                 {children}
             </main>
             <Toaster />
