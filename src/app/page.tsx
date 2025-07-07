@@ -1,545 +1,76 @@
 
 "use client";
 
-import type { TimeFilter, ActivePomodoroSession } from '@/types/pomodoro';
-import { useState, useEffect } from 'react';
-import { usePomodoro } from '@/hooks/usePomodoro';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { MobileTabBar } from '@/components/layout/MobileTabBar';
-import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
-import { TimerControls } from '@/components/pomodoro/TimerControls';
-import { SettingsModal } from '@/components/pomodoro/SettingsModal';
-import { EditEntryModal } from '@/components/pomodoro/EditSessionModal';
-import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
-import { EditActiveSessionModal } from '@/components/pomodoro/EditActiveSessionModal';
-import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
-import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
-import { ProjectEntriesModal } from '@/components/pomodoro/ProjectEntriesModal';
-import { TaskList } from '@/components/pomodoro/TaskList';
-import { SessionSummaryModal } from '@/components/pomodoro/SessionSummaryModal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from "@/components/ui/skeleton";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil, Play, FlaskConical, Calendar as CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
-import { summarizeSession } from '@/ai/flows/summarize-session-flow';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { MessageSquareQuestion, CircleUserRound, Replace, ScanLine, Brush, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type MobileTab = 'timer' | 'log' | 'insights';
+const ActionButton = ({ icon, label, className = '' }: { icon: React.ReactNode, label: string, className?: string }) => (
+  <div className="flex flex-col items-center gap-2">
+    <Button variant="secondary" className={cn("w-[84px] h-[84px] bg-white/60 rounded-3xl shadow-lg flex items-center justify-center", className)}>
+      {icon}
+    </Button>
+    <span className="font-semibold text-sm text-gray-800">{label}</span>
+  </div>
+);
 
-export default function PomodoroPage() {
-  const pomodoroState = usePomodoro();
-  const { currentUser, isPremium, upgradeUserToPremium, togglePremiumStatus } = useAuth();
-  const { toast } = useToast();
-  const {
-    settings,
-    updateSettings,
-    activeSessions,
-    pomodoroLog,
-    addTaskToSession,
-    toggleTaskInSession,
-    deleteTaskFromSession,
-    deleteLogEntry,
-    addSession,
-    removeSession,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    switchMode,
-    endCurrentWorkSession,
-    formatTime,
-    isClient,
-    recentProjects,
-    removeRecentProject,
-    motivationalQuote,
-    isFetchingQuote,
-    activeFilter,
-    setActiveFilter,
-    processedChartData,
-    isEditModalOpen,
-    entryToEdit,
-    openEditModal,
-    closeEditModal,
-    updateLogEntry,
-    addManualLogEntry,
-    populateTestData,
-    isDataLoading,
-    isEditActiveSessionModalOpen,
-    activeSessionToEdit,
-    openEditActiveSessionModal,
-    closeEditActiveSessionModal,
-    updateActiveSessionStartTime,
-    inputProjectName,
-    setInputProjectName,
-    sessionToSummarize,
-    logSessionFromSummary,
-    customDateRange,
-    setCustomDateRange,
-    isEntriesModalOpen,
-    openEntriesModal,
-    closeEntriesModal,
-    entriesForModal,
-    selectedChartProject,
-  } = pomodoroState;
-
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const isMobile = useIsMobile();
-  const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>('timer');
-  const [isSummarizing, setIsSummarizing] = useState(false);
-
-  useEffect(() => {
-    if (isClient && typeof document !== 'undefined') {
-      const runningWorkSession = activeSessions.find(s => s.isRunning && s.currentInterval === 'work');
-      const runningBreakSession = activeSessions.find(s => s.isRunning && (s.currentInterval === 'shortBreak' || s.currentInterval === 'longBreak'));
-
-      let titlePrefix = "Adagio";
-      if (runningWorkSession) {
-        titlePrefix = `${runningWorkSession.project} - ${formatTime(runningWorkSession.currentTime)}`;
-      } else if (runningBreakSession) {
-        titlePrefix = `Break - ${formatTime(runningBreakSession.currentTime)}`;
-      } else if (activeSessions.length > 0 && activeMobileTab === 'timer') {
-         const firstSession = activeSessions[0];
-         if (firstSession.currentInterval === 'work') {
-            titlePrefix = `${firstSession.project} - ${formatTime(firstSession.currentTime)}`;
-         } else {
-            titlePrefix = `Break - ${formatTime(firstSession.currentTime)}`;
-         }
-      }
-      document.title = `${titlePrefix} | Adagio`;
-    }
-  }, [activeSessions, formatTime, isClient, activeMobileTab]);
-
-
-  if (!isClient || isDataLoading) {
-    return (
-      <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading your Adagio experience...</p>
-      </main>
-    );
-  }
-
-  const handleAddSession = () => {
-    if (inputProjectName.trim()) {
-      addSession(inputProjectName.trim());
-    }
-  };
-  
-  const startSessionFromProject = (projectName: string) => {
-    const existingSession = activeSessions.find(s => s.project === projectName);
-    if (existingSession) {
-        if (!existingSession.isRunning) {
-            startTimer(existingSession.id);
-        }
-    } else {
-        addSession(projectName);
-    }
-  };
-
-  const handleSaveSummary = async (session: ActivePomodoroSession) => {
-    const completedTasks = session.tasks.filter(task => task.completed).map(task => task.text);
-
-    if (!isPremium || !currentUser || completedTasks.length === 0) {
-        logSessionFromSummary(session);
-        return;
-    }
-
-    setIsSummarizing(true);
-    try {
-        const result = await summarizeSession({ 
-            tasks: completedTasks,
-        });
-        logSessionFromSummary(session, result.projectName);
-    } catch (error) {
-        console.error("AI summarization failed:", error);
-        toast({
-            title: "AI Summary Failed",
-            description: "Logging session without an AI summary.",
-            variant: "destructive"
-        });
-        logSessionFromSummary(session);
-    } finally {
-        setIsSummarizing(false);
-    }
-  };
-
-  const filterButtonLabel = (filter: TimeFilter): string => {
-    switch (filter) {
-      case 'today': return 'Today';
-      case 'thisWeek': return 'This Week';
-      case 'thisMonth': return 'This Month';
-      default: return '';
-    }
-  };
-
-  const renderTimerContent = () => (
-    <>
-      <div className="w-full max-w-md mb-6">
-        <div className="relative">
-          <Input
-            id="project-input"
-            type="text"
-            placeholder="What are you working on?"
-            value={inputProjectName}
-            onChange={(e) => setInputProjectName(e.target.value)}
-            className="bg-card border-border shadow-sm h-12 text-base pl-4 pr-14"
-            onKeyPress={(e) => e.key === 'Enter' && handleAddSession()}
-          />
-          <Button
-            onClick={handleAddSession}
-            size="icon"
-            aria-label="Add session"
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full"
-          >
-            <PlusCircle className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-      
-      {recentProjects && recentProjects.length > 0 && (
-        <div className="w-full max-w-md mb-8">
-          <div className="flex flex-wrap gap-3">
-            {recentProjects.map((project, index) => {
-               const colors = ['text-chart-1', 'text-chart-2', 'text-chart-3', 'text-chart-4', 'text-chart-5'];
-               const iconColor = colors[index % colors.length];
-               return (
-               <div key={project} className="relative group">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="text-sm px-4 py-2 h-auto bg-card/80 hover:bg-accent/90 border-border shadow-sm text-foreground/90 pr-8"
-                    onClick={() => startSessionFromProject(project)}
-                    aria-label={`Start session for ${project}`}
-                  >
-                    <Play className={cn("h-4 w-4 mr-2", iconColor)} />
-                    <span className="truncate max-w-[150px]">{project}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-0 right-0 h-full w-8 rounded-l-none text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeRecentProject(project)}
-                    aria-label={`Remove ${project} from recent projects`}
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-              </div>
-            )})}
-          </div>
-        </div>
-      )}
-      {(!recentProjects || recentProjects.length === 0) && <div className="mb-8"></div>}
-
-      {activeSessions.length === 0 && (
-        <Card className="w-full max-w-md mb-8 bg-card shadow-md">
-          <CardContent className="p-6 text-center text-muted-foreground">
-            No active sessions. Add a project or start one from your recents to get going!
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="w-full max-w-md space-y-6">
-        {activeSessions.map((session) => (
-          <Card key={session.id} className="bg-card shadow-lg overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-              <CardTitle className="text-lg text-foreground truncate flex-1 pr-2">
-                {session.project}
-              </CardTitle>
-              <div className="flex items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeSession(session.id)}
-                  aria-label={`Remove ${session.project} session`}
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <TimerDisplay
-                formattedTime={formatTime(session.currentTime)}
-                intervalType={session.currentInterval}
-                isRunning={session.isRunning}
-              />
-              <TimerControls
-                sessionId={session.id}
-                isRunning={session.isRunning}
-                currentInterval={session.currentInterval}
-                onStart={() => startTimer(session.id)}
-                onPause={() => pauseTimer(session.id)}
-                onReset={() => resetTimer(session.id)}
-                onSwitchMode={() => switchMode(session.id)}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                onEndCurrentWorkSession={session.currentInterval === 'work' && session.isRunning ? () => endCurrentWorkSession(session.id) : undefined}
-                onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
-                lastWorkSessionStartTime={session.lastWorkSessionStartTime}
-              />
-              <TaskList
-                session={session}
-                onAddTask={addTaskToSession}
-                onToggleTask={toggleTaskInSession}
-                onDeleteTask={deleteTaskFromSession}
-              />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {(motivationalQuote && currentUser && activeSessions.some(s => s.currentInterval === 'shortBreak' || s.currentInterval === 'longBreak')) && (
-        <div className="w-full max-w-md mt-8 mb-8">
-          {isFetchingQuote && (
-            <Card className="bg-card shadow-md animate-pulse">
-              <CardContent className="p-4">
-                <Skeleton className="h-5 w-3/4 mb-2" />
-                <Skeleton className="h-3 w-1/2 ml-auto" />
-              </CardContent>
-            </Card>
-          )}
-          {!isFetchingQuote && motivationalQuote && (
-            <Card className="bg-card shadow-md animate-subtle-pop">
-              <CardContent className="p-4">
-                <div className="flex items-start text-sm text-muted-foreground italic">
-                  <Quote className="h-4 w-4 mr-2 text-primary/70 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="mb-1">"{motivationalQuote.quote}"</p>
-                    {motivationalQuote.source && (
-                      <p className="text-xs text-muted-foreground/80 text-right">- {motivationalQuote.source}</p>
-                    )}
-                  </div>
-                </div>
-                {!isPremium && motivationalQuote.source === "Adagio App" && (
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    className="p-0 h-auto text-xs mt-2 text-primary hover:text-primary/80"
-                    onClick={upgradeUserToPremium}
-                  >
-                    Unlock with Premium
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-    </>
-  );
-
-  const renderLogContent = (mobileLayout = false) => (
-    <>
-      <PomodoroLog
-        isMobileLayout={mobileLayout}
-        log={pomodoroLog}
-        onDeleteEntry={deleteLogEntry}
-        onEditEntry={(entry) => {
-          if (currentUser) {
-            openEditModal(entry);
-          } else {
-            toast({
-              title: "Please Sign In",
-              description: "Editing log entries requires an account to sync changes.",
-            });
-          }
-        }}
-        onAddEntry={() => setIsAddModalOpen(true)}
-      />
-      {!currentUser && (
-        <Card className="w-full max-w-md mt-4 bg-card shadow-lg border-primary/20">
-          <CardHeader className="p-4">
-            <div className="flex items-center">
-              <ListChecks className="mr-3 h-5 w-5 text-primary shrink-0" />
-              <div>
-                <CardTitle className="text-sm font-semibold text-foreground">Sync Your Data</CardTitle>
-                <CardDescription className="text-xs text-muted-foreground">
-                  Your log is saved on this device. Sign in to sync across devices.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
-    </>
-  );
-
-  const renderInsightsContent = () => (
-    <>
-      <Card className="w-full max-w-md bg-card shadow-lg mt-8">
-        <CardHeader>
-          <CardTitle className="flex items-center text-foreground">
-            <BarChart2 className="mr-2 h-5 w-5 text-chart-2" />
-            Time Insights
-          </CardTitle>
-           {!currentUser && <CardDescription className="text-muted-foreground">Sign in to see your time insights.</CardDescription>}
-           {currentUser && <CardDescription className="text-muted-foreground">Tracked time per project.</CardDescription>}
-        </CardHeader>
-        <CardContent className="pt-2">
-          {currentUser ? (
-            <>
-              <div className="flex justify-center flex-wrap gap-2 mb-6">
-                {(['today', 'thisWeek', 'thisMonth'] as const).map((filterOption) => (
-                  <Button
-                    key={filterOption}
-                    variant={activeFilter === filterOption ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setActiveFilter(filterOption)}
-                    className="text-xs sm:text-sm px-3 py-1.5 h-auto"
-                  >
-                    {filterButtonLabel(filterOption)}
-                  </Button>
-                ))}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={activeFilter === 'custom' ? 'default' : 'outline'}
-                      size="sm"
-                      className="text-xs sm:text-sm px-3 py-1.5 h-auto w-[240px] justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateRange?.from ? (
-                        customDateRange.to ? (
-                          <>
-                            {format(customDateRange.from, "LLL dd, y")} -{" "}
-                            {format(customDateRange.to, "LLL dd, y")}
-                          </>
-                        ) : (
-                          format(customDateRange.from, "LLL dd, y")
-                        )
-                      ) : (
-                        <span>Custom Range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={customDateRange?.from}
-                      selected={customDateRange}
-                      onSelect={(range) => {
-                          setCustomDateRange(range);
-                          if (range?.from) {
-                            setActiveFilter('custom');
-                          }
-                      }}
-                      numberOfMonths={2}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <ProjectTimeChart data={processedChartData} onBarClick={openEntriesModal} />
-            </>
-          ) : (
-            <p className="text-center text-muted-foreground py-4">No data to display. Please sign in.</p>
-          )}
-        </CardContent>
-      </Card>
-       {currentUser && (
-        <div className="w-full max-w-md mt-4 flex flex-col items-center gap-2">
-          {!isPremium && (
-            <Button onClick={upgradeUserToPremium} variant="default" size="lg" className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white">
-              <Sparkles className="mr-2 h-5 w-5" /> Upgrade to Adagio Premium
-            </Button>
-          )}
-           <div className="flex items-center gap-2 mt-2">
-              <Button onClick={togglePremiumStatus} variant="secondary" size="sm">
-                <RefreshCwIcon className="mr-2 h-4 w-4" /> Toggle Premium (Test): {isPremium ? 'ON' : 'OFF'}
-              </Button>
-              <Button onClick={populateTestData} variant="outline" size="sm">
-                <FlaskConical className="mr-2 h-4 w-4" /> Populate Data
-              </Button>
-            </div>
-        </div>
-       )}
-    </>
-  );
-
-  const sharedModals = (
-    <>
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onSave={updateSettings}
-      />
-      <AddEntryModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={addManualLogEntry}
-      />
-      {entryToEdit && (
-        <EditEntryModal
-          isOpen={isEditModalOpen}
-          onClose={closeEditModal}
-          entry={entryToEdit}
-          onSave={updateLogEntry}
-        />
-      )}
-      {activeSessionToEdit && (
-        <EditActiveSessionModal
-          isOpen={isEditActiveSessionModalOpen}
-          onClose={closeEditActiveSessionModal}
-          session={activeSessionToEdit}
-          onSave={updateActiveSessionStartTime}
-        />
-      )}
-      {sessionToSummarize && (
-          <SessionSummaryModal
-            isOpen={!!sessionToSummarize}
-            session={sessionToSummarize}
-            onSave={handleSaveSummary}
-            isSummarizing={isSummarizing}
-            isPremium={isPremium && !!currentUser}
-          />
-      )}
-      {selectedChartProject && (
-        <ProjectEntriesModal
-            isOpen={isEntriesModalOpen}
-            onClose={closeEntriesModal}
-            projectName={selectedChartProject}
-            entries={entriesForModal}
-        />
-      )}
-    </>
-  );
-
-
-  if (isMobile) {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-start pt-6 pb-24 px-4 h-screen bg-background text-foreground selection:bg-primary/30">
-          {activeMobileTab === 'timer' && renderTimerContent()}
-          {activeMobileTab === 'log' && (
-            <div className="w-full max-w-md flex-1 flex flex-col min-h-0">
-              {renderLogContent(true)}
-            </div>
-          )}
-          {activeMobileTab === 'insights' && renderInsightsContent()}
-        </div>
-        <MobileTabBar activeTab={activeMobileTab} onTabChange={setActiveMobileTab} />
-        {sharedModals}
-      </>
-    );
-  }
+export default function HomePage() {
+  const { currentUser } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const userName = currentUser?.displayName?.split(' ')[0] || 'there';
 
   return (
-    <>
-      <div className="flex flex-col items-center justify-start p-8 min-h-screen bg-background text-foreground selection:bg-primary/30">
-        
-        {renderTimerContent()}
-        {renderLogContent()}
-        {renderInsightsContent()}
-        
-        {sharedModals}
+    <div className="relative flex flex-col h-screen w-full overflow-hidden p-6 md:p-8">
+      {/* Top Icons */}
+      <header className="flex justify-between items-center w-full">
+        <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11">
+          <MessageSquareQuestion className="h-6 w-6 text-gray-800" />
+        </Button>
+        <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11" onClick={() => setIsAuthModalOpen(true)}>
+          <CircleUserRound className="h-6 w-6 text-gray-800" />
+        </Button>
+      </header>
+
+      {/* Greeting */}
+      <div className="flex-grow flex items-center justify-center -mt-20">
+        <div className="text-left w-full">
+          <h1 className="text-5xl lg:text-6xl font-bold text-black tracking-tight">
+            Hi {userName},<br />
+            How can I help<br />
+            you today?
+          </h1>
+        </div>
       </div>
-    </>
+
+      {/* Bottom Action Bar */}
+      <footer className="absolute bottom-0 left-0 right-0 flex justify-center pb-5 pointer-events-none">
+        <div className="relative w-full max-w-sm h-52">
+          {/* Arc Background */}
+          <div className="absolute bottom-0 w-full h-44 bg-white/40 backdrop-blur-xl rounded-t-[48px] shadow-2xl shadow-black/10">
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="absolute bottom-16 w-full flex justify-around items-center px-4 pointer-events-auto">
+            <ActionButton icon={<Replace className="h-9 w-9 text-[#8B85E4]" />} label="Convert" />
+            <ActionButton icon={<ScanLine className="h-9 w-9 text-[#66C4C4]" />} label="Scan" />
+            <ActionButton icon={<Brush className="h-9 w-9 text-[#E4B585]" />} label="Edit" />
+          </div>
+
+          {/* Center Search Button */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
+            <Button size="icon" className="bg-black text-white rounded-full h-16 w-16 shadow-lg hover:bg-gray-800">
+              <Search className="h-8 w-8" />
+            </Button>
+          </div>
+        </div>
+      </footer>
+      
+      {!currentUser && (
+        <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+      )}
+    </div>
   );
 }

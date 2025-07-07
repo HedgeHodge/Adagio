@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 200 50% 98%;
     --foreground: 222 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 84% 4.9%;
-    --primary: 15 90% 55%;
+    --primary: 222 84% 4.9%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11.2%;
@@ -22,39 +22,29 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 15 90% 55%;
-    --chart-1: 15 90% 55%;
-    --chart-2: 45 95% 58%;
-    --chart-3: 320 90% 65%;
-    --chart-4: 180 70% 55%;
-    --chart-5: 260 60% 70%;
+    --ring: 222 84% 4.9%;
     --radius: 0.5rem;
   }
   .dark {
-    --background: 250 30% 9%;
+    --background: 222 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 250 30% 14%;
+    --card: 222 84% 4.9%;
     --card-foreground: 210 40% 98%;
-    --popover: 250 30% 14%;
+    --popover: 222 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 15 90% 60%;
-    --primary-foreground: 15 90% 15%;
-    --secondary: 250 30% 17%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 250 30% 17%;
+    --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 250 30% 17%;
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 250 30% 25%;
-    --input: 250 30% 25%;
-    --ring: 15 90% 60%;
-    --chart-1: 15 90% 60%;
-    --chart-2: 45 95% 63%;
-    --chart-3: 320 90% 70%;
-    --chart-4: 180 70% 60%;
-    --chart-5: 260 60% 75%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 210 40% 98%;
   }
 }
 
@@ -63,26 +53,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-b from-[#D4E9E2] to-[#F3D4B4] text-foreground;
   }
-}
-
-/* Custom Animations for Adagio */
-@keyframes pulse-bg {
-  0%, 100% { background-color: hsl(var(--primary) / 0.1); }
-  50% { background-color: hsl(var(--primary) / 0.2); }
-}
-
-.animate-pulse-bg {
-  animation: pulse-bg 2s infinite;
-}
-
-@keyframes subtle-pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.animate-subtle-pop {
-  animation: subtle-pop 0.3s ease-out;
 }
