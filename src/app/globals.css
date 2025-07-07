@@ -106,14 +106,3 @@ body {
 .animate-subtle-pop {
   animation: subtle-pop 0.3s ease-out;
 }
-
-.header-wavy-bottom {
-  mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3e%3cpath d='M0,0 L100,0 L100,85 Q50,100 0,85 Z' fill='black'/%3e%3c/svg%3e");
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
-}
-
-.content-fade-top {
-  mask-image: linear-gradient(to bottom, transparent 0%, black 400px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 400px); /* Safari compatibility */
-}

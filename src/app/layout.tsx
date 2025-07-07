@@ -69,21 +69,23 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>
           <AuthProvider>
-            <header className="fixed top-0 left-0 right-0 h-20 px-4 z-50 flex items-center justify-between bg-background/80 backdrop-blur-sm header-wavy-bottom">
-                <Link href="/" className="flex items-center" aria-label="Adagio Home Page">
-                    <h1 className="sm:hidden text-3xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
-                        A
-                    </h1>
-                    <h1 className="hidden sm:block text-3xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
-                        Adagio
-                    </h1>
-                </Link>
-              <div className="flex items-center space-x-2">
+            <header className="fixed top-0 left-0 right-0 h-28 px-4 z-50 flex items-start pt-4 justify-between bg-gradient-to-b from-background via-background/95 to-transparent pointer-events-none">
+                <div className="pointer-events-auto">
+                    <Link href="/" className="flex items-center" aria-label="Adagio Home Page">
+                        <h1 className="sm:hidden text-3xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                            A
+                        </h1>
+                        <h1 className="hidden sm:block text-3xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                            Adagio
+                        </h1>
+                    </Link>
+                </div>
+              <div className="flex items-center space-x-2 pointer-events-auto">
                 <ThemeToggleButton />
                 <AuthStatus />
               </div>
             </header>
-            <main className="pt-20 content-fade-top">
+            <main className="pt-20">
                 {children}
             </main>
             <Toaster />
