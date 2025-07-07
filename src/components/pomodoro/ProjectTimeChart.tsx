@@ -26,7 +26,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onBarClick, isModalOpen }: ProjectTimeChartProps) {
+export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
   if (data.length === 0) {
     return (
       <CardDescription className="text-center py-8 text-muted-foreground">
@@ -62,6 +62,15 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
         <BarChart
           data={data}
           margin={{ top: 5, right: 5, left: -10, bottom: 20 }}
+          className="cursor-pointer"
+          onClick={(state) => {
+            if (state && state.activePayload && state.activePayload.length > 0) {
+              const payload = state.activePayload[0].payload;
+              if (payload && payload.name) {
+                onBarClick(payload.name);
+              }
+            }
+          }}
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
           <XAxis
@@ -119,13 +128,6 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
             fill="var(--color-totalMinutes)"
             radius={[4, 4, 0, 0]}
             barSize={30}
-            cursor="pointer"
-            activeBar={false}
-            onClick={(data) => {
-              if (data && data.name) {
-                onBarClick(data.name);
-              }
-            }}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -134,3 +136,4 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
 });
 
 ProjectTimeChart.displayName = 'ProjectTimeChart';
+
