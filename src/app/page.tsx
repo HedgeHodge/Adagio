@@ -29,6 +29,7 @@ import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, R
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeSession } from '@/ai/flows/summarize-session-flow';
+import { cn } from '@/lib/utils';
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
@@ -205,7 +206,10 @@ export default function PomodoroPage() {
       {recentProjects && recentProjects.length > 0 && (
         <div className="w-full max-w-md mb-8">
           <div className="flex flex-wrap gap-3">
-            {recentProjects.map((project) => (
+            {recentProjects.map((project, index) => {
+               const colors = ['text-chart-1', 'text-chart-2', 'text-chart-3', 'text-chart-4', 'text-chart-5'];
+               const iconColor = colors[index % colors.length];
+               return (
                <div key={project} className="relative group">
                   <Button
                     variant="secondary"
@@ -214,7 +218,7 @@ export default function PomodoroPage() {
                     onClick={() => startSessionFromProject(project)}
                     aria-label={`Start session for ${project}`}
                   >
-                    <Play className="h-4 w-4 mr-2 text-primary" />
+                    <Play className={cn("h-4 w-4 mr-2", iconColor)} />
                     <span className="truncate max-w-[150px]">{project}</span>
                   </Button>
                   <Button
@@ -227,7 +231,7 @@ export default function PomodoroPage() {
                     <XCircle className="h-4 w-4" />
                   </Button>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       )}
@@ -371,7 +375,7 @@ export default function PomodoroPage() {
       <Card className="w-full max-w-md bg-card shadow-lg mt-8">
         <CardHeader>
           <CardTitle className="flex items-center text-foreground">
-            <BarChart2 className="mr-2 h-5 w-5 text-primary" />
+            <BarChart2 className="mr-2 h-5 w-5 text-chart-2" />
             Time Insights
           </CardTitle>
            {!currentUser && <CardDescription className="text-muted-foreground">Sign in to see your time insights.</CardDescription>}

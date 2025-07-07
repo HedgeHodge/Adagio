@@ -16,14 +16,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Pomodoro Flow',
-  description: 'Find your flow state. The modern pomodoro timer for focused work.',
-  applicationName: 'Pomodoro Flow',
+  title: 'Adagio',
+  description: 'Find your flow state with Adagio, the modern pomodoro timer.',
+  applicationName: 'Adagio',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Pomodoro Flow',
+    title: 'Adagio',
   },
   formatDetection: {
     telephone: false,
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
-    { media: '(prefers-color-scheme: dark)', color: '#020817' },
+    { media: '(prefers-color-scheme: dark)', color: '#13111C' },
   ],
 };
 
@@ -52,9 +52,9 @@ export default function RootLayout({
           <AuthProvider>
             <header className="fixed top-0 left-0 right-0 h-28 px-4 z-50 flex items-start pt-4 justify-between bg-gradient-to-b from-background via-background/95 to-transparent pointer-events-none">
                 <div className="pointer-events-auto">
-                    <Link href="/" className="flex items-center" aria-label="Pomodoro Flow Home Page">
+                    <Link href="/" className="flex items-center" aria-label="Adagio Home Page">
                         <h1 className="text-3xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
-                            Pomodoro Flow
+                            Adagio
                         </h1>
                     </Link>
                 </div>
@@ -63,8 +63,12 @@ export default function RootLayout({
                 <AuthStatus />
               </div>
             </header>
-            <main className="pt-24 px-4 sm:px-6 lg:px-8">
-                {children}
+            <main className="relative">
+                <div className="[mask-image:linear-gradient(to_bottom,transparent_0%,_black_128px)]">
+                    <div className="pt-28 px-4 sm:px-6 lg:px-8">
+                        {children}
+                    </div>
+                </div>
             </main>
             <Toaster />
           </AuthProvider>

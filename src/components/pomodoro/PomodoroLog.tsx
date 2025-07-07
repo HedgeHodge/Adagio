@@ -57,7 +57,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
     )}>
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Entry Log</CardTitle>
+          <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-chart-3" />Entry Log</CardTitle>
           {onAddEntry && (
             <Button onClick={onAddEntry} variant="ghost" size="icon" aria-label="Add manual entry">
               <PlusCircle className="h-6 w-6 text-primary hover:text-primary/80" />
