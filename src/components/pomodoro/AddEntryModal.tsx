@@ -98,7 +98,7 @@ export function AddEntryModal({ isOpen, onClose, onSave }: AddEntryModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-b-3xl">
+      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Add Manual Entry</DialogTitle>
           <DialogDescription className="text-muted-foreground">

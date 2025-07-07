@@ -51,7 +51,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); reset(settings); } }}>
-      <DialogContent className="sm:max-w-[425px] bg-card sm:rounded-b-3xl">
+      <DialogContent className="sm:max-w-[425px] bg-card sm:rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Settings</DialogTitle>
           <DialogDescription className="text-muted-foreground">

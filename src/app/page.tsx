@@ -97,7 +97,7 @@ export default function HomePage() {
 
   const TimerView = (
     <div className="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
-         <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-b-3xl">
+         <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
             <CardHeader>
                 <CardTitle>Start a New Session</CardTitle>
             </CardHeader>
@@ -156,7 +156,7 @@ export default function HomePage() {
                     transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 30 }}
                     className="w-full"
                 >
-                    <Card className="w-full shadow-lg relative overflow-hidden bg-card/70 backdrop-blur-sm rounded-b-3xl">
+                    <Card className="w-full shadow-lg relative overflow-hidden bg-card/70 backdrop-blur-sm rounded-3xl">
                         <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-10" onClick={() => pomodoro.removeSession(session.id)}>
                             <X className="h-4 w-4" />
                         </Button>
@@ -213,7 +213,7 @@ export default function HomePage() {
   );
 
   const InsightsView = (
-      <Card className="w-full max-w-2xl mx-auto shadow-lg bg-card/70 backdrop-blur-sm rounded-b-3xl">
+      <Card className="w-full max-w-2xl mx-auto shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
           <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex-1">

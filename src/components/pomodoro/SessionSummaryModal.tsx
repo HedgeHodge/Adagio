@@ -35,7 +35,7 @@ export function SessionSummaryModal({ isOpen, session, onSave, isSummarizing, is
   
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-b-3xl" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-foreground">Session Complete!</DialogTitle>
           <DialogDescription className="text-muted-foreground">
