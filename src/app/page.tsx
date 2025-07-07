@@ -38,10 +38,9 @@ export default function PomodoroPage() {
     updateSettings,
     activeSessions,
     pomodoroLog,
-    tasks,
-    addTask,
-    toggleTask,
-    deleteTask,
+    addTaskToSession,
+    toggleTaskInSession,
+    deleteTaskFromSession,
     deleteLogEntry,
     addSession,
     removeSession,
@@ -122,14 +121,14 @@ export default function PomodoroPage() {
     }
   };
   
-  const handleFocusTask = (taskText: string) => {
-    const existingSession = activeSessions.find(s => s.project === taskText);
+  const startSessionFromProject = (projectName: string) => {
+    const existingSession = activeSessions.find(s => s.project === projectName);
     if (existingSession) {
         if (!existingSession.isRunning) {
             startTimer(existingSession.id);
         }
     } else {
-        addSession(taskText);
+        addSession(projectName);
     }
   };
 
@@ -194,7 +193,7 @@ export default function PomodoroPage() {
               variant="outline"
               size="sm"
               className="text-xs px-2 py-1 h-auto bg-card hover:bg-accent/80 border-border shadow-sm text-muted-foreground"
-              onClick={() => handleFocusTask(project)}
+              onClick={() => startSessionFromProject(project)}
             >
               <Play className="h-3 w-3 mr-1.5" />
               {project}
@@ -207,7 +206,7 @@ export default function PomodoroPage() {
       {activeSessions.length === 0 && (
         <Card className="w-full max-w-md mb-8 bg-card shadow-md">
           <CardContent className="p-6 text-center text-muted-foreground">
-            No active sessions. Add a project or start a task to get going!
+            No active sessions. Add a project or start one from your recents to get going!
           </CardContent>
         </Card>
       )}
@@ -249,6 +248,12 @@ export default function PomodoroPage() {
                 onEndCurrentWorkSession={session.currentInterval === 'work' && session.isRunning ? () => endCurrentWorkSession(session.id) : undefined}
                 onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
                 lastWorkSessionStartTime={session.lastWorkSessionStartTime}
+              />
+              <TaskList
+                session={session}
+                onAddTask={addTaskToSession}
+                onToggleTask={toggleTaskInSession}
+                onDeleteTask={deleteTaskFromSession}
               />
             </CardContent>
           </Card>
@@ -297,13 +302,6 @@ export default function PomodoroPage() {
 
   const renderLogContent = () => (
     <>
-      <TaskList 
-        tasks={tasks}
-        onAddTask={addTask}
-        onToggleTask={toggleTask}
-        onDeleteTask={deleteTask}
-        onFocusTask={handleFocusTask}
-      />
       <PomodoroLog
         log={pomodoroLog}
         onDeleteEntry={deleteLogEntry}
@@ -327,7 +325,7 @@ export default function PomodoroPage() {
               <div>
                 <CardTitle className="text-sm font-semibold text-foreground">Sync Your Data</CardTitle>
                 <CardDescription className="text-xs text-muted-foreground">
-                  Your tasks and log are saved on this device. Sign in to sync.
+                  Your log is saved on this device. Sign in to sync across devices.
                 </CardDescription>
               </div>
             </div>

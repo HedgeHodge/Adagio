@@ -1,32 +1,31 @@
 
 "use client";
 
-import type { Task } from '@/types/pomodoro';
+import type { ActivePomodoroSession } from '@/types/pomodoro';
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListTodo, Play, Trash2, PlusCircle } from 'lucide-react';
+import { ListTodo, Trash2, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TaskListProps {
-  tasks: Task[];
-  onAddTask: (text: string) => void;
-  onToggleTask: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  onFocusTask: (text: string) => void;
+  session: ActivePomodoroSession;
+  onAddTask: (sessionId: string, text: string) => void;
+  onToggleTask: (sessionId: string, taskId: string) => void;
+  onDeleteTask: (sessionId: string, taskId: string) => void;
 }
 
-export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocusTask }: TaskListProps) {
+export function TaskList({ session, onAddTask, onToggleTask, onDeleteTask }: TaskListProps) {
   const [newTaskText, setNewTaskText] = useState('');
+  const { id: sessionId, tasks } = session;
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskText.trim()) {
-      onAddTask(newTaskText.trim());
+      onAddTask(sessionId, newTaskText.trim());
       setNewTaskText('');
     }
   };
@@ -36,33 +35,31 @@ export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocus
   const completedTasks = tasks.filter(task => task.completed);
 
   return (
-    <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center text-foreground"><ListTodo className="mr-2 h-5 w-5 text-primary" />Today's Tasks</CardTitle>
-        <CardDescription className="text-muted-foreground">
-          What do you want to focus on today?
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleAddTask} className="flex items-center space-x-2 mb-4">
-          <Input
-            type="text"
-            placeholder="Add a new task..."
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            className="flex-grow bg-background"
-          />
-          <Button type="submit" size="icon" aria-label="Add task">
-            <PlusCircle className="h-5 w-5" />
-          </Button>
-        </form>
+    <div className="pt-4 mt-4 border-t border-border/50">
+      <h4 className="text-sm font-semibold mb-3 text-foreground/80 flex items-center">
+        <ListTodo className="mr-2 h-4 w-4" />
+        Tasks
+      </h4>
+      <form onSubmit={handleAddTask} className="flex items-center space-x-2 mb-4">
+        <Input
+          type="text"
+          placeholder="Add a new task..."
+          value={newTaskText}
+          onChange={(e) => setNewTaskText(e.target.value)}
+          className="flex-grow bg-background h-9"
+        />
+        <Button type="submit" size="icon" className="h-9 w-9" aria-label="Add task">
+          <PlusCircle className="h-5 w-5" />
+        </Button>
+      </form>
 
-        {!hasTasks ? (
-          <div className="h-[150px] flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">No tasks yet. Add one to get started!</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-[200px] pr-4">
+      {!hasTasks ? (
+        <div className="text-center py-4">
+          <p className="text-xs text-muted-foreground">No tasks for this session yet.</p>
+        </div>
+      ) : (
+        <ScrollArea className="h-[150px] pr-2 -mr-2">
+          <ul className="space-y-0.5">
             <AnimatePresence>
               {incompleteTasks.map(task => (
                 <motion.li
@@ -77,7 +74,7 @@ export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocus
                     <Checkbox
                       id={`task-${task.id}`}
                       checked={task.completed}
-                      onCheckedChange={() => onToggleTask(task.id)}
+                      onCheckedChange={() => onToggleTask(sessionId, task.id)}
                       aria-label={`Mark "${task.text}" as complete`}
                     />
                     <label
@@ -90,22 +87,12 @@ export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocus
                       {task.text}
                     </label>
                   </div>
-                  <div className="flex items-center ml-2 space-x-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-primary/80 hover:text-primary opacity-50 group-hover:opacity-100"
-                      onClick={() => onFocusTask(task.text)}
-                      aria-label={`Focus on ${task.text}`}
-                      title={`Focus on ${task.text}`}
-                    >
-                      <Play className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center ml-2 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive/70 hover:text-destructive opacity-50 group-hover:opacity-100"
-                      onClick={() => onDeleteTask(task.id)}
+                      onClick={() => onDeleteTask(sessionId, task.id)}
                       aria-label={`Delete task ${task.text}`}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -129,7 +116,7 @@ export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocus
                        <Checkbox
                           id={`task-${task.id}`}
                           checked={task.completed}
-                          onCheckedChange={() => onToggleTask(task.id)}
+                          onCheckedChange={() => onToggleTask(sessionId, task.id)}
                        />
                        <label
                          htmlFor={`task-${task.id}`}
@@ -143,7 +130,7 @@ export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocus
                          variant="ghost"
                          size="icon"
                          className="h-7 w-7 text-destructive/70 hover:text-destructive opacity-0 group-hover:opacity-100"
-                         onClick={() => onDeleteTask(task.id)}
+                         onClick={() => onDeleteTask(sessionId, task.id)}
                          aria-label={`Delete task ${task.text}`}
                        >
                          <Trash2 className="h-4 w-4" />
@@ -152,9 +139,9 @@ export function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask, onFocus
                 </motion.li>
               ))}
             </AnimatePresence>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+          </ul>
+        </ScrollArea>
+      )}
+    </div>
   );
 }

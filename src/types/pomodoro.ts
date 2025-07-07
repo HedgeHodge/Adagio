@@ -39,6 +39,7 @@ export interface ActivePomodoroSession {
   currentInterval: IntervalType;
   pomodorosCompletedThisSet: number;
   lastWorkSessionStartTime: number | null; // timestamp for the current work interval of this session
+  tasks: Task[];
 }
 
 export interface UserPomodoroData {
@@ -46,7 +47,6 @@ export interface UserPomodoroData {
   pomodoroLog?: PomodoroLogEntry[];
   activeSessions?: ActivePomodoroSession[];
   recentProjects?: string[];
-  tasks?: Task[];
   isPremium?: boolean; // Added for premium features
   lastUpdated?: import('firebase/firestore').Timestamp;
 }
