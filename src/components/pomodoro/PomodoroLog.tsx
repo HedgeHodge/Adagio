@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { PomodoroLogEntry } from '@/types/pomodoro';
@@ -68,7 +67,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
           {hasEntries ? 'Your completed work entries, grouped by day.' : 'No entries completed yet. Start working or add one manually!'}
         </CardDescription>
       </CardHeader>
-      <CardContent className={cn("p-0", isMobileLayout && "flex-1 flex flex-col")}>
+      <CardContent className={cn("p-0", isMobileLayout && "flex-1 flex flex-col min-h-0")}>
         {!hasEntries ? (
            <div className="h-[200px] flex items-center justify-center p-6">
              <p className="text-sm text-muted-foreground">Your log is empty.</p>
