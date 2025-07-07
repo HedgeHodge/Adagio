@@ -11,13 +11,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const SessionSummaryInputSchema = z.object({
+const SessionSummaryInputSchema = z.object({
   tasks: z.array(z.string()).describe('A list of tasks completed during the session.'),
   description: z.string().optional().describe('A user-provided description of what they accomplished.'),
 });
 export type SessionSummaryInput = z.infer<typeof SessionSummaryInputSchema>;
 
-export const SessionSummaryOutputSchema = z.object({
+const SessionSummaryOutputSchema = z.object({
   projectName: z.string().describe('A concise and descriptive project or task name, no more than 5 words long, derived from the user\'s completed tasks and description.'),
 });
 export type SessionSummaryOutput = z.infer<typeof SessionSummaryOutputSchema>;
