@@ -83,7 +83,7 @@ export default function RootLayout({
                 <AuthStatus />
               </div>
             </header>
-            <main>
+            <main className="pt-16">
                 {children}
             </main>
             <Toaster />

@@ -506,7 +506,7 @@ export default function PomodoroPage() {
   if (isMobile) {
     return (
       <>
-        <div className="flex flex-col items-center justify-start pt-22 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
+        <div className="flex flex-col items-center justify-start pt-6 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
           {activeMobileTab === 'timer' && renderTimerContent()}
           {activeMobileTab === 'log' && renderLogContent()}
           {activeMobileTab === 'insights' && renderInsightsContent()}
@@ -519,7 +519,7 @@ export default function PomodoroPage() {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-start p-8 pt-24 min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <div className="flex flex-col items-center justify-start p-8 min-h-screen bg-background text-foreground selection:bg-primary/30">
         
         {renderTimerContent()}
         {renderLogContent()}
