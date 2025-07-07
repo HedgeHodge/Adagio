@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil, Play } from 'lucide-react';
+import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil, Play, FlaskConical } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeSession } from '@/ai/flows/summarize-session-flow';
@@ -392,9 +392,14 @@ export default function PomodoroPage() {
               <Sparkles className="mr-2 h-5 w-5" /> Upgrade to Adagio Premium
             </Button>
           )}
-           <Button onClick={togglePremiumStatus} variant="secondary" size="sm" className="mt-2">
-            <RefreshCwIcon className="mr-2 h-4 w-4" /> Toggle Premium (Test): {isPremium ? 'ON' : 'OFF'}
-          </Button>
+           <div className="flex items-center gap-2 mt-2">
+              <Button onClick={togglePremiumStatus} variant="secondary" size="sm">
+                <RefreshCwIcon className="mr-2 h-4 w-4" /> Toggle Premium (Test): {isPremium ? 'ON' : 'OFF'}
+              </Button>
+              <Button onClick={populateTestData} variant="outline" size="sm">
+                <FlaskConical className="mr-2 h-4 w-4" /> Populate Data
+              </Button>
+            </div>
         </div>
        )}
     </>

@@ -5,7 +5,7 @@ import type { PomodoroSettings, PomodoroLogEntry, IntervalType, TimeFilter, Char
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
-import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay } from 'date-fns';
+import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, Timestamp, deleteField } from 'firebase/firestore';
@@ -565,7 +565,58 @@ export function usePomodoro() {
     return Object.entries(aggregation).map(([name, totalMinutes]) => ({ name, totalMinutes })).sort((a, b) => b.totalMinutes - a.totalMinutes);
   }, [pomodoroLog, activeFilter, isClient, isDataLoading, isPremium, filterLogForFreeTier]);
 
-  const populateTestData = useCallback(() => { /* ... implementation unchanged ... */ }, []);
+  const populateTestData = useCallback(() => {
+    const now = new Date();
+    const testLogEntries: PomodoroLogEntry[] = [];
+    const testProjects = ['Client A Website', 'Internal Dashboard', 'Q3 Financials', 'Mobile App Design', 'API Integration'];
+
+    const createEntry = (date: Date, project: string, duration: number): PomodoroLogEntry => {
+      const endTime = date;
+      const startTime = new Date(endTime.getTime() - duration * 60 * 1000);
+      return {
+        id: `${endTime.getTime()}-${project.replace(/\s/g, '')}`,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        type: 'work',
+        duration,
+        project,
+        summary: `Completed key features for ${project}.`,
+      };
+    };
+
+    // Today
+    testLogEntries.push(createEntry(new Date(now.getTime() - 1 * 60 * 60 * 1000), testProjects[0], 25));
+    testLogEntries.push(createEntry(new Date(now.getTime() - 3 * 60 * 60 * 1000), testProjects[1], 50));
+    // Yesterday
+    testLogEntries.push(createEntry(subDays(now, 1), testProjects[0], 45));
+    testLogEntries.push(createEntry(subDays(now, 1), testProjects[2], 30));
+    // This week
+    testLogEntries.push(createEntry(subDays(now, 3), testProjects[3], 60));
+    // Last week
+    testLogEntries.push(createEntry(subWeeks(now, 1), testProjects[1], 90));
+    testLogEntries.push(createEntry(subWeeks(now, 1), testProjects[4], 20));
+    // This month (but > 1 week ago)
+    testLogEntries.push(createEntry(subWeeks(now, 2), testProjects[2], 75));
+    // Last month
+    testLogEntries.push(createEntry(subMonths(now, 1), testProjects[0], 120));
+    testLogEntries.push(createEntry(subMonths(now, 1), testProjects[3], 40));
+
+    const cleanedEntries = testLogEntries.map(cleanLogEntry);
+    setPomodoroLog(prevLog => {
+        const existingIds = new Set(prevLog.map(e => e.id));
+        const newEntries = cleanedEntries.filter(e => !existingIds.has(e.id));
+        const combined = [...prevLog, ...newEntries];
+        const sorted = combined.sort((a,b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
+        return isPremium ? sorted : filterLogForFreeTier(sorted);
+    });
+
+    setRecentProjects(prev => {
+        const combined = [...testProjects, ...prev];
+        return [...new Set(combined)].slice(0, MAX_RECENT_PROJECTS);
+    });
+
+    toast({ title: "Test Data Populated!", description: "10 new log entries added." });
+  }, [isPremium, filterLogForFreeTier, toast]);
 
   const removeRecentProject = useCallback((projectName: string) => {
     setRecentProjects(prev => prev.filter(p => p !== projectName));
