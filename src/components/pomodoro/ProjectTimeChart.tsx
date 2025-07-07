@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from 'react';
 import type { ChartDataPoint } from '@/types/pomodoro';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -24,7 +25,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-export function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
+export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
   if (data.length === 0) {
     return (
       <CardDescription className="text-center py-8 text-muted-foreground">
@@ -130,4 +131,6 @@ export function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
       </ResponsiveContainer>
     </ChartContainer>
   );
-}
+});
+
+ProjectTimeChart.displayName = 'ProjectTimeChart';
