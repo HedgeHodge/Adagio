@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { MessageSquareMore, CircleUserRound, Replace, ScanLine, Brush, Search } from 'lucide-react';
+import { MessageSquareMore, CircleUserRound, Replace, Clock, Brush, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ActionButton = ({ icon, label, className = '' }: { icon: React.ReactNode, label: string, className?: string }) => (
@@ -54,7 +55,9 @@ export default function HomePage() {
           {/* Action Buttons */}
           <div className="absolute bottom-16 w-full flex justify-around items-center px-4 pointer-events-auto">
             <ActionButton icon={<Replace className="h-9 w-9 text-[#8B85E4]" />} label="Convert" />
-            <ActionButton icon={<ScanLine className="h-9 w-9 text-[#66C4C4]" />} label="Scan" />
+            <Link href="/pomodoro">
+              <ActionButton icon={<Clock className="h-9 w-9 text-[#66C4C4]" />} label="Focus" />
+            </Link>
             <ActionButton icon={<Brush className="h-9 w-9 text-[#E4B585]" />} label="Edit" />
           </div>
 

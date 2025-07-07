@@ -102,6 +102,7 @@ export function usePomodoro() {
   const [activeSessionToEdit, setActiveSessionToEdit] = useState<ActivePomodoroSession | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [inputProjectName, setInputProjectName] = useState('');
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -673,6 +674,9 @@ export function usePomodoro() {
     return entriesInPeriod.filter(entry => (entry.project || 'No Project') === selectedChartProject);
   }, [selectedChartProject, pomodoroLog, isPremium, filterLogForFreeTier, getLogEntriesForPeriod, activeFilter, customDateRange]);
 
+  const openSettingsModal = useCallback(() => setIsSettingsModalOpen(true), []);
+  const closeSettingsModal = useCallback(() => setIsSettingsModalOpen(false), []);
+
 
   return {
     settings, updateSettings, activeSessions, pomodoroLog, 
@@ -686,5 +690,6 @@ export function usePomodoro() {
     inputProjectName, setInputProjectName,
     customDateRange, setCustomDateRange,
     isEntriesModalOpen, openEntriesModal, closeEntriesModal, entriesForModal, selectedChartProject,
+    isSettingsModalOpen, openSettingsModal, closeSettingsModal
   };
 }
