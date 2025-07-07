@@ -1,4 +1,10 @@
 
+export interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface PomodoroSettings {
   workDuration: number; // minutes
   shortBreakDuration: number; // minutes
@@ -33,7 +39,6 @@ export interface ActivePomodoroSession {
   currentInterval: IntervalType;
   pomodorosCompletedThisSet: number;
   lastWorkSessionStartTime: number | null; // timestamp for the current work interval of this session
-  shouldLogWork?: boolean; // Flag to indicate this session's work interval needs to be logged
 }
 
 export interface UserPomodoroData {
@@ -41,6 +46,7 @@ export interface UserPomodoroData {
   pomodoroLog?: PomodoroLogEntry[];
   activeSessions?: ActivePomodoroSession[];
   recentProjects?: string[];
+  tasks?: Task[];
   isPremium?: boolean; // Added for premium features
   lastUpdated?: import('firebase/firestore').Timestamp;
 }

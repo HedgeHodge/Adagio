@@ -15,14 +15,17 @@ import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
 import { EditActiveSessionModal } from '@/components/pomodoro/EditActiveSessionModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
+import { TaskList } from '@/components/pomodoro/TaskList';
+import { SessionSummaryModal } from '@/components/pomodoro/SessionSummaryModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil } from 'lucide-react';
+import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { summarizeSession } from '@/ai/flows/summarize-session-flow';
 
 type MobileTab = 'timer' | 'log' | 'insights';
 
@@ -35,6 +38,10 @@ export default function PomodoroPage() {
     updateSettings,
     activeSessions,
     pomodoroLog,
+    tasks,
+    addTask,
+    toggleTask,
+    deleteTask,
     deleteLogEntry,
     addSession,
     removeSession,
@@ -66,13 +73,16 @@ export default function PomodoroPage() {
     updateActiveSessionStartTime,
     inputProjectName,
     setInputProjectName,
-    updateRecentProjects,
+    sessionToSummarize,
+    logSessionFromSummary,
+    closeSummaryModal,
   } = pomodoroState;
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>('timer');
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   useEffect(() => {
     if (isClient && typeof document !== 'undefined') {
@@ -112,6 +122,39 @@ export default function PomodoroPage() {
     }
   };
   
+  const handleFocusTask = (taskText: string) => {
+    const existingSession = activeSessions.find(s => s.project === taskText);
+    if (existingSession) {
+        if (!existingSession.isRunning) {
+            startTimer(existingSession.id);
+        }
+    } else {
+        addSession(taskText);
+    }
+  };
+
+  const handleSaveSummary = async (session: ActivePomodoroSession, description: string) => {
+    if (!description.trim() || !currentUser) {
+        logSessionFromSummary(session, session.project); // Log with original project name if no description or not signed in
+        return;
+    }
+    setIsSummarizing(true);
+    try {
+        const result = await summarizeSession({ description });
+        logSessionFromSummary(session, result.projectName);
+    } catch (error) {
+        console.error("AI summarization failed:", error);
+        toast({
+            title: "AI Summary Failed",
+            description: "Logging with original project name.",
+            variant: "destructive"
+        });
+        logSessionFromSummary(session, session.project);
+    } finally {
+        setIsSummarizing(false);
+    }
+  };
+
   const filterButtonLabel = (filter: TimeFilter): string => {
     switch (filter) {
       case 'today': return 'Today';
@@ -151,17 +194,9 @@ export default function PomodoroPage() {
               variant="outline"
               size="sm"
               className="text-xs px-2 py-1 h-auto bg-card hover:bg-accent/80 border-border shadow-sm text-muted-foreground"
-              onClick={() => {
-                const existingSession = activeSessions.find(s => s.project === project && !s.isRunning);
-                if (existingSession) {
-                    startTimer(existingSession.id);
-                } else if (!activeSessions.some(s => s.project === project && s.isRunning)){
-                    addSession(project);
-                } else {
-                    setInputProjectName(project);
-                }
-              }}
+              onClick={() => handleFocusTask(project)}
             >
+              <Play className="h-3 w-3 mr-1.5" />
               {project}
             </Button>
           ))}
@@ -172,7 +207,7 @@ export default function PomodoroPage() {
       {activeSessions.length === 0 && (
         <Card className="w-full max-w-md mb-8 bg-card shadow-md">
           <CardContent className="p-6 text-center text-muted-foreground">
-            No active sessions. Add a project above to get started!
+            No active sessions. Add a project or start a task to get going!
           </CardContent>
         </Card>
       )}
@@ -262,6 +297,13 @@ export default function PomodoroPage() {
 
   const renderLogContent = () => (
     <>
+      <TaskList 
+        tasks={tasks}
+        onAddTask={addTask}
+        onToggleTask={toggleTask}
+        onDeleteTask={deleteTask}
+        onFocusTask={handleFocusTask}
+      />
       <PomodoroLog
         log={pomodoroLog}
         onDeleteEntry={deleteLogEntry}
@@ -283,9 +325,9 @@ export default function PomodoroPage() {
             <div className="flex items-center">
               <ListChecks className="mr-3 h-5 w-5 text-primary shrink-0" />
               <div>
-                <CardTitle className="text-sm font-semibold text-foreground">Sync Your Log</CardTitle>
+                <CardTitle className="text-sm font-semibold text-foreground">Sync Your Data</CardTitle>
                 <CardDescription className="text-xs text-muted-foreground">
-                  Your log is saved on this device. Sign in to sync your history.
+                  Your tasks and log are saved on this device. Sign in to sync.
                 </CardDescription>
               </div>
             </div>
@@ -339,11 +381,50 @@ export default function PomodoroPage() {
            <Button onClick={togglePremiumStatus} variant="secondary" size="sm" className="mt-2">
             <RefreshCwIcon className="mr-2 h-4 w-4" /> Toggle Premium (Test): {isPremium ? 'ON' : 'OFF'}
           </Button>
-          <Button onClick={populateTestData} variant="outline" size="sm" className="mt-2">
-            Populate Test Data
-          </Button>
         </div>
        )}
+    </>
+  );
+
+  const sharedModals = (
+    <>
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onSave={updateSettings}
+      />
+      <AddEntryModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={addManualLogEntry}
+      />
+      {entryToEdit && (
+        <EditEntryModal
+          isOpen={isEditModalOpen}
+          onClose={closeEditModal}
+          entry={entryToEdit}
+          onSave={updateLogEntry}
+        />
+      )}
+      {activeSessionToEdit && (
+        <EditActiveSessionModal
+          isOpen={isEditActiveSessionModalOpen}
+          onClose={closeEditActiveSessionModal}
+          session={activeSessionToEdit}
+          onSave={updateActiveSessionStartTime}
+        />
+      )}
+      {sessionToSummarize && (
+          <SessionSummaryModal
+            isOpen={!!sessionToSummarize}
+            onClose={closeSummaryModal}
+            session={sessionToSummarize}
+            onSave={handleSaveSummary}
+            isSummarizing={isSummarizing}
+            isPremium={isPremium && !!currentUser}
+          />
+      )}
     </>
   );
 
@@ -365,33 +446,7 @@ export default function PomodoroPage() {
           {activeMobileTab === 'insights' && renderInsightsContent()}
         </main>
         <MobileTabBar activeTab={activeMobileTab} onTabChange={setActiveMobileTab} />
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          settings={settings}
-          onSave={updateSettings}
-        />
-        <AddEntryModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onSave={addManualLogEntry}
-        />
-        {entryToEdit && (
-          <EditEntryModal
-            isOpen={isEditModalOpen}
-            onClose={closeEditModal}
-            entry={entryToEdit}
-            onSave={updateLogEntry}
-          />
-        )}
-        {activeSessionToEdit && (
-          <EditActiveSessionModal
-            isOpen={isEditActiveSessionModalOpen}
-            onClose={closeEditActiveSessionModal}
-            session={activeSessionToEdit}
-            onSave={updateActiveSessionStartTime}
-          />
-        )}
+        {sharedModals}
       </>
     );
   }
@@ -408,34 +463,8 @@ export default function PomodoroPage() {
         {renderTimerContent()}
         {renderLogContent()}
         {renderInsightsContent()}
-
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          settings={settings}
-          onSave={updateSettings}
-        />
-        <AddEntryModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onSave={addManualLogEntry}
-        />
-        {entryToEdit && (
-          <EditEntryModal
-            isOpen={isEditModalOpen}
-            onClose={closeEditModal}
-            entry={entryToEdit}
-            onSave={updateLogEntry}
-          />
-        )}
-        {activeSessionToEdit && (
-          <EditActiveSessionModal
-            isOpen={isEditActiveSessionModalOpen}
-            onClose={closeEditActiveSessionModal}
-            session={activeSessionToEdit}
-            onSave={updateActiveSessionStartTime}
-          />
-        )}
+        
+        {sharedModals}
       </main>
     </>
   );
