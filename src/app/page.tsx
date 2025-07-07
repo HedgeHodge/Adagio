@@ -1,11 +1,10 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { MessageSquareQuestion, CircleUserRound, Replace, ScanLine, Brush, Search } from 'lucide-react';
+import { MessageSquareMore, CircleUserRound, Replace, ScanLine, Brush, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ActionButton = ({ icon, label, className = '' }: { icon: React.ReactNode, label: string, className?: string }) => (
@@ -27,7 +26,7 @@ export default function HomePage() {
       {/* Top Icons */}
       <header className="flex justify-between items-center w-full">
         <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11">
-          <MessageSquareQuestion className="h-6 w-6 text-gray-800" />
+          <MessageSquareMore className="h-6 w-6 text-gray-800" />
         </Button>
         <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11" onClick={() => setIsAuthModalOpen(true)}>
           <CircleUserRound className="h-6 w-6 text-gray-800" />
