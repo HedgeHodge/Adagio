@@ -63,7 +63,7 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
           data={data}
           margin={{ top: 5, right: 5, left: -10, bottom: 20 }}
           className="cursor-pointer"
-          onClick={(state) => {
+          onMouseDown={(state) => {
             if (state && state.activePayload && state.activePayload.length > 0) {
               const payload = state.activePayload[0].payload;
               if (payload && payload.name) {
@@ -136,4 +136,3 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
 });
 
 ProjectTimeChart.displayName = 'ProjectTimeChart';
-
