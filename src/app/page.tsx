@@ -294,7 +294,7 @@ export default function HomePage() {
 
       <footer className="absolute bottom-0 left-0 right-0 flex justify-center pb-5 pointer-events-none z-20">
         <div className="relative w-full max-w-sm h-52">
-          <div className="absolute bottom-0 w-full h-44 bg-white/40 backdrop-blur-xl rounded-t-[48px] shadow-2xl shadow-black/10">
+          <div className="absolute bottom-0 w-full h-44 bg-white/40 backdrop-blur-xl rounded-[48px] shadow-2xl shadow-black/10">
           </div>
           
           <div className="absolute bottom-8 w-full flex justify-around items-end px-4 pointer-events-auto">
