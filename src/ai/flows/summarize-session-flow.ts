@@ -12,12 +12,13 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 export const SessionSummaryInputSchema = z.object({
-  description: z.string().describe('A user-provided description of the work they accomplished during a session.'),
+  tasks: z.array(z.string()).describe('A list of tasks completed during the session.'),
+  description: z.string().optional().describe('A user-provided description of what they accomplished.'),
 });
 export type SessionSummaryInput = z.infer<typeof SessionSummaryInputSchema>;
 
 export const SessionSummaryOutputSchema = z.object({
-  projectName: z.string().describe('A concise and descriptive project or task name, no more than 5 words long, derived from the user\'s description.'),
+  projectName: z.string().describe('A concise and descriptive project or task name, no more than 5 words long, derived from the user\'s completed tasks and description.'),
 });
 export type SessionSummaryOutput = z.infer<typeof SessionSummaryOutputSchema>;
 
@@ -30,23 +31,36 @@ const summaryPrompt = ai.definePrompt({
   input: {schema: SessionSummaryInputSchema},
   output: {schema: SessionSummaryOutputSchema},
   prompt: `You are a productivity assistant. Your goal is to help users log their work efficiently.
-Based on the user's description of their work, create a concise and descriptive project or task name.
+Based on the user's completed tasks and an optional description of their work, create a concise and descriptive project or task name.
 The name should be no more than 5 words long.
 
 Example 1:
-User description: "I was working on the quarterly financial statements for the finance department and also started preparing the slides for the upcoming board meeting."
+Tasks: ["Draft Q3 report", "Create slides for board meeting"]
+Description: "Worked on the quarterly financial statements and started the presentation."
 Your output: "Quarterly Financials & Slides"
 
 Example 2:
-User description: "fixed that weird login bug that was reported by the QA team yesterday"
+Tasks: ["Fix login bug"]
+Description: "fixed that weird login bug that was reported by the QA team yesterday"
 Your output: "Fix Login Bug (QA)"
 
 Example 3:
-User description: "answered a bunch of emails and cleared my inbox"
+Tasks: ["Answer support emails", "Clear backlog"]
 Your output: "Email Triage"
 
-User's description to summarize:
+Now, summarize the following session:
+
+{{#if tasks}}
+Completed Tasks:
+{{#each tasks}}
+- {{{this}}}
+{{/each}}
+{{/if}}
+
+{{#if description}}
+Additional Description:
 "{{{description}}}"
+{{/if}}
 `,
 });
 

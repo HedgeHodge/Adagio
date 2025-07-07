@@ -133,13 +133,20 @@ export default function PomodoroPage() {
   };
 
   const handleSaveSummary = async (session: ActivePomodoroSession, description: string) => {
-    if (!description.trim() || !currentUser) {
-        logSessionFromSummary(session, session.project); // Log with original project name if no description or not signed in
+    const completedTasks = session.tasks.filter(task => task.completed).map(task => task.text);
+    const descriptionTrimmed = description.trim();
+
+    if (!isPremium || !currentUser || (completedTasks.length === 0 && !descriptionTrimmed)) {
+        logSessionFromSummary(session, session.project);
         return;
     }
+
     setIsSummarizing(true);
     try {
-        const result = await summarizeSession({ description });
+        const result = await summarizeSession({ 
+            tasks: completedTasks,
+            description: descriptionTrimmed ? descriptionTrimmed : undefined
+        });
         logSessionFromSummary(session, result.projectName);
     } catch (error) {
         console.error("AI summarization failed:", error);
