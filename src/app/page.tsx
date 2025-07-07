@@ -528,7 +528,7 @@ export default function PomodoroPage() {
 
   return (
     <>
-      <main className="flex flex-col items-center justify-start pt-12 sm:pt-20 min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
+      <main className="flex flex-col items-center justify-start pt-20 min-h-screen bg-background text-foreground p-4 selection:bg-primary/30">
         <Link href="/" aria-label="Adagio Home Page">
             <h1 className="text-6xl sm:text-7xl font-headline font-bold mb-6 sm:mb-8 text-primary cursor-pointer hover:opacity-80 transition-opacity">
                 Adagio
