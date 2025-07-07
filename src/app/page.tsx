@@ -427,7 +427,7 @@ export default function PomodoroPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-              <ProjectTimeChart data={processedChartData} onBarClick={openEntriesModal} />
+              <ProjectTimeChart data={processedChartData} onBarClick={openEntriesModal} isModalOpen={isEntriesModalOpen} />
             </>
           ) : (
             <p className="text-center text-muted-foreground py-4">No data to display. Please sign in.</p>

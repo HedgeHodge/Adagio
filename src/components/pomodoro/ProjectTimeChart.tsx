@@ -10,6 +10,7 @@ import { CardDescription } from '@/components/ui/card';
 interface ProjectTimeChartProps {
   data: ChartDataPoint[];
   onBarClick: (projectName: string) => void;
+  isModalOpen?: boolean;
 }
 
 const formatMinutesToWholeHours = (totalMinutes: number): string => {
@@ -25,7 +26,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
+export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onBarClick, isModalOpen }: ProjectTimeChartProps) {
   if (data.length === 0) {
     return (
       <CardDescription className="text-center py-8 text-muted-foreground">
@@ -88,7 +89,7 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
             allowDecimals={false}
           />
           <ChartTooltip
-            cursor={{ fill: 'hsl(var(--accent))', radius: 4 }}
+            cursor={isModalOpen ? false : { fill: 'hsl(var(--accent))', radius: 4 }}
             content={
               <ChartTooltipContent
                 indicator="dot"
