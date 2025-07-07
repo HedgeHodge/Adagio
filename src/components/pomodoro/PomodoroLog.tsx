@@ -53,19 +53,19 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry }: Pom
         ) : (
           <ScrollArea className="h-[200px] pr-4">
             <ul className="space-y-3">
-              {log.map((entry, index) => (
+              {log.map((entry) => (
                 <li 
                   key={entry.id} 
                   className="flex items-center justify-between p-3 rounded-md border border-border bg-background/50 hover:bg-accent/10 transition-colors group"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm text-foreground truncate">
-                      Entry #{log.length - index} ({formatDuration(entry.duration)})
+                      {entry.project || 'Untitled Entry'} ({formatDuration(entry.duration)})
                     </div>
-                    {entry.project && (
+                    {entry.summary && (
                       <div className="text-xs text-primary/90 flex items-center mt-1 truncate">
                         <Briefcase className="mr-1.5 h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate">{entry.project}</span>
+                        <span className="truncate">{entry.summary}</span>
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground mt-0.5">

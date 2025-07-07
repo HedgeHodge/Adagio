@@ -136,7 +136,7 @@ export default function PomodoroPage() {
     const completedTasks = session.tasks.filter(task => task.completed).map(task => task.text);
 
     if (!isPremium || !currentUser || completedTasks.length === 0) {
-        logSessionFromSummary(session, session.project);
+        logSessionFromSummary(session);
         return;
     }
 
@@ -150,10 +150,10 @@ export default function PomodoroPage() {
         console.error("AI summarization failed:", error);
         toast({
             title: "AI Summary Failed",
-            description: "Logging with original project name.",
+            description: "Logging session without an AI summary.",
             variant: "destructive"
         });
-        logSessionFromSummary(session, session.project);
+        logSessionFromSummary(session);
     } finally {
         setIsSummarizing(false);
     }

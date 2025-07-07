@@ -42,6 +42,9 @@ const cleanLogEntry = (entry: any): PomodoroLogEntry => {
   if (cleanedEntry.project === undefined || cleanedEntry.project === null || (typeof cleanedEntry.project === 'string' && cleanedEntry.project.trim() === '')) {
     delete cleanedEntry.project;
   }
+  if (cleanedEntry.summary === undefined || cleanedEntry.summary === null || (typeof cleanedEntry.summary === 'string' && cleanedEntry.summary.trim() === '')) {
+    delete cleanedEntry.summary;
+  }
   if (!cleanedEntry.startTime || !parseISO(cleanedEntry.startTime).getTime()) {
     console.warn('Invalid startTime in log entry, setting to current time as fallback:', cleanedEntry);
     cleanedEntry.startTime = new Date().toISOString();
@@ -367,14 +370,14 @@ export function usePomodoro() {
     }));
   }, []);
 
- const logWorkEntry = useCallback((session: ActivePomodoroSession, projectNameOverride?: string) => {
+ const logWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
 
     const now = Date.now();
     const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
     if (calculatedDurationMinutes <= 0 && session.currentTime === 0) return null;
 
-    const finalProjectName = projectNameOverride || session.project;
+    const finalProjectName = session.project;
 
     const newLogEntry: PomodoroLogEntry = {
       id: `${now}-${session.id}`,
@@ -383,6 +386,7 @@ export function usePomodoro() {
       type: 'work',
       duration: calculatedDurationMinutes,
       project: finalProjectName,
+      summary: summary,
       sessionId: session.id,
     };
 
@@ -449,8 +453,8 @@ export function usePomodoro() {
     if (notificationSentRefs.current[sessionId]) delete notificationSentRefs.current[sessionId];
   }, [activeSessions, toast]);
 
-  const logSessionFromSummary = useCallback((session: ActivePomodoroSession, projectName: string) => {
-      const loggedEntry = logWorkEntry(session, projectName);
+  const logSessionFromSummary = useCallback((session: ActivePomodoroSession, summary?: string) => {
+      const loggedEntry = logWorkEntry(session, summary);
       if (loggedEntry) {
         toast({
             title: "Work entry logged!",

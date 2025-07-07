@@ -19,6 +19,7 @@ export interface PomodoroLogEntry {
   type: 'work'; // Only logging work pomodoros
   duration: number; // minutes
   project?: string; // Name of the project or task
+  summary?: string; // AI generated summary
   sessionId?: string; // Optional: to link log entry to a specific session if needed
 }
 
