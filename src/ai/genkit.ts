@@ -1,8 +1,5 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const apiKey = process.env.GOOGLE_API_KEY;
 
