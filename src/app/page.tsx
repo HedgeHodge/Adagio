@@ -426,7 +426,7 @@ export default function PomodoroPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-              <ProjectTimeChart data={processedChartData} onBarClick={openEntriesModal} isModalOpen={isEntriesModalOpen} />
+              <ProjectTimeChart data={processedChartData} onBarClick={openEntriesModal} />
             </>
           ) : (
             <p className="text-center text-muted-foreground py-4">No data to display. Please sign in.</p>
@@ -506,11 +506,11 @@ export default function PomodoroPage() {
   if (isMobile) {
     return (
       <>
-        <main className="flex flex-col items-center justify-start pt-6 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
+        <div className="flex flex-col items-center justify-start pt-22 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
           {activeMobileTab === 'timer' && renderTimerContent()}
           {activeMobileTab === 'log' && renderLogContent()}
           {activeMobileTab === 'insights' && renderInsightsContent()}
-        </main>
+        </div>
         <MobileTabBar activeTab={activeMobileTab} onTabChange={setActiveMobileTab} />
         {sharedModals}
       </>
@@ -519,14 +519,14 @@ export default function PomodoroPage() {
 
   return (
     <>
-      <main className="flex flex-col items-center justify-start p-8 min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <div className="flex flex-col items-center justify-start p-8 pt-24 min-h-screen bg-background text-foreground selection:bg-primary/30">
         
         {renderTimerContent()}
         {renderLogContent()}
         {renderInsightsContent()}
         
         {sharedModals}
-      </main>
+      </div>
     </>
   );
 }
