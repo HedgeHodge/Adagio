@@ -326,9 +326,10 @@ export default function PomodoroPage() {
     </>
   );
 
-  const renderLogContent = () => (
+  const renderLogContent = (mobileLayout = false) => (
     <>
       <PomodoroLog
+        isMobileLayout={mobileLayout}
         log={pomodoroLog}
         onDeleteEntry={deleteLogEntry}
         onEditEntry={(entry) => {
@@ -506,9 +507,13 @@ export default function PomodoroPage() {
   if (isMobile) {
     return (
       <>
-        <div className="flex flex-col items-center justify-start pt-6 pb-24 px-4 min-h-screen bg-background text-foreground selection:bg-primary/30">
+        <div className="flex flex-col items-center justify-start pt-6 pb-24 px-4 h-screen bg-background text-foreground selection:bg-primary/30">
           {activeMobileTab === 'timer' && renderTimerContent()}
-          {activeMobileTab === 'log' && renderLogContent()}
+          {activeMobileTab === 'log' && (
+            <div className="w-full max-w-md flex-1 flex flex-col min-h-0">
+              {renderLogContent(true)}
+            </div>
+          )}
           {activeMobileTab === 'insights' && renderInsightsContent()}
         </div>
         <MobileTabBar activeTab={activeMobileTab} onTabChange={setActiveMobileTab} />

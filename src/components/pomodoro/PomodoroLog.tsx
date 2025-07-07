@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { PomodoroLogEntry } from '@/types/pomodoro';
@@ -7,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ListChecks, Briefcase, Trash2, Pencil, PlusCircle } from 'lucide-react';
 import { format, parseISO, isToday, isYesterday } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface PomodoroLogProps {
   log: PomodoroLogEntry[];
   onDeleteEntry: (id: string) => void;
   onEditEntry: (entry: PomodoroLogEntry) => void;
   onAddEntry?: () => void;
+  isMobileLayout?: boolean;
 }
 
 const formatDuration = (minutes: number): string => {
@@ -27,7 +30,7 @@ const formatDuration = (minutes: number): string => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
-export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry }: PomodoroLogProps) {
+export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMobileLayout = false }: PomodoroLogProps) {
   const hasEntries = log.length > 0;
 
   const groupedLog = React.useMemo(() => {
@@ -48,7 +51,10 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry }: Pom
   const groupDates = Object.keys(groupedLog);
 
   return (
-    <Card className="w-full max-w-md mt-8 bg-card shadow-lg">
+    <Card className={cn(
+      "w-full max-w-md mt-8 bg-card shadow-lg",
+      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0"
+    )}>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-primary" />Entry Log</CardTitle>
@@ -62,13 +68,13 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry }: Pom
           {hasEntries ? 'Your completed work entries, grouped by day.' : 'No entries completed yet. Start working or add one manually!'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className={cn("p-0", isMobileLayout && "flex-1 flex flex-col")}>
         {!hasEntries ? (
            <div className="h-[200px] flex items-center justify-center p-6">
              <p className="text-sm text-muted-foreground">Your log is empty.</p>
            </div>
         ) : (
-          <ScrollArea className="h-[240px]">
+          <ScrollArea className={cn("h-[240px]", isMobileLayout && "h-full")}>
             <div className="p-6 pt-0">
               {groupDates.map((dateStr) => {
                 const entriesForDate = groupedLog[dateStr];
