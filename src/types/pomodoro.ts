@@ -25,7 +25,7 @@ export interface PomodoroLogEntry {
 
 export type IntervalType = 'work' | 'shortBreak' | 'longBreak';
 
-export type TimeFilter = 'today' | 'thisWeek' | 'thisMonth';
+export type TimeFilter = 'today' | 'thisWeek' | 'thisMonth' | 'custom';
 
 export interface ChartDataPoint {
   name: string; // Project name or "No Project"

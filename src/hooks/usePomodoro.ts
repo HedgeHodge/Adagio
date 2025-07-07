@@ -5,10 +5,11 @@ import type { PomodoroSettings, PomodoroLogEntry, IntervalType, TimeFilter, Char
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
-import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths } from 'date-fns';
+import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, Timestamp, deleteField } from 'firebase/firestore';
+import type { DateRange } from 'react-day-picker';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
@@ -90,7 +91,10 @@ export function usePomodoro() {
   const [motivationalQuote, setMotivationalQuote] = useState<MotivationalQuoteOutput | null>(null);
   const [isFetchingQuote, setIsFetchingQuote] = useState<boolean>(false);
   const [isClient, setIsClient] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<TimeFilter>('today');
+  const [activeFilter, setActiveFilter] = useState<TimeFilter>('thisWeek');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
+  const [selectedChartProject, setSelectedChartProject] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<PomodoroLogEntry | null>(null);
   const [sessionToSummarize, setSessionToSummarize] = useState<ActivePomodoroSession | null>(null);
@@ -545,25 +549,41 @@ export function usePomodoro() {
     );
   }, []);
 
+  const getLogEntriesForPeriod = useCallback((log: PomodoroLogEntry[], filter: TimeFilter, range?: DateRange): PomodoroLogEntry[] => {
+    const now = new Date();
+    switch (filter) {
+      case 'today':
+        return log.filter(entry => isToday(parseISO(entry.endTime)));
+      case 'thisWeek':
+        return log.filter(entry => isWithinInterval(parseISO(entry.endTime), { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) }));
+      case 'thisMonth':
+        return log.filter(entry => isWithinInterval(parseISO(entry.endTime), { start: startOfMonth(now), end: endOfMonth(now) }));
+      case 'custom':
+        if (range?.from) {
+          const start = startOfDay(range.from);
+          const end = range.to ? endOfDay(range.to) : endOfDay(range.from);
+          return log.filter(entry => isWithinInterval(parseISO(entry.endTime), { start, end }));
+        }
+        return [];
+      default:
+        return log;
+    }
+  }, []);
+
 
   const processedChartData = useMemo((): ChartDataPoint[] => {
     if (!isClient || isDataLoading) return [];
     const currentLog = isPremium ? pomodoroLog : filterLogForFreeTier(pomodoroLog);
-    let filteredLogForChartPeriod: PomodoroLogEntry[];
-    const now = new Date();
-    switch (activeFilter) {
-      case 'today': filteredLogForChartPeriod = currentLog.filter(entry => isToday(parseISO(entry.endTime))); break;
-      case 'thisWeek': filteredLogForChartPeriod = currentLog.filter(entry => isWithinInterval(parseISO(entry.endTime), { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) })); break;
-      case 'thisMonth': filteredLogForChartPeriod = currentLog.filter(entry => isWithinInterval(parseISO(entry.endTime), { start: startOfMonth(now), end: endOfMonth(now) })); break;
-      default: filteredLogForChartPeriod = currentLog;
-    }
+
+    const filteredLogForChartPeriod = getLogEntriesForPeriod(currentLog, activeFilter, customDateRange);
+
     const aggregation: Record<string, number> = {};
     filteredLogForChartPeriod.forEach(entry => {
       const projectName = entry.project || 'No Project';
       aggregation[projectName] = (aggregation[projectName] || 0) + entry.duration;
     });
     return Object.entries(aggregation).map(([name, totalMinutes]) => ({ name, totalMinutes })).sort((a, b) => b.totalMinutes - a.totalMinutes);
-  }, [pomodoroLog, activeFilter, isClient, isDataLoading, isPremium, filterLogForFreeTier]);
+  }, [pomodoroLog, activeFilter, customDateRange, isClient, isDataLoading, isPremium, filterLogForFreeTier, getLogEntriesForPeriod]);
 
   const populateTestData = useCallback(() => {
     const now = new Date();
@@ -634,6 +654,25 @@ export function usePomodoro() {
     }
   }, [activeSessions, motivationalQuote, isFetchingQuote, fetchAndSetQuote, isPremium]);
 
+  const openEntriesModal = useCallback((projectName: string) => {
+    setSelectedChartProject(projectName);
+    setIsEntriesModalOpen(true);
+  }, []);
+
+  const closeEntriesModal = useCallback(() => {
+    setIsEntriesModalOpen(false);
+    setSelectedChartProject(null);
+  }, []);
+
+  const entriesForModal = useMemo(() => {
+    if (!selectedChartProject) return [];
+    
+    const currentLog = isPremium ? pomodoroLog : filterLogForFreeTier(pomodoroLog);
+    const entriesInPeriod = getLogEntriesForPeriod(currentLog, activeFilter, customDateRange);
+
+    return entriesInPeriod.filter(entry => (entry.project || 'No Project') === selectedChartProject);
+  }, [selectedChartProject, pomodoroLog, isPremium, filterLogForFreeTier, getLogEntriesForPeriod, activeFilter, customDateRange]);
+
 
   return {
     settings, updateSettings, activeSessions, pomodoroLog, 
@@ -645,5 +684,7 @@ export function usePomodoro() {
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
     sessionToSummarize, logSessionFromSummary, removeRecentProject,
     inputProjectName, setInputProjectName,
+    customDateRange, setCustomDateRange,
+    isEntriesModalOpen, openEntriesModal, closeEntriesModal, entriesForModal, selectedChartProject,
   };
 }

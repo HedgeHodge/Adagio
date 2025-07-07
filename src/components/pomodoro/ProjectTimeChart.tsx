@@ -8,6 +8,7 @@ import { CardDescription } from '@/components/ui/card';
 
 interface ProjectTimeChartProps {
   data: ChartDataPoint[];
+  onBarClick: (projectName: string) => void;
 }
 
 const formatMinutesToWholeHours = (totalMinutes: number): string => {
@@ -23,7 +24,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
+export function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
   if (data.length === 0) {
     return (
       <CardDescription className="text-center py-8 text-muted-foreground">
@@ -59,7 +60,15 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
         <BarChart
           accessibilityLayer
           data={data}
-          margin={{ top: 5, right: 5, left: -10, bottom: 20 }} 
+          margin={{ top: 5, right: 5, left: -10, bottom: 20 }}
+          onClick={(e) => {
+            if (e && e.activePayload && e.activePayload.length > 0) {
+              const payload = e.activePayload[0].payload;
+              if (payload && payload.name) {
+                onBarClick(payload.name);
+              }
+            }
+          }}
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
           <XAxis
@@ -113,10 +122,9 @@ export function ProjectTimeChart({ data }: ProjectTimeChartProps) {
               />
             }
           />
-          <Bar dataKey="totalMinutes" fill="var(--color-totalMinutes)" radius={[4, 4, 0, 0]} barSize={30} />
+          <Bar dataKey="totalMinutes" fill="var(--color-totalMinutes)" radius={[4, 4, 0, 0]} barSize={30} cursor="pointer" />
         </BarChart>
       </ResponsiveContainer>
     </ChartContainer>
   );
 }
-

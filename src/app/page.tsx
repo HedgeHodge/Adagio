@@ -15,15 +15,19 @@ import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
 import { EditActiveSessionModal } from '@/components/pomodoro/EditActiveSessionModal';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
+import { ProjectEntriesModal } from '@/components/pomodoro/ProjectEntriesModal';
 import { TaskList } from '@/components/pomodoro/TaskList';
 import { SessionSummaryModal } from '@/components/pomodoro/SessionSummaryModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil, Play, FlaskConical } from 'lucide-react';
+import { Quote, BarChart2, Loader2, PlusCircle, XCircle, Sparkles, ListChecks, RefreshCwIcon, Pencil, Play, FlaskConical, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeSession } from '@/ai/flows/summarize-session-flow';
 
@@ -75,6 +79,13 @@ export default function PomodoroPage() {
     setInputProjectName,
     sessionToSummarize,
     logSessionFromSummary,
+    customDateRange,
+    setCustomDateRange,
+    isEntriesModalOpen,
+    openEntriesModal,
+    closeEntriesModal,
+    entriesForModal,
+    selectedChartProject,
   } = pomodoroState;
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -365,7 +376,7 @@ export default function PomodoroPage() {
         <CardContent className="pt-2">
           {currentUser ? (
             <>
-              <div className="flex justify-center space-x-2 mb-6">
+              <div className="flex justify-center flex-wrap gap-2 mb-6">
                 {(['today', 'thisWeek', 'thisMonth'] as const).map((filterOption) => (
                   <Button
                     key={filterOption}
@@ -377,8 +388,46 @@ export default function PomodoroPage() {
                     {filterButtonLabel(filterOption)}
                   </Button>
                 ))}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={activeFilter === 'custom' ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs sm:text-sm px-3 py-1.5 h-auto w-[240px] justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateRange?.from ? (
+                        customDateRange.to ? (
+                          <>
+                            {format(customDateRange.from, "LLL dd, y")} -{" "}
+                            {format(customDateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(customDateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Custom Range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={customDateRange?.from}
+                      selected={customDateRange}
+                      onSelect={(range) => {
+                          setCustomDateRange(range);
+                          if (range?.from) {
+                            setActiveFilter('custom');
+                          }
+                      }}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-              <ProjectTimeChart data={processedChartData} />
+              <ProjectTimeChart data={processedChartData} onBarClick={openEntriesModal} />
             </>
           ) : (
             <p className="text-center text-muted-foreground py-4">No data to display. Please sign in.</p>
@@ -442,6 +491,14 @@ export default function PomodoroPage() {
             isSummarizing={isSummarizing}
             isPremium={isPremium && !!currentUser}
           />
+      )}
+      {selectedChartProject && (
+        <ProjectEntriesModal
+            isOpen={isEntriesModalOpen}
+            onClose={closeEntriesModal}
+            projectName={selectedChartProject}
+            entries={entriesForModal}
+        />
       )}
     </>
   );
