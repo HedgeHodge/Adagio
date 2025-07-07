@@ -60,7 +60,6 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <ResponsiveContainer width="100%" height={250}>
         <BarChart
-          accessibilityLayer
           data={data}
           margin={{ top: 5, right: 5, left: -10, bottom: 20 }}
         >
