@@ -180,54 +180,58 @@ export default function PomodoroPage() {
 
   const renderTimerContent = () => (
     <>
-      <div className="w-full max-w-md mb-4">
-        <Label htmlFor="project-input" className="text-sm font-medium text-foreground/80">
-          Add new work session:
-        </Label>
-        <div className="flex items-center space-x-2 mt-1">
+      <div className="w-full max-w-md mb-6">
+        <div className="relative">
           <Input
             id="project-input"
             type="text"
-            placeholder="E.g., Freelance Project #2"
+            placeholder="What are you working on?"
             value={inputProjectName}
             onChange={(e) => setInputProjectName(e.target.value)}
-            className="bg-card border-border shadow-sm flex-grow"
+            className="bg-card border-border shadow-sm h-12 text-base pl-4 pr-14"
             onKeyPress={(e) => e.key === 'Enter' && handleAddSession()}
           />
-          <Button onClick={handleAddSession} size="icon" aria-label="Add session">
+          <Button
+            onClick={handleAddSession}
+            size="icon"
+            aria-label="Add session"
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full"
+          >
             <PlusCircle className="h-5 w-5" />
           </Button>
         </div>
       </div>
       
       {recentProjects && recentProjects.length > 0 && (
-        <div className="w-full max-w-md mb-6 mt-2 flex flex-wrap gap-2">
-          {recentProjects.map((project) => (
-             <div key={project} className="relative group">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs px-2 py-1 h-auto bg-card hover:bg-accent/80 border-border shadow-sm text-muted-foreground pr-7"
-                  onClick={() => startSessionFromProject(project)}
-                  aria-label={`Start session for ${project}`}
-                >
-                  <Play className="h-3 w-3 mr-1.5" />
-                  <span className="truncate max-w-[120px] inline-block">{project}</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-0 right-0 h-full w-6 rounded-l-none text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => removeRecentProject(project)}
-                  aria-label={`Remove ${project} from recent projects`}
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                </Button>
-            </div>
-          ))}
+        <div className="w-full max-w-md mb-8">
+          <div className="flex flex-wrap gap-3">
+            {recentProjects.map((project) => (
+               <div key={project} className="relative group">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="text-sm px-4 py-2 h-auto bg-card/80 hover:bg-accent/90 border-border shadow-sm text-foreground/90 pr-8"
+                    onClick={() => startSessionFromProject(project)}
+                    aria-label={`Start session for ${project}`}
+                  >
+                    <Play className="h-4 w-4 mr-2 text-primary" />
+                    <span className="truncate max-w-[150px]">{project}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-0 right-0 h-full w-8 rounded-l-none text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removeRecentProject(project)}
+                    aria-label={`Remove ${project} from recent projects`}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-      {(!recentProjects || recentProjects.length === 0) && <div className="mb-6"></div>}
+      {(!recentProjects || recentProjects.length === 0) && <div className="mb-8"></div>}
 
       {activeSessions.length === 0 && (
         <Card className="w-full max-w-md mb-8 bg-card shadow-md">
