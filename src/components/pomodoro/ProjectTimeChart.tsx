@@ -89,7 +89,6 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
             allowDecimals={false}
           />
           <ChartTooltip
-            cursor={isModalOpen ? false : { fill: 'hsl(var(--accent))', radius: 4 }}
             content={
               <ChartTooltipContent
                 indicator="dot"
@@ -122,6 +121,7 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
             radius={[4, 4, 0, 0]}
             barSize={30}
             cursor="pointer"
+            activeBar={false}
             onClick={(data) => {
               if (data && data.name) {
                 onBarClick(data.name);
