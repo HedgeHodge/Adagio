@@ -7,6 +7,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { AuthStatus } from '@/components/layout/AuthStatus';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
+import Link from 'next/link';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -68,11 +69,23 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>
           <AuthProvider>
-            <header className="fixed top-0 right-0 p-4 z-50 flex items-center space-x-2">
-              <ThemeToggleButton />
-              <AuthStatus />
+            <header className="fixed top-0 left-0 right-0 h-16 px-4 z-50 flex items-center justify-between bg-background/95 backdrop-blur-sm border-b border-border">
+                <Link href="/" className="flex items-center" aria-label="Adagio Home Page">
+                    <h1 className="sm:hidden text-3xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                        A
+                    </h1>
+                    <h1 className="hidden sm:block text-3xl font-headline font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity">
+                        Adagio
+                    </h1>
+                </Link>
+              <div className="flex items-center space-x-2">
+                <ThemeToggleButton />
+                <AuthStatus />
+              </div>
             </header>
-            {children}
+            <main className="pt-16">
+                {children}
+            </main>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
