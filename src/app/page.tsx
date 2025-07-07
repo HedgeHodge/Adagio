@@ -52,6 +52,7 @@ export default function PomodoroPage() {
     formatTime,
     isClient,
     recentProjects,
+    removeRecentProject,
     motivationalQuote,
     isFetchingQuote,
     activeFilter,
@@ -192,16 +193,27 @@ export default function PomodoroPage() {
       {recentProjects && recentProjects.length > 0 && (
         <div className="w-full max-w-md mb-6 mt-2 flex flex-wrap gap-2">
           {recentProjects.map((project) => (
-            <Button
-              key={project}
-              variant="outline"
-              size="sm"
-              className="text-xs px-2 py-1 h-auto bg-card hover:bg-accent/80 border-border shadow-sm text-muted-foreground"
-              onClick={() => startSessionFromProject(project)}
-            >
-              <Play className="h-3 w-3 mr-1.5" />
-              {project}
-            </Button>
+             <div key={project} className="relative group">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs px-2 py-1 h-auto bg-card hover:bg-accent/80 border-border shadow-sm text-muted-foreground pr-7"
+                  onClick={() => startSessionFromProject(project)}
+                  aria-label={`Start session for ${project}`}
+                >
+                  <Play className="h-3 w-3 mr-1.5" />
+                  <span className="truncate max-w-[120px] inline-block">{project}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-0 right-0 h-full w-6 rounded-l-none text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => removeRecentProject(project)}
+                  aria-label={`Remove ${project} from recent projects`}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                </Button>
+            </div>
           ))}
         </div>
       )}

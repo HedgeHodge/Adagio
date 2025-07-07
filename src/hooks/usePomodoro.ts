@@ -563,6 +563,14 @@ export function usePomodoro() {
 
   const populateTestData = useCallback(() => { /* ... implementation unchanged ... */ }, []);
 
+  const removeRecentProject = useCallback((projectName: string) => {
+    setRecentProjects(prev => prev.filter(p => p !== projectName));
+    toast({
+      title: "Project Removed",
+      description: `"${projectName}" has been removed from your recent projects.`,
+    });
+  }, [toast]);
+
   useEffect(() => {
     const anySessionOnBreak = activeSessions.some(s => s.currentInterval === 'shortBreak' || s.currentInterval === 'longBreak');
     if (anySessionOnBreak && !isFetchingQuote) {
@@ -580,7 +588,7 @@ export function usePomodoro() {
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
-    sessionToSummarize, logSessionFromSummary,
+    sessionToSummarize, logSessionFromSummary, removeRecentProject,
     inputProjectName, setInputProjectName,
   };
 }
