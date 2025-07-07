@@ -458,19 +458,9 @@ export function usePomodoro() {
         });
       }
       setSessionToSummarize(null);
-      // Reset the specific session that was just logged
-      setActiveSessions(prev => prev.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0} : s));
+      // Reset the specific session that was just logged, including its tasks
+      setActiveSessions(prev => prev.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: []} : s));
   }, [logWorkEntry, toast, formatTime]);
-  
-  const closeSummaryModal = useCallback(() => {
-    const session = sessionToSummarize;
-    setSessionToSummarize(null);
-    if(session) {
-        // Reset session if user skips logging
-        setActiveSessions(prev => prev.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0} : s));
-        toast({ title: "Log Skipped", description: `Session for "${session.project}" was not logged.`})
-    }
-  }, [sessionToSummarize, toast]);
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => { setSettings(prev => ({ ...prev, ...newSettings })); }, []);
   const deleteLogEntry = useCallback((id: string) => { setPomodoroLog(prevLog => { const updatedLog = prevLog.filter(entry => entry.id !== id); return isPremium ? updatedLog : filterLogForFreeTier(updatedLog); }); toast({ title: "Entry deleted", variant: "destructive" }); }, [toast, isPremium, filterLogForFreeTier]);
@@ -590,7 +580,7 @@ export function usePomodoro() {
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
-    sessionToSummarize, logSessionFromSummary, closeSummaryModal,
+    sessionToSummarize, logSessionFromSummary,
     inputProjectName, setInputProjectName,
   };
 }

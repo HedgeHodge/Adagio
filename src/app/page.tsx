@@ -74,7 +74,6 @@ export default function PomodoroPage() {
     setInputProjectName,
     sessionToSummarize,
     logSessionFromSummary,
-    closeSummaryModal,
   } = pomodoroState;
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -132,11 +131,10 @@ export default function PomodoroPage() {
     }
   };
 
-  const handleSaveSummary = async (session: ActivePomodoroSession, description: string) => {
+  const handleSaveSummary = async (session: ActivePomodoroSession) => {
     const completedTasks = session.tasks.filter(task => task.completed).map(task => task.text);
-    const descriptionTrimmed = description.trim();
 
-    if (!isPremium || !currentUser || (completedTasks.length === 0 && !descriptionTrimmed)) {
+    if (!isPremium || !currentUser || completedTasks.length === 0) {
         logSessionFromSummary(session, session.project);
         return;
     }
@@ -145,7 +143,6 @@ export default function PomodoroPage() {
     try {
         const result = await summarizeSession({ 
             tasks: completedTasks,
-            description: descriptionTrimmed ? descriptionTrimmed : undefined
         });
         logSessionFromSummary(session, result.projectName);
     } catch (error) {
@@ -423,7 +420,6 @@ export default function PomodoroPage() {
       {sessionToSummarize && (
           <SessionSummaryModal
             isOpen={!!sessionToSummarize}
-            onClose={closeSummaryModal}
             session={sessionToSummarize}
             onSave={handleSaveSummary}
             isSummarizing={isSummarizing}

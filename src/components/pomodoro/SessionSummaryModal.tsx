@@ -4,7 +4,6 @@
 import * as React from "react";
 import type { ActivePomodoroSession } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -21,47 +20,31 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SessionSummaryModalProps {
   isOpen: boolean;
-  onClose: () => void;
   session: ActivePomodoroSession;
-  onSave: (session: ActivePomodoroSession, description: string) => Promise<void>;
+  onSave: (session: ActivePomodoroSession) => Promise<void>;
   isSummarizing: boolean;
   isPremium: boolean;
 }
 
-export function SessionSummaryModal({ isOpen, onClose, session, onSave, isSummarizing, isPremium }: SessionSummaryModalProps) {
-  const [description, setDescription] = React.useState('');
+export function SessionSummaryModal({ isOpen, session, onSave, isSummarizing, isPremium }: SessionSummaryModalProps) {
   const completedTasks = session.tasks.filter(task => task.completed);
 
   const handleSave = () => {
-    onSave(session, description).finally(() => {
-        setDescription(''); // Clear description after save attempt
-    });
-  };
-
-  const handleSkip = () => {
-    setDescription('');
-    onClose();
+    onSave(session);
   };
   
-  // Prevent closing via overlay click or escape key while summarizing
-  const onOpenChange = (open: boolean) => {
-    if (!isSummarizing && !open) {
-      handleSkip();
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-card">
+    <Dialog open={isOpen}>
+      <DialogContent className="sm:max-w-[480px] bg-card" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-foreground">Session Complete!</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Log your work for "<strong>{session.project}</strong>". How did it go?
+            Log your work for "<strong>{session.project}</strong>".
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          {completedTasks.length > 0 && (
+          {completedTasks.length > 0 ? (
             <div className="space-y-2">
               <Label className="text-foreground/80">Completed Tasks:</Label>
               <ScrollArea className="h-[100px] w-full rounded-md border p-2 bg-background">
@@ -75,39 +58,27 @@ export function SessionSummaryModal({ isOpen, onClose, session, onSave, isSummar
                 </ul>
               </ScrollArea>
             </div>
+          ) : (
+             <p className="text-sm text-muted-foreground text-center py-4">No tasks were marked as complete for this session. The entry will be logged with the original project name.</p>
           )}
 
-          <Label htmlFor="summary-description" className="text-foreground/80">
-            Add additional notes (optional):
-          </Label>
-          <Textarea
-            id="summary-description"
-            placeholder="e.g., Deployed the new feature and monitored the logs..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[100px] bg-background"
-            disabled={isSummarizing}
-          />
-           {!isPremium && (
+           {!isPremium && completedTasks.length > 0 && (
             <Alert>
               <Sparkles className="h-4 w-4" />
               <AlertTitle>Unlock AI Summaries!</AlertTitle>
               <AlertDescription>
-                Upgrade to Premium to automatically generate a concise project name from your completed tasks and notes. For now, it will be logged as "{session.project}".
+                Upgrade to Premium to automatically generate a concise project name from your completed tasks. For now, it will be logged as "{session.project}".
               </AlertDescription>
             </Alert>
            )}
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={handleSkip} disabled={isSummarizing}>
-            Skip
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={isSummarizing}>
+          <Button type="button" onClick={handleSave} disabled={isSummarizing} className="w-full">
             {isSummarizing ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Summarizing...</>
             ) : (
-                isPremium && (completedTasks.length > 0 || description.trim()) ? <><Sparkles className="mr-2 h-4 w-4" /> Summarize & Save</> : "Save Log"
+                isPremium && completedTasks.length > 0 ? <><Sparkles className="mr-2 h-4 w-4" /> Summarize & Save Log</> : "Save Log"
             )}
           </Button>
         </DialogFooter>
