@@ -112,7 +112,7 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[480px] bg-card">
+      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-b-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Edit Entry</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -190,4 +190,3 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
     </Dialog>
   );
 }
-

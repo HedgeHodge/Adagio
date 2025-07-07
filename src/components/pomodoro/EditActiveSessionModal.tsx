@@ -70,7 +70,7 @@ export function EditActiveSessionModal({ isOpen, onClose, session, onSave }: Edi
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[480px] bg-card">
+      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-b-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Edit Start Time</DialogTitle>
           <DialogDescription className="text-muted-foreground">

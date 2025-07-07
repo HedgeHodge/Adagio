@@ -27,7 +27,7 @@ interface ProjectEntriesModalProps {
 export function ProjectEntriesModal({ isOpen, onClose, projectName, entries }: ProjectEntriesModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl bg-card">
+      <DialogContent className="sm:max-w-xl bg-card sm:rounded-b-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">
             Entries for "{projectName}"
