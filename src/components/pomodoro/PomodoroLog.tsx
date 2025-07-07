@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { PomodoroLogEntry } from '@/types/pomodoro';
@@ -104,9 +105,9 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
                               {entry.project || 'Untitled Entry'} ({formatDuration(entry.duration)})
                             </div>
                             {entry.summary && (
-                              <div className="text-xs text-primary/90 flex items-center mt-1 truncate">
-                                <Briefcase className="mr-1.5 h-3.5 w-3.5 flex-shrink-0" />
-                                <span className="truncate">{entry.summary}</span>
+                              <div className="text-xs text-primary/90 flex items-start mt-1">
+                                <Briefcase className="mr-1.5 h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                                <span className="flex-1">{entry.summary}</span>
                               </div>
                             )}
                             <div className="text-xs text-muted-foreground mt-0.5">
