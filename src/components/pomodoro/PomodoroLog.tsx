@@ -52,8 +52,8 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
 
   return (
     <Card className={cn(
-      "w-full max-w-md mt-8 bg-card shadow-lg",
-      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0"
+      "w-full max-w-md mt-8 bg-card shadow-lg rounded-b-3xl",
+      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
     )}>
       <CardHeader>
         <div className="flex justify-between items-center">
@@ -68,7 +68,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
           {hasEntries ? 'Your completed work entries, grouped by day.' : 'No entries completed yet. Start working or add one manually!'}
         </CardDescription>
       </CardHeader>
-      <CardContent className={cn("p-0", isMobileLayout && "flex-1 flex flex-col min-h-0")}>
+      <CardContent className={cn("p-0 min-h-0", isMobileLayout && "flex-1 flex flex-col")}>
         {!hasEntries ? (
            <div className="h-[200px] flex items-center justify-center p-6">
              <p className="text-sm text-muted-foreground">Your log is empty.</p>
