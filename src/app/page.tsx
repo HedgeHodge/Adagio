@@ -224,7 +224,7 @@ export default function HomePage() {
                           <PopoverTrigger asChild>
                               <Button
                                   variant={"outline"}
-                                  className="w-full md:w-[280px] justify-start text-left font-normal"
+                                  className="w-full justify-start text-left font-normal"
                               >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {pomodoro.customDateRange?.from ? (
