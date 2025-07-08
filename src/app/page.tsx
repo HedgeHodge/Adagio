@@ -292,12 +292,12 @@ export default function HomePage() {
                 {currentUser ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden">
+                            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
                                 <Avatar className="h-full w-full">
                                     {currentUser.photoURL ? (
                                         <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
                                     ) : null}
-                                    <AvatarFallback className="bg-transparent text-gray-800 text-xl">
+                                    <AvatarFallback className="bg-white/30 text-gray-800 text-xl">
                                         {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
                                         currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
                                         <CircleUserRound className="h-6 w-6" />}
@@ -332,7 +332,7 @@ export default function HomePage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
-                    <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
+                    <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent" onClick={() => setIsAuthModalOpen(true)}>
                         <CircleUserRound className="h-6 w-6 text-gray-800" />
                     </Button>
                 )}
