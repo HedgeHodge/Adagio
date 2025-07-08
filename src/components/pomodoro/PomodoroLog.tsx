@@ -2,11 +2,11 @@
 "use client";
 
 import type { PomodoroLogEntry } from '@/types/pomodoro';
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListChecks, Briefcase, Trash2, Pencil, PlusCircle } from 'lucide-react';
+import { ListChecks, Briefcase, Trash2, Pencil, PlusCircle, Loader2 } from 'lucide-react';
 import { format, parseISO, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -31,10 +31,19 @@ const formatDuration = (minutes: number): string => {
 };
 
 export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMobileLayout = false }: PomodoroLogProps) {
-  const hasEntries = log.length > 0;
+  const [isMounted, setIsMounted] = useState(false);
 
-  const groupedLog = React.useMemo(() => {
-    return log.reduce<Record<string, PomodoroLogEntry[]>>((acc, entry) => {
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const sortedLog = useMemo(() => {
+    return [...log].sort((a, b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
+  }, [log]);
+
+  const groupedLog = useMemo(() => {
+    if (!isMounted) return {};
+    return sortedLog.reduce<Record<string, PomodoroLogEntry[]>>((acc, entry) => {
       try {
         const entryDateStr = format(parseISO(entry.startTime), 'yyyy-MM-dd');
         if (!acc[entryDateStr]) {
@@ -46,9 +55,40 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
       }
       return acc;
     }, {});
-  }, [log]);
+  }, [sortedLog, isMounted]);
 
   const groupDates = Object.keys(groupedLog);
+  const hasEntries = log.length > 0;
+
+  const renderLoader = () => (
+    <Card className={cn(
+      "w-full max-w-md md:max-w-2xl mx-auto mt-8 bg-card shadow-lg rounded-3xl",
+      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
+    )}>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center text-foreground"><ListChecks className="mr-2 h-5 w-5 text-chart-3" />Entry Log</CardTitle>
+          {onAddEntry && (
+            <Button onClick={onAddEntry} variant="ghost" size="icon" aria-label="Add manual entry" disabled>
+              <PlusCircle className="h-6 w-6 text-primary/80" />
+            </Button>
+          )}
+        </div>
+        <CardDescription className="text-muted-foreground">
+          Loading your completed work entries...
+        </CardDescription>
+      </CardHeader>
+      <CardContent className={cn("p-0 min-h-0", isMobileLayout && "flex-1 flex flex-col")}>
+         <div className="h-[240px] flex items-center justify-center p-6">
+           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+         </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (!isMounted) {
+    return renderLoader();
+  }
 
   return (
     <Card className={cn(
