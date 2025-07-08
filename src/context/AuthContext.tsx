@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(null);
       setIsPremium(false);
     }
-    setLoading(false);
+    // setLoading(false); // This is now handled in the useEffect's getRedirectResult.finally()
   }, []);
 
   useEffect(() => {
@@ -97,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
             toast({ title, description, variant: "destructive", duration: 10000 });
         }
+      })
+      .finally(() => {
+        // This ensures the loading state is only set to false after the redirect
+        // operation has been checked. This is more robust against race conditions
+        // on mobile browsers.
+        setLoading(false);
       });
     
     return () => unsubscribe();
