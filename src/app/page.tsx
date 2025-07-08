@@ -44,7 +44,7 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
     <Button
       variant="secondary"
       className={cn(
-        "w-[84px] h-[84px] bg-white/60 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-300",
+        "w-20 h-20 bg-white/60 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-300",
         isActive ? 'bg-white/90 scale-110 -translate-y-2' : 'hover:bg-white/80',
         className
       )}
@@ -292,31 +292,26 @@ export default function HomePage() {
         {activeTab === 'insights' && InsightsView}
       </main>
 
-      <footer className="absolute bottom-0 left-0 right-0 flex justify-center pb-4 pointer-events-none z-20">
-        <div className="relative w-full max-w-sm h-40">
-          <div className="absolute bottom-0 w-full h-32 bg-white/40 backdrop-blur-xl rounded-[48px] shadow-2xl shadow-black/10">
-          </div>
-          
-          <div className="absolute bottom-6 w-full flex justify-around items-end px-4 pointer-events-auto">
+      <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20">
+        <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/10 flex justify-around items-center px-4">
             <ActionButton 
-              icon={<Clock className={cn("h-9 w-9", activeTab === 'timer' ? 'text-primary' : 'text-gray-700')} />} 
+              icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-gray-700')} />} 
               label="Timer" 
               onClick={() => setActiveTab('timer')}
               isActive={activeTab === 'timer'}
             />
             <ActionButton 
-              icon={<ListChecks className={cn("h-9 w-9", activeTab === 'log' ? 'text-primary' : 'text-gray-700')} />} 
+              icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-gray-700')} />} 
               label="Log" 
               onClick={() => setActiveTab('log')}
               isActive={activeTab === 'log'}
             />
             <ActionButton 
-              icon={<BarChart2 className={cn("h-9 w-9", activeTab === 'insights' ? 'text-primary' : 'text-gray-700')} />} 
+              icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-gray-700')} />} 
               label="Insights" 
               onClick={() => setActiveTab('insights')}
               isActive={activeTab === 'insights'}
             />
-          </div>
         </div>
       </footer>
       
