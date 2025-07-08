@@ -95,7 +95,7 @@ export default function HomePage() {
   };
 
   const TimerView = (
-    <div className="flex flex-col items-center gap-6 w-full max-w-md md:max-w-2xl mx-auto">
+    <div className="flex flex-col items-center gap-6 w-full max-w-md md:max-w-2xl">
          <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
             <CardHeader>
                 <CardTitle>Start a New Session</CardTitle>
@@ -212,7 +212,7 @@ export default function HomePage() {
   );
 
   const InsightsView = (
-      <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md md:max-w-2xl mx-auto">
+      <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md md:max-w-2xl">
           <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                   <div className="flex-1">
@@ -224,7 +224,7 @@ export default function HomePage() {
                           <PopoverTrigger asChild>
                               <Button
                                   variant={"outline"}
-                                  className="w-full justify-start text-left font-normal"
+                                  className="w-full md:w-auto justify-start text-left font-normal"
                               >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {pomodoro.customDateRange?.from ? (
@@ -290,7 +290,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 custom:grid-cols-2 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
           {/* Timer Column */}
           <div className={cn(
-            "custom:col-span-1", 
+            "custom:col-span-1 flex flex-col items-center", 
             activeTab !== 'timer' && 'hidden custom:block'
           )}>
             {TimerView}
@@ -298,7 +298,7 @@ export default function HomePage() {
 
           {/* Insights Column */}
           <div className={cn(
-            "custom:col-span-1", 
+            "custom:col-span-1 flex flex-col items-center", 
             activeTab !== 'insights' && 'hidden custom:block'
           )}>
             {InsightsView}
@@ -306,7 +306,7 @@ export default function HomePage() {
 
           {/* Log Column */}
           <div className={cn(
-            "custom:col-span-2 lg:col-span-1 flex flex-col h-full", 
+            "custom:col-span-2 lg:col-span-1 flex flex-col h-full items-center", 
             activeTab !== 'log' && 'hidden custom:block'
           )}>
             {LogView}
