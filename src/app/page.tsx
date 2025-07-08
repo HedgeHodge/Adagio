@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -48,6 +49,7 @@ import {
     LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDevLog } from '@/context/DevLogContext';
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
@@ -72,6 +74,7 @@ export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
     const { currentUser, isPremium, signOut } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const devLog = useDevLog();
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
@@ -292,7 +295,7 @@ export default function HomePage() {
                 {currentUser ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
+                            <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
                                 <Avatar className="h-full w-full">
                                     {currentUser.photoURL ? (
                                         <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
@@ -332,8 +335,12 @@ export default function HomePage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
-                    <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent" onClick={() => setIsAuthModalOpen(true)}>
-                        <CircleUserRound className="h-6 w-6 text-gray-800" />
+                    <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent" onClick={() => setIsAuthModalOpen(true)}>
+                         <Avatar className="h-full w-full">
+                           <AvatarFallback className="bg-white/30 text-gray-800">
+                                <CircleUserRound className="h-6 w-6" />
+                           </AvatarFallback>
+                         </Avatar>
                     </Button>
                 )}
             </header>
@@ -365,8 +372,13 @@ export default function HomePage() {
                         {/* Add button to populate test data */}
                         {process.env.NODE_ENV === 'development' && (
                             <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mt-8 mx-auto">
-                                <CardContent className="flex justify-center py-4">
-                                    <Button variant="ghost" onClick={pomodoro.populateTestData} className="w-full">Populate Test Data</Button>
+                                <CardContent className="flex flex-col md:flex-row items-center justify-center py-4 gap-4">
+                                    <Button variant="ghost" onClick={pomodoro.populateTestData}>Populate Test Data</Button>
+                                    {devLog && (
+                                         <Button variant="ghost" onClick={devLog.toggleDevMode}>
+                                             {devLog.isDevModeEnabled ? 'Hide Dev Log' : 'Show Dev Log'}
+                                         </Button>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}

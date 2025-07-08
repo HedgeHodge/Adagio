@@ -5,6 +5,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { DevLogProvider } from '@/context/DevLogContext';
+import { DevLogPanel } from '@/components/dev/DevLogPanel';
 
 const nunito_sans = Nunito_Sans({
   subsets: ['latin'],
@@ -52,12 +54,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${nunito_sans.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        <DevLogProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+              <Toaster />
+              <DevLogPanel />
+            </AuthProvider>
+          </ThemeProvider>
+        </DevLogProvider>
       </body>
     </html>
   );
