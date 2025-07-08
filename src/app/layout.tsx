@@ -1,15 +1,15 @@
 
 import type { Metadata, Viewport } from 'next';
-import { Roboto_Slab, Pacifico } from 'next/font/google';
+import { Inter, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 
-const robotoSlab = Roboto_Slab({
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-roboto-slab',
+  variable: '--font-inter',
 });
 
 const pacifico = Pacifico({
@@ -50,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${robotoSlab.variable} ${pacifico.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
         <ThemeProvider>
           <AuthProvider>

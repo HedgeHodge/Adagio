@@ -11,7 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['var(--font-roboto-slab)', 'serif'],
+        body: ['var(--font-inter)', 'sans-serif'],
         handwritten: ['var(--font-pacifico)', 'cursive'],
         code: ['monospace'],
       },
