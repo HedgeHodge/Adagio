@@ -76,7 +76,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-email') {
         message = 'Invalid email or password.';
       } else if (err.code === 'auth/unauthorized-domain') {
-        message = `Sign-in from this domain (${hostname}) is not authorized for sign-in. Please contact the administrator.`;
+        message = `Sign-in from this domain (${hostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
       }
       setError(message);
     } finally {
@@ -99,7 +99,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
       } else if (err.code === 'auth/invalid-email') {
         message = 'The email address is not valid.';
       } else if (err.code === 'auth/unauthorized-domain') {
-        message = `Sign-up from this domain (${hostname}) is not authorized for sign-in. Please contact the administrator.`;
+        message = `Sign-up from this domain (${hostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
       }
       setError(message);
     } finally {
@@ -239,9 +239,9 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
         </Tabs>
 
         {error && (
-          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive flex items-center">
-            <AlertCircle className="h-4 w-4 mr-2 shrink-0" />
-            {error}
+          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive flex items-start">
+            <AlertCircle className="h-4 w-4 mr-2 shrink-0 mt-0.5" />
+            <span className="flex-1">{error}</span>
           </div>
         )}
 
@@ -264,16 +264,6 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
             </>
           )}
         </Button>
-        
-        {hostname && error?.includes("not authorized for sign-in") && (
-          <Alert className="mt-4">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Configuration Help</AlertTitle>
-            <AlertDescription>
-              To enable sign-in, add your app's domain (<strong>{hostname}</strong>) to the "Authorized domains" list in your Firebase project's Authentication settings.
-            </AlertDescription>
-          </Alert>
-        )}
 
         <DialogFooter className="mt-2 pt-4 text-center text-xs text-muted-foreground">
           By continuing, you agree to Adagio's Terms of Service and Privacy Policy.

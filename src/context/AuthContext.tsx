@@ -85,7 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error.code === 'auth/unauthorized-domain') {
           title = "Domain Not Authorized";
-          description = "This app's domain is not authorized for sign-in. Please ask the administrator to add it to the Firebase project's 'Authorized domains' list.";
+          const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'your app domain';
+          description = `Sign-in from this domain (${currentHostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
         } else if (error.code === 'auth/account-exists-with-different-credential') {
           title = "Account Exists";
           description = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-            toast({ title, description, variant: "destructive" });
+            toast({ title, description, variant: "destructive", duration: 10000 });
         }
       });
     
