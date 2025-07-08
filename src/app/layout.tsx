@@ -1,15 +1,15 @@
 
 import type { Metadata, Viewport } from 'next';
-import { Inter, Pacifico } from 'next/font/google';
+import { Nunito_Sans, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 
-const inter = Inter({
+const nunito_sans = Nunito_Sans({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-nunito-sans',
 });
 
 const pacifico = Pacifico({
@@ -50,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${pacifico.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${nunito_sans.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
         <ThemeProvider>
           <AuthProvider>
