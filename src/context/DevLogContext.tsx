@@ -43,8 +43,6 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-
     if (isDevModeEnabled) {
       console.log = (...args) => {
         originalConsole.log(...args);
@@ -74,20 +72,13 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
   }, [isDevModeEnabled, addLog]);
 
   const toggleDevMode = useCallback(() => {
-    if (process.env.NODE_ENV === 'development') {
-        setIsDevModeEnabled(prev => !prev);
-    }
+    setIsDevModeEnabled(prev => !prev);
   }, []);
 
   const clearLogs = useCallback(() => {
     setLogs([]);
   }, []);
   
-  // Only render provider in development
-  if (process.env.NODE_ENV !== 'development') {
-    return <>{children}</>;
-  }
-
   const value = { isDevModeEnabled, toggleDevMode, logs, clearLogs };
 
   return (
@@ -99,7 +90,7 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
 
 export function useDevLog() {
   const context = useContext(DevLogContext);
-  if (context === undefined && process.env.NODE_ENV === 'development') {
+  if (context === undefined) {
     throw new Error('useDevLog must be used within a DevLogProvider');
   }
   return context;

@@ -371,18 +371,16 @@ export default function HomePage() {
                         activeTab !== 'log' && 'hidden custom:flex'
                     )}>
                         {/* Dev tools moved to the top of the column to ensure visibility */}
-                        {process.env.NODE_ENV === 'development' && (
-                            <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mb-8 mx-auto">
-                                <CardContent className="flex flex-col md:flex-row items-center justify-center py-4 gap-4">
-                                    <Button variant="ghost" onClick={pomodoro.populateTestData}>Populate Test Data</Button>
-                                    {devLog && (
-                                         <Button variant="ghost" onClick={devLog.toggleDevMode}>
-                                             {devLog.isDevModeEnabled ? 'Hide Dev Log' : 'Show Dev Log'}
-                                         </Button>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        )}
+                        <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mb-8 mx-auto">
+                            <CardContent className="flex flex-col md:flex-row items-center justify-center py-4 gap-4">
+                                <Button variant="ghost" onClick={pomodoro.populateTestData}>Populate Test Data</Button>
+                                {devLog && (
+                                        <Button variant="ghost" onClick={devLog.toggleDevMode}>
+                                            {devLog.isDevModeEnabled ? 'Hide Dev Log' : 'Show Dev Log'}
+                                        </Button>
+                                )}
+                            </CardContent>
+                        </Card>
                         {LogView}
                     </div>
                 </div>
