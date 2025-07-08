@@ -95,7 +95,7 @@ export default function HomePage() {
   };
 
   const TimerView = (
-    <div className="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
+    <div className="flex flex-col items-center gap-6 w-full max-w-md md:max-w-2xl mx-auto">
          <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
             <CardHeader>
                 <CardTitle>Start a New Session</CardTitle>
