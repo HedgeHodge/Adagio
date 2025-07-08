@@ -26,18 +26,6 @@ export function DevLogPanel() {
     }
   };
   
-  const formatMessage = (msg: any): string => {
-    if (typeof msg === 'string') return msg;
-    if (typeof msg === 'object' && msg !== null) {
-      try {
-        return JSON.stringify(msg, null, 2);
-      } catch (e) {
-        return '[Unserializable Object]';
-      }
-    }
-    return String(msg);
-  }
-
   return (
     <div className="fixed bottom-4 right-4 z-[200] w-full max-w-lg">
       <Card className="bg-card/90 backdrop-blur-sm shadow-2xl">
@@ -65,7 +53,8 @@ export function DevLogPanel() {
                              <span>{log.timestamp}</span>
                            </div>
                            <pre className="whitespace-pre-wrap break-all">
-                               {log.message.map(formatMessage).join(' ')}
+                               {/* Messages are already pre-formatted strings */}
+                               {log.message.join(' ')}
                            </pre>
                         </div>
                     ))}

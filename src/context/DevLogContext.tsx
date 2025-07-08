@@ -5,7 +5,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 
 interface LogMessage {
   type: 'log' | 'warn' | 'error';
-  message: any[];
+  // Messages are pre-formatted into strings to ensure they are serializable
+  message: string[];
   timestamp: string;
 }
 
@@ -26,6 +27,32 @@ const originalConsole = {
 
 const SESSION_STORAGE_LOG_KEY = 'adagio-dev-logs';
 
+const formatForStorage = (msg: any): string => {
+    if (typeof msg === 'string') return msg;
+    if (msg === undefined) return 'undefined';
+    if (msg === null) return 'null';
+    if (typeof msg === 'function') return `[Function: ${msg.name || 'anonymous'}]`;
+    try {
+        // Handle circular references and stringify objects
+        const cache = new Set();
+        return JSON.stringify(msg, (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+                if (cache.has(value)) {
+                    return '[Circular]';
+                }
+                cache.add(value);
+            }
+            // stringify bigints
+            if (typeof value === 'bigint') {
+                return value.toString() + 'n';
+            }
+            return value;
+        }, 2); // Indent with 2 spaces for readability
+    } catch (e) {
+        return '[Unserializable Object]';
+    }
+}
+
 export function DevLogProvider({ children }: { children: ReactNode }) {
   const [isDevModeEnabled, setIsDevModeEnabled] = useState(false);
   const [logs, setLogs] = useState<LogMessage[]>([]);
@@ -44,12 +71,14 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
   const addLog = useCallback((type: 'log' | 'warn' | 'error', ...args: any[]) => {
     if (args.some(arg => typeof arg === 'string' && arg.includes('DevLogContext'))) return;
 
+    const formattedMessages = args.map(formatForStorage);
+
     setLogs(prevLogs => {
       const newLogs = [
         ...prevLogs,
         {
           type,
-          message: args,
+          message: formattedMessages,
           timestamp: new Date().toLocaleTimeString(),
         },
       ];
