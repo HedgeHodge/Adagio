@@ -292,7 +292,7 @@ export default function HomePage() {
                 {currentUser ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11 p-0 overflow-hidden">
+                            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden">
                                 <Avatar className="h-full w-full">
                                     {currentUser.photoURL ? (
                                         <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
@@ -332,14 +332,14 @@ export default function HomePage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
-                    <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
+                    <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
                         <CircleUserRound className="h-6 w-6 text-gray-800" />
                     </Button>
                 )}
             </header>
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
-                 <div className="grid grid-cols-1 custom:grid-cols-2 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+                 <div className="grid grid-cols-1 custom:grid-cols-2 lg:col-span-1 custom:mx-auto gap-8 items-start max-w-7xl">
                     {/* Timer Column */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
