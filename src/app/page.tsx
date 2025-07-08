@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDevLog } from '@/context/DevLogContext';
+import { AccountModal } from '@/components/auth/AccountModal';
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
@@ -74,6 +75,7 @@ export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
     const { currentUser, isPremium, signOut } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const devLog = useDevLog();
 
     const [isSummarizing, setIsSummarizing] = useState(false);
@@ -335,7 +337,7 @@ export default function HomePage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
-                    <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent" onClick={() => setIsAuthModalOpen(true)}>
+                    <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
                          <Avatar className="h-full w-full">
                            <AvatarFallback className="bg-white/30 text-gray-800">
                                 <CircleUserRound className="h-6 w-6" />
@@ -368,10 +370,9 @@ export default function HomePage() {
                         "custom:col-span-2 lg:col-span-1 flex flex-col h-full items-center",
                         activeTab !== 'log' && 'hidden custom:flex'
                     )}>
-                        {LogView}
-                        {/* Add button to populate test data */}
+                        {/* Dev tools moved to the top of the column to ensure visibility */}
                         {process.env.NODE_ENV === 'development' && (
-                            <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mt-8 mx-auto">
+                            <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mb-8 mx-auto">
                                 <CardContent className="flex flex-col md:flex-row items-center justify-center py-4 gap-4">
                                     <Button variant="ghost" onClick={pomodoro.populateTestData}>Populate Test Data</Button>
                                     {devLog && (
@@ -382,7 +383,7 @@ export default function HomePage() {
                                 </CardContent>
                             </Card>
                         )}
-
+                        {LogView}
                     </div>
                 </div>
             </main>
@@ -411,6 +412,7 @@ export default function HomePage() {
             </footer>
 
             {!currentUser && <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />}
+            {currentUser && <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />}
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
