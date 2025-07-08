@@ -214,12 +214,12 @@ export default function HomePage() {
   const InsightsView = (
       <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
           <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                   <div className="flex-1">
                       <CardTitle>Productivity Insights</CardTitle>
                       <CardDescription>Time spent per project.</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
                        <Popover>
                           <PopoverTrigger asChild>
                               <Button
@@ -255,7 +255,7 @@ export default function HomePage() {
                           </PopoverContent>
                       </Popover>
                       <Select value={pomodoro.activeFilter} onValueChange={(value) => pomodoro.setActiveFilter(value as any)}>
-                          <SelectTrigger className="w-[140px]">
+                          <SelectTrigger className="w-full sm:w-[140px]">
                               <SelectValue placeholder="Select filter" />
                           </SelectTrigger>
                           <SelectContent>
