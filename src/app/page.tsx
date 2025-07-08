@@ -24,8 +24,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { AccountModal } from '@/components/auth/AccountModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
     CircleUserRound,
     Clock,
@@ -36,7 +43,9 @@ import {
     X,
     Calendar as CalendarIcon,
     Loader2,
-    Sparkles
+    Sparkles,
+    CheckCircle,
+    LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,22 +70,13 @@ type ActiveTab = 'timer' | 'log' | 'insights';
 
 export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
-    const { currentUser, isPremium } = useAuth();
+    const { currentUser, isPremium, signOut } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
 
     const pomodoro = usePomodoro();
-
-    const handleAccountClick = () => {
-        if (currentUser) {
-            setIsAccountModalOpen(true);
-        } else {
-            setIsAuthModalOpen(true);
-        }
-    };
 
     const handleAddSession = (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,7 +105,7 @@ export default function HomePage() {
     };
 
     const TimerView = (
-        <div className="flex flex-col items-center gap-6 w-full max-w-md md:max-w-2xl">
+        <div className="flex flex-col items-center gap-6 w-full max-w-md">
             <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
                 <CardHeader>
                     <CardTitle>Start a New Session</CardTitle>
@@ -222,7 +222,7 @@ export default function HomePage() {
     );
 
     const InsightsView = (
-        <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md md:max-w-2xl mx-auto">
+        <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md mx-auto">
             <CardHeader>
                 <div>
                     <CardTitle>Productivity Insights</CardTitle>
@@ -289,30 +289,61 @@ export default function HomePage() {
                     <span className="hidden md:inline">Adagio</span>
                     <span className="md:hidden">A</span>
                 </div>
-                <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11 p-0 overflow-hidden" onClick={handleAccountClick}>
-                    {currentUser ? (
-                        <Avatar className="h-full w-full">
-                            {currentUser.photoURL ? (
-                                <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
-                            ) : null}
-                            <AvatarFallback className="bg-transparent text-gray-800 text-xl">
-                                {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
-                                currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
-                                <CircleUserRound className="h-6 w-6" />}
-                            </AvatarFallback>
-                        </Avatar>
-                    ) : (
+                {currentUser ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11 p-0 overflow-hidden">
+                                <Avatar className="h-full w-full">
+                                    {currentUser.photoURL ? (
+                                        <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
+                                    ) : null}
+                                    <AvatarFallback className="bg-transparent text-gray-800 text-xl">
+                                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
+                                        currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
+                                        <CircleUserRound className="h-6 w-6" />}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                             <DropdownMenuLabel className="font-normal">
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-sm font-medium leading-none text-foreground">
+                                        {currentUser.displayName || "User"}
+                                    </p>
+                                    {currentUser.email && (
+                                        <p className="text-xs leading-none text-muted-foreground">
+                                            {currentUser.email}
+                                        </p>
+                                    )}
+                                </div>
+                             </DropdownMenuLabel>
+                             <DropdownMenuSeparator />
+                             {isPremium && (
+                                <DropdownMenuItem disabled className="opacity-100 cursor-default focus:bg-transparent focus:text-primary">
+                                    <CheckCircle className="mr-2 h-4 w-4 text-primary" />
+                                    <span className="text-sm font-medium text-primary">Premium Member</span>
+                                </DropdownMenuItem>
+                             )}
+                             <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sign Out</span>
+                             </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
                         <CircleUserRound className="h-6 w-6 text-gray-800" />
-                    )}
-                </Button>
+                    </Button>
+                )}
             </header>
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
-                <div className="grid grid-cols-1 custom:grid-cols-2 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+                 <div className="grid grid-cols-1 custom:grid-cols-2 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
                     {/* Timer Column */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
-                        activeTab !== 'timer' && 'hidden custom:block'
+                        activeTab !== 'timer' && 'hidden custom:flex'
                     )}>
                         {TimerView}
                     </div>
@@ -320,7 +351,7 @@ export default function HomePage() {
                     {/* Insights Column */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
-                        activeTab !== 'insights' && 'hidden custom:block'
+                        activeTab !== 'insights' && 'hidden custom:flex'
                     )}>
                         {InsightsView}
                     </div>
@@ -328,7 +359,7 @@ export default function HomePage() {
                     {/* Log Column */}
                     <div className={cn(
                         "custom:col-span-2 lg:col-span-1 flex flex-col h-full items-center",
-                        activeTab !== 'log' && 'hidden custom:block'
+                        activeTab !== 'log' && 'hidden custom:flex'
                     )}>
                         {LogView}
                         {/* Add button to populate test data */}
@@ -367,11 +398,7 @@ export default function HomePage() {
                 </div>
             </footer>
 
-            {currentUser ? (
-                <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />
-            ) : (
-                <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
-            )}
+            {!currentUser && <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />}
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
