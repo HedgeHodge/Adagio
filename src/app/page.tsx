@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -25,6 +24,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { AccountModal } from '@/components/auth/AccountModal';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     CircleUserRound,
     Clock,
@@ -62,11 +63,20 @@ export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
     const { currentUser, isPremium } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
 
     const pomodoro = usePomodoro();
+
+    const handleAccountClick = () => {
+        if (currentUser) {
+            setIsAccountModalOpen(true);
+        } else {
+            setIsAuthModalOpen(true);
+        }
+    };
 
     const handleAddSession = (e: React.FormEvent) => {
         e.preventDefault();
@@ -108,7 +118,7 @@ export default function HomePage() {
                                 placeholder="What are you working on?"
                                 value={pomodoro.inputProjectName}
                                 onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
-                                className="h-12 text-base pr-24 bg-background/70"
+                                className="h-12 text-base pr-28 bg-background/70"
                                 disabled={pomodoro.isDataLoading}
                             />
                             <Button type="submit" size="sm" className="absolute top-1/2 right-2 -translate-y-1/2" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
@@ -218,12 +228,12 @@ export default function HomePage() {
                     <CardTitle>Productivity Insights</CardTitle>
                     <CardDescription>Time spent per project.</CardDescription>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+                <div className="flex flex-col md:flex-row items-center gap-2 pt-4">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant={"outline"}
-                                className="w-full sm:w-auto justify-start text-left font-normal"
+                                className="w-full md:w-auto justify-start text-left font-normal"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {pomodoro.customDateRange?.from ? (
@@ -254,7 +264,7 @@ export default function HomePage() {
                         </PopoverContent>
                     </Popover>
                     <Select value={pomodoro.activeFilter} onValueChange={(value) => pomodoro.setActiveFilter(value as any)}>
-                        <SelectTrigger className="w-full sm:w-[140px]">
+                        <SelectTrigger className="w-full md:w-[140px]">
                             <SelectValue placeholder="Select filter" />
                         </SelectTrigger>
                         <SelectContent>
@@ -279,8 +289,21 @@ export default function HomePage() {
                     <span className="hidden md:inline">Adagio</span>
                     <span className="md:hidden">A</span>
                 </div>
-                <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11" onClick={() => setIsAuthModalOpen(true)}>
-                    <CircleUserRound className="h-6 w-6 text-gray-800" />
+                <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11 p-0 overflow-hidden" onClick={handleAccountClick}>
+                    {currentUser ? (
+                        <Avatar className="h-full w-full">
+                            {currentUser.photoURL ? (
+                                <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
+                            ) : null}
+                            <AvatarFallback className="bg-transparent text-gray-800 text-xl">
+                                {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
+                                currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
+                                <CircleUserRound className="h-6 w-6" />}
+                            </AvatarFallback>
+                        </Avatar>
+                    ) : (
+                        <CircleUserRound className="h-6 w-6 text-gray-800" />
+                    )}
                 </Button>
             </header>
 
@@ -344,7 +367,9 @@ export default function HomePage() {
                 </div>
             </footer>
 
-            {!currentUser && (
+            {currentUser ? (
+                <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />
+            ) : (
                 <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
             )}
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
