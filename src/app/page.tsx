@@ -315,7 +315,7 @@ export default function HomePage() {
       </main>
 
       <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20 lg:hidden">
-        <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/10 flex justify-around items-center px-4">
+        <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
             <ActionButton 
               icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-gray-700')} />} 
               label="Timer" 
