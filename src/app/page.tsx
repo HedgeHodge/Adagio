@@ -212,60 +212,58 @@ export default function HomePage() {
     );
 
     const InsightsView = (
-        <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md md:max-w-2xl">
+        <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md md:max-w-2xl mx-auto">
             <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
-                    <div className="flex-1">
-                        <CardTitle>Productivity Insights</CardTitle>
-                        <CardDescription>Time spent per project.</CardDescription>
-                    </div>
-                    <div className="flex flex-col md:flex-row items-center gap-2">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className="w-full md:w-auto justify-start text-left font-normal"
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {pomodoro.customDateRange?.from ? (
-                                        pomodoro.customDateRange.to ? (
-                                            <>
-                                                {format(pomodoro.customDateRange.from, "LLL dd, y")} -{" "}
-                                                {format(pomodoro.customDateRange.to, "LLL dd, y")}
-                                            </>
-                                        ) : (
-                                            format(pomodoro.customDateRange.from, "LLL dd, y")
-                                        )
+                <div>
+                    <CardTitle>Productivity Insights</CardTitle>
+                    <CardDescription>Time spent per project.</CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className="w-full sm:w-auto justify-start text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {pomodoro.customDateRange?.from ? (
+                                    pomodoro.customDateRange.to ? (
+                                        <>
+                                            {format(pomodoro.customDateRange.from, "LLL dd, y")} -{" "}
+                                            {format(pomodoro.customDateRange.to, "LLL dd, y")}
+                                        </>
                                     ) : (
-                                        <span>Pick a date</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end">
-                                <Calendar
-                                    mode="range"
-                                    defaultMonth={pomodoro.customDateRange?.from}
-                                    selected={pomodoro.customDateRange}
-                                    onSelect={(range) => {
-                                        pomodoro.setCustomDateRange(range);
-                                        pomodoro.setActiveFilter('custom');
-                                    }}
-                                    numberOfMonths={2}
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        <Select value={pomodoro.activeFilter} onValueChange={(value) => pomodoro.setActiveFilter(value as any)}>
-                            <SelectTrigger className="w-full md:w-[140px]">
-                                <SelectValue placeholder="Select filter" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="thisWeek">This Week</SelectItem>
-                                <SelectItem value="thisMonth">This Month</SelectItem>
-                                <SelectItem value="today">Today</SelectItem>
-                                <SelectItem value="custom" disabled>Custom</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                                        format(pomodoro.customDateRange.from, "LLL dd, y")
+                                    )
+                                ) : (
+                                    <span>Pick a date</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                mode="range"
+                                defaultMonth={pomodoro.customDateRange?.from}
+                                selected={pomodoro.customDateRange}
+                                onSelect={(range) => {
+                                    pomodoro.setCustomDateRange(range);
+                                    pomodoro.setActiveFilter('custom');
+                                }}
+                                numberOfMonths={2}
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    <Select value={pomodoro.activeFilter} onValueChange={(value) => pomodoro.setActiveFilter(value as any)}>
+                        <SelectTrigger className="w-full sm:w-[140px]">
+                            <SelectValue placeholder="Select filter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="thisWeek">This Week</SelectItem>
+                            <SelectItem value="thisMonth">This Month</SelectItem>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="custom" disabled>Custom</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardHeader>
             <CardContent>
