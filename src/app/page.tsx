@@ -286,35 +286,35 @@ export default function HomePage() {
         </Button>
       </header>
       
-      <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 lg:pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+      <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
+        <div className="grid grid-cols-1 custom:grid-cols-2 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
           {/* Timer Column */}
           <div className={cn(
-            "lg:col-span-1", 
-            activeTab !== 'timer' && 'hidden lg:block'
+            "custom:col-span-1", 
+            activeTab !== 'timer' && 'hidden custom:block'
           )}>
             {TimerView}
           </div>
 
           {/* Insights Column */}
           <div className={cn(
-            "lg:col-span-1", 
-            activeTab !== 'insights' && 'hidden lg:block'
+            "custom:col-span-1", 
+            activeTab !== 'insights' && 'hidden custom:block'
           )}>
             {InsightsView}
           </div>
 
           {/* Log Column */}
           <div className={cn(
-            "lg:col-span-2 xl:col-span-1 flex flex-col h-full", 
-            activeTab !== 'log' && 'hidden lg:block'
+            "custom:col-span-2 lg:col-span-1 flex flex-col h-full", 
+            activeTab !== 'log' && 'hidden custom:block'
           )}>
             {LogView}
           </div>
         </div>
       </main>
 
-      <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20 lg:hidden">
+      <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20 custom:hidden">
         <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
             <ActionButton 
               icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-gray-700')} />} 

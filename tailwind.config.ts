@@ -10,6 +10,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'custom': '700px',
+      },
       fontFamily: {
         body: ['var(--font-nunito-sans)', 'sans-serif'],
         handwritten: ['var(--font-pacifico)', 'cursive'],
