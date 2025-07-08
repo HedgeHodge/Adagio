@@ -24,22 +24,42 @@ const originalConsole = {
   error: console.error,
 };
 
+const SESSION_STORAGE_LOG_KEY = 'adagio-dev-logs';
+
 export function DevLogProvider({ children }: { children: ReactNode }) {
   const [isDevModeEnabled, setIsDevModeEnabled] = useState(false);
   const [logs, setLogs] = useState<LogMessage[]>([]);
 
+  useEffect(() => {
+    try {
+      const storedLogs = sessionStorage.getItem(SESSION_STORAGE_LOG_KEY);
+      if (storedLogs) {
+        setLogs(JSON.parse(storedLogs));
+      }
+    } catch (error) {
+      originalConsole.error('Failed to load dev logs from session storage', error);
+    }
+  }, []);
+
   const addLog = useCallback((type: 'log' | 'warn' | 'error', ...args: any[]) => {
-    // Prevent feedback loop if logging state
     if (args.some(arg => typeof arg === 'string' && arg.includes('DevLogContext'))) return;
 
-    setLogs(prevLogs => [
-      ...prevLogs,
-      {
-        type,
-        message: args,
-        timestamp: new Date().toLocaleTimeString(),
-      },
-    ]);
+    setLogs(prevLogs => {
+      const newLogs = [
+        ...prevLogs,
+        {
+          type,
+          message: args,
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ];
+      try {
+        sessionStorage.setItem(SESSION_STORAGE_LOG_KEY, JSON.stringify(newLogs));
+      } catch (error) {
+        originalConsole.error('Failed to save dev logs to session storage', error);
+      }
+      return newLogs;
+    });
   }, []);
 
   useEffect(() => {
@@ -56,7 +76,6 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
         originalConsole.error(...args);
         addLog('error', ...args);
       };
-       originalConsole.log('Dev Log Panel activated.');
     } else {
       console.log = originalConsole.log;
       console.warn = originalConsole.warn;
@@ -64,7 +83,6 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
     }
 
     return () => {
-      // Cleanup on unmount
       console.log = originalConsole.log;
       console.warn = originalConsole.warn;
       console.error = originalConsole.error;
@@ -72,11 +90,21 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
   }, [isDevModeEnabled, addLog]);
 
   const toggleDevMode = useCallback(() => {
-    setIsDevModeEnabled(prev => !prev);
+    setIsDevModeEnabled(prev => {
+        if (!prev) {
+            originalConsole.log('Dev Log Panel activated.');
+        }
+        return !prev;
+    });
   }, []);
 
   const clearLogs = useCallback(() => {
     setLogs([]);
+    try {
+      sessionStorage.removeItem(SESSION_STORAGE_LOG_KEY);
+    } catch (error) {
+      originalConsole.error('Failed to clear dev logs from session storage', error);
+    }
   }, []);
   
   const value = { isDevModeEnabled, toggleDevMode, logs, clearLogs };
