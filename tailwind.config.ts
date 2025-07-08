@@ -12,6 +12,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['var(--font-inter)', 'sans-serif'],
+        handwritten: ['var(--font-pacifico)', 'cursive'],
         code: ['monospace'],
       },
       colors: {

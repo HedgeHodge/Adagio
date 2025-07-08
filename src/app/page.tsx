@@ -26,7 +26,6 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthModal } from '@/components/auth/AuthModal';
 import {
-  MessageSquareMore,
   CircleUserRound,
   Clock,
   ListChecks,
@@ -278,9 +277,10 @@ export default function HomePage() {
   return (
     <div className="relative flex flex-col h-screen w-full overflow-hidden">
       <header className="flex justify-between items-center w-full p-6 md:p-8 z-20 shrink-0">
-        <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11">
-          <MessageSquareMore className="h-6 w-6 text-gray-800" />
-        </Button>
+        <div className="font-handwritten text-4xl font-bold text-gray-800 select-none">
+          <span className="hidden md:inline">Adagio</span>
+          <span className="md:hidden">A</span>
+        </div>
         <Button variant="ghost" size="icon" className="bg-black/5 rounded-full h-11 w-11" onClick={() => setIsAuthModalOpen(true)}>
           <CircleUserRound className="h-6 w-6 text-gray-800" />
         </Button>
