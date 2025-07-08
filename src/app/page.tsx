@@ -95,7 +95,7 @@ export default function HomePage() {
   };
 
   const TimerView = (
-    <div className="flex flex-col items-center gap-6 w-full max-w-md md:max-w-2xl mx-auto">
+    <div className="flex flex-col items-center gap-6 w-full">
          <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
             <CardHeader>
                 <CardTitle>Start a New Session</CardTitle>
@@ -212,7 +212,7 @@ export default function HomePage() {
   );
 
   const InsightsView = (
-      <Card className="w-full max-w-2xl mx-auto shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
+      <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
           <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex-1">
@@ -286,13 +286,35 @@ export default function HomePage() {
         </Button>
       </header>
       
-      <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40">
-        {activeTab === 'timer' && TimerView}
-        {activeTab === 'log' && <div className="h-full flex flex-col">{LogView}</div>}
-        {activeTab === 'insights' && InsightsView}
+      <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 lg:pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+          {/* Timer Column */}
+          <div className={cn(
+            "lg:col-span-1", 
+            activeTab !== 'timer' && 'hidden lg:block'
+          )}>
+            {TimerView}
+          </div>
+
+          {/* Insights Column */}
+          <div className={cn(
+            "lg:col-span-1", 
+            activeTab !== 'insights' && 'hidden lg:block'
+          )}>
+            {InsightsView}
+          </div>
+
+          {/* Log Column */}
+          <div className={cn(
+            "lg:col-span-2 xl:col-span-1 flex flex-col h-full", 
+            activeTab !== 'log' && 'hidden lg:block'
+          )}>
+            {LogView}
+          </div>
+        </div>
       </main>
 
-      <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20">
+      <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20 lg:hidden">
         <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/10 flex justify-around items-center px-4">
             <ActionButton 
               icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-gray-700')} />} 
