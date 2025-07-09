@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getAnalytics, type Analytics, isSupported } from 'firebase/analytics';
+// import { getAnalytics, type Analytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,15 +18,15 @@ const firebaseConfig = {
 const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
-let analytics: Analytics | undefined;
+// let analytics: Analytics | undefined;
 
-// Initialize Analytics on the client side only
-if (typeof window !== 'undefined') {
-  isSupported().then((isSupported) => {
-    if (isSupported) {
-      analytics = getAnalytics(app);
-    }
-  });
-}
+// Disabling Analytics to troubleshoot redirect issues.
+// if (typeof window !== 'undefined') {
+//   isSupported().then((isSupported) => {
+//     if (isSupported) {
+//       analytics = getAnalytics(app);
+//     }
+//   });
+// }
 
-export { app, auth, db, analytics };
+export { app, auth, db };
