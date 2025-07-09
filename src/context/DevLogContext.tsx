@@ -32,6 +32,13 @@ const formatForStorage = (msg: any): string => {
     if (msg === undefined) return 'undefined';
     if (msg === null) return 'null';
     if (typeof msg === 'function') return `[Function: ${msg.name || 'anonymous'}]`;
+
+    // Add a check for React's synthetic events or internal objects.
+    // These are often pooled and have circular references, making them unsafe to stringify.
+    if (typeof msg === 'object' && msg !== null && (msg.hasOwnProperty('_reactName') || msg.hasOwnProperty('nativeEvent'))) {
+        return `[React SyntheticEvent: ${msg.type || 'unknown'}]`;
+    }
+
     try {
         // Handle circular references and stringify objects
         const cache = new Set();
@@ -52,6 +59,7 @@ const formatForStorage = (msg: any): string => {
         return '[Unserializable Object]';
     }
 }
+
 
 export function DevLogProvider({ children }: { children: ReactNode }) {
   const [isDevModeEnabled, setIsDevModeEnabled] = useState(false);
@@ -92,24 +100,20 @@ export function DevLogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (isDevModeEnabled) {
-      console.log = (...args) => {
-        originalConsole.log(...args);
-        addLog('log', ...args);
-      };
-      console.warn = (...args) => {
-        originalConsole.warn(...args);
-        addLog('warn', ...args);
-      };
-      console.error = (...args) => {
-        originalConsole.error(...args);
-        addLog('error', ...args);
-      };
-    } else {
-      console.log = originalConsole.log;
-      console.warn = originalConsole.warn;
-      console.error = originalConsole.error;
-    }
+    // We patch console to always be listening.
+    // But we only add to the visible log if the dev panel is enabled.
+    console.log = (...args) => {
+      originalConsole.log(...args);
+      if (isDevModeEnabled) addLog('log', ...args);
+    };
+    console.warn = (...args) => {
+      originalConsole.warn(...args);
+      if (isDevModeEnabled) addLog('warn', ...args);
+    };
+    console.error = (...args) => {
+      originalConsole.error(...args);
+      if (isDevModeEnabled) addLog('error', ...args);
+    };
 
     return () => {
       console.log = originalConsole.log;

@@ -52,7 +52,7 @@ export function DevLogPanel() {
                              <span className="font-semibold uppercase">{log.type}</span>
                              <span>{log.timestamp}</span>
                            </div>
-                           <pre className="whitespace-pre-wrap break-all">
+                           <pre className="whitespace-pre-wrap">
                                {/* Messages are already pre-formatted strings */}
                                {log.message.join(' ')}
                            </pre>
