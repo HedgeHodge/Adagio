@@ -49,7 +49,6 @@ import {
     LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useDevLog } from '@/context/DevLogContext';
 import { AccountModal } from '@/components/auth/AccountModal';
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
@@ -76,7 +75,6 @@ export default function HomePage() {
     const { currentUser, isPremium, signOut } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-    const devLog = useDevLog();
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
@@ -370,15 +368,9 @@ export default function HomePage() {
                         "custom:col-span-2 lg:col-span-1 flex flex-col h-full items-center",
                         activeTab !== 'log' && 'hidden custom:flex'
                     )}>
-                        {/* Dev tools moved to the top of the column to ensure visibility */}
                         <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mb-8 mx-auto">
                             <CardContent className="flex flex-col md:flex-row items-center justify-center py-4 gap-4">
                                 <Button variant="ghost" onClick={pomodoro.populateTestData}>Populate Test Data</Button>
-                                {devLog && (
-                                        <Button variant="ghost" onClick={devLog.toggleDevMode}>
-                                            {devLog.isDevModeEnabled ? 'Hide Dev Log' : 'Show Dev Log'}
-                                        </Button>
-                                )}
                             </CardContent>
                         </Card>
                         {LogView}
