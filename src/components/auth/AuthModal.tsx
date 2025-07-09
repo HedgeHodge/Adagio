@@ -72,11 +72,14 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
       await signInWithEmailPassword(data.email, data.password);
       onOpenChange(false); 
     } catch (err: any) {
-      let message = "Failed to sign in. Please check your email and password.";
+      let message = "An unexpected error occurred. Please try again.";
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-email') {
         message = 'Invalid email or password.';
       } else if (err.code === 'auth/unauthorized-domain') {
-        message = `Sign-in from this domain (${hostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
+        message = `This app's domain (${hostname}) is not authorized for authentication. Please go to your Firebase project's Authentication settings, click the 'Settings' tab, and add the domain to the 'Authorized domains' list.`;
+      } else {
+        message = `An error occurred (${err.code || 'unknown'}). Please check your Firebase project's authentication settings.`;
+        console.error("Full sign-in error:", err);
       }
       setError(message);
     } finally {
@@ -91,15 +94,18 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
       await signUpWithEmailPassword(data.email, data.password);
       onOpenChange(false); 
     } catch (err: any) {
-      let message = "Failed to sign up. The email might already be in use.";
-       if (err.code === 'auth/email-already-in-use') {
-        message = 'This email address is already in use.';
+      let message = "An unexpected error occurred. Please try again.";
+      if (err.code === 'auth/email-already-in-use') {
+        message = 'This email address is already in use by another account.';
       } else if (err.code === 'auth/weak-password') {
-        message = 'The password is too weak.';
+        message = 'The password is too weak. It must be at least 6 characters long.';
       } else if (err.code === 'auth/invalid-email') {
         message = 'The email address is not valid.';
       } else if (err.code === 'auth/unauthorized-domain') {
-        message = `Sign-up from this domain (${hostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
+        message = `This app's domain (${hostname}) is not authorized for authentication. Please go to your Firebase project's Authentication settings, click the 'Settings' tab, and add the domain to the 'Authorized domains' list.`;
+      } else {
+        message = `An error occurred (${err.code || 'unknown'}). Please check your Firebase project's authentication settings.`;
+        console.error("Full signup error:", err);
       }
       setError(message);
     } finally {
