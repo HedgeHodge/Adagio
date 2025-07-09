@@ -12,6 +12,8 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
+  setPersistence,
+  indexedDBLocalPersistence
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; 
 import { useToast } from '@/hooks/use-toast';
@@ -62,16 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // This is the primary auth state listener.
+    // This is the primary auth state listener. It will handle user object creation/updates.
     const unsubscribe = onAuthStateChanged(auth, handleUser);
 
-    // This specifically handles the result of a redirect sign-in.
-    // It only runs once on component mount.
-    getRedirectResult(auth)
+    // Set persistence before checking for the redirect result.
+    // This is crucial for the redirect flow to work reliably on all browsers, especially mobile.
+    setPersistence(auth, indexedDBLocalPersistence)
+      .then(() => {
+        // Persistence set. Now we can safely check for the redirect result.
+        return getRedirectResult(auth);
+      })
       .then((result) => {
         if (result) {
           // User has signed in or linked a credential.
-          // The onAuthStateChanged listener above will handle the user object.
+          // The onAuthStateChanged listener above will handle creating the user doc and setting state.
           toast({
             title: "Signed In Successfully",
             description: `Welcome back, ${result.user.displayName || result.user.email}!`,
@@ -79,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((error) => {
-        console.error("Error during Google sign-in redirect:", error);
+        console.error("Error during sign-in setup:", error);
         let title = "Google Sign-In Error";
         let description = "An unknown error occurred during sign-in. Please try again.";
 
@@ -94,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description = error.message || description;
         }
 
+        // Avoid showing toasts for normal redirect cancellation
         if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
             toast({ title, description, variant: "destructive", duration: 10000 });
         }
