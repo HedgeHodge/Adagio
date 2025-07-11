@@ -116,10 +116,15 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   const handleGoogleSignIn = async () => {
     setError(null);
     setIsSubmitting(true);
-    // signInWithGoogle will cause a page redirect. Errors are handled
-    // by getRedirectResult in AuthContext. The `isSubmitting` state will
-    // be reset when the page reloads.
-    await signInWithGoogle();
+    try {
+        await signInWithGoogle();
+        onOpenChange(false);
+    } catch (err: any) {
+        // The AuthContext now handles errors and toasts, so we just log here.
+        console.error("Google Sign-In failed in modal:", err);
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const handleModalOpenChange = (open: boolean) => {

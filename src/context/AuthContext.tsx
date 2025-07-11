@@ -6,8 +6,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { auth, db } from '@/lib/firebase';
 import { 
   GoogleAuthProvider, 
-  signInWithRedirect, 
-  getRedirectResult, 
+  signInWithFedCM,
   signOut as firebaseSignOut, 
   onAuthStateChanged,
   createUserWithEmailAndPassword, 
@@ -45,7 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (docSnap.exists() && docSnap.data()) {
         setIsPremium(docSnap.data().isPremium === true);
       } else {
-        // Create user doc if it doesn't exist
         await setDoc(userDocRef, { 
           isPremium: false, 
           email: user.email, 
@@ -60,32 +58,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(null);
       setIsPremium(false);
     }
-    // setLoading(false); // This is now handled in the useEffect's getRedirectResult.finally()
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    // This is the primary auth state listener. It will handle user object creation/updates.
-    const unsubscribe = onAuthStateChanged(auth, handleUser);
-
-    // Set persistence before checking for the redirect result.
-    // This is crucial for the redirect flow to work reliably on all browsers, especially mobile.
     setPersistence(auth, indexedDBLocalPersistence)
-      .then(() => {
-        // Persistence set. Now we can safely check for the redirect result.
-        return getRedirectResult(auth);
-      })
-      .then((result) => {
-        if (result) {
-          // User has signed in or linked a credential.
-          // The onAuthStateChanged listener above will handle creating the user doc and setting state.
-          toast({
-            title: "Signed In Successfully",
-            description: `Welcome back, ${result.user.displayName || result.user.email}!`,
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Error during sign-in setup:", error);
+      .catch((err) => {
+        console.error("Firebase persistence error:", err);
+      });
+      
+    const unsubscribe = onAuthStateChanged(auth, handleUser);
+    
+    return () => unsubscribe();
+  }, [handleUser]);
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithFedCM(auth, provider);
+      // The onAuthStateChanged listener will handle user creation/update.
+      toast({
+        title: "Signed In Successfully",
+        description: `Welcome back, ${result.user.displayName || result.user.email}!`,
+      });
+    } catch (error: any) {
+        console.error("Error during Google FedCM sign-in:", error);
         let title = "Google Sign-In Error";
         let description = "An unknown error occurred during sign-in. Please try again.";
 
@@ -96,30 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (error.code === 'auth/account-exists-with-different-credential') {
           title = "Account Exists";
           description = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
-        } else if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-          description = error.message || description;
+        } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+            title = "Sign-in Cancelled";
+            description = "You closed the sign-in window before completing the process.";
+        } else {
+            description = error.message || description;
         }
 
-        // Avoid showing toasts for normal redirect cancellation
-        if (error.code !== 'auth/redirect-cancelled' && error.code !== 'auth/redirect-operation-pending') {
-            toast({ title, description, variant: "destructive", duration: 10000 });
-        }
-      })
-      .finally(() => {
-        // This ensures the loading state is only set to false after the redirect
-        // operation has been checked. This is more robust against race conditions
-        // on mobile browsers.
-        setLoading(false);
-      });
-    
-    return () => unsubscribe();
-  }, [handleUser, toast]);
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    // Always use redirect for a more robust flow that works across all browsers
-    // and avoids issues with pop-up blockers.
-    await signInWithRedirect(auth, provider);
+        toast({ title, description, variant: "destructive", duration: 10000 });
+    }
   };
 
   const signOut = async () => {
