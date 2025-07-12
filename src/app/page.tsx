@@ -109,7 +109,7 @@ export default function HomePage() {
 
     const TimerView = (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-            <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl">
+            <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md">
                 <CardHeader>
                     <CardTitle>Start a New Session</CardTitle>
                 </CardHeader>
@@ -166,7 +166,7 @@ export default function HomePage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -30, scale: 0.95 }}
                         transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 30 }}
-                        className="w-full"
+                        className="w-full max-w-md"
                     >
                         <Card className="w-full shadow-lg relative overflow-hidden bg-card/70 backdrop-blur-sm rounded-3xl">
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-10" onClick={() => pomodoro.removeSession(session.id)}>
@@ -289,8 +289,8 @@ export default function HomePage() {
         <div className="relative flex flex-col h-screen w-full overflow-hidden">
             <header className="flex justify-between items-center w-full p-6 md:p-8 z-20 shrink-0">
                 <div className="font-handwritten text-4xl font-bold text-gray-800 select-none">
-                    <span className="hidden md:inline">Adagio</span>
-                    <span className="md:hidden">A</span>
+                    <span className="hidden custom:inline">Adagio</span>
+                    <span className="custom:hidden">A</span>
                 </div>
                 {currentUser ? (
                     <DropdownMenu>
@@ -357,13 +357,13 @@ export default function HomePage() {
 
                     {/* Middle Column: Changes based on screen size */}
                     <div className={cn(
-                        "custom:col-span-1 wide:col-span-1 flex flex-col items-center gap-8",
+                        "custom:col-span-1 wide:col-span-1 flex flex-col items-start gap-8 w-full",
                         activeTab === 'timer' && 'hidden custom:flex',
                     )}>
                         <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden custom:block wide:block')}>
                             {LogView}
                         </div>
-                        <div className={cn("w-full", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
+                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
                            {/* This view only shows here on the 2-col layout */}
                            {InsightsView}
                         </div>
