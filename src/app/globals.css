@@ -55,4 +55,8 @@
   body {
     @apply bg-gradient-to-b from-[#D4E9E2] to-[#F3D4B4] text-foreground;
   }
+
+  .dark body {
+    @apply bg-gradient-to-b from-[#0D1B2A] to-[#F3D4B4];
+  }
 }
