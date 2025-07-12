@@ -88,10 +88,6 @@ export default {
           '50%': { transform: 'scale(1.03)' },
           '100%': { transform: 'scale(1)' },
         },
-        'pulse-bg': {
-          '0%, 100%': { backgroundColor: 'hsl(var(--primary) / 0.05)' },
-          '50%': { backgroundColor: 'hsl(var(--primary) / 0.15)' },
-        },
         'radiate': {
           '0%': { transform: 'scale(0)', opacity: '0.6' },
           '100%': { transform: 'scale(1.2)', opacity: '0' },
@@ -101,10 +97,11 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'subtle-pop': 'subtle-pop 0.3s ease-out',
-        'pulse-bg': 'pulse-bg 2s infinite ease-in-out',
         'radiate': 'radiate 2.5s infinite ease-out',
       },
     },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
+
+    

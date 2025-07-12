@@ -77,7 +77,7 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
         >
             {icon}
         </Button>
-        <span className="font-semibold text-sm text-gray-800 transition-opacity" style={{ opacity: isActive ? 1 : 0.7 }}>{label}</span>
+        <span className="font-semibold text-sm text-foreground transition-opacity" style={{ opacity: isActive ? 1 : 0.7 }}>{label}</span>
     </div>
 );
 
@@ -404,19 +404,19 @@ export default function HomePage() {
             <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 z-20 md:hidden">
                 <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
                     <ActionButton
-                        icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-gray-700')} />}
+                        icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-foreground')} />}
                         label="Timer"
                         onClick={() => setActiveTab('timer')}
                         isActive={activeTab === 'timer'}
                     />
                     <ActionButton
-                        icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-gray-700')} />}
+                        icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-foreground')} />}
                         label="Log"
                         onClick={() => setActiveTab('log')}
                         isActive={activeTab === 'log'}
                     />
                     <ActionButton
-                        icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-gray-700')} />}
+                        icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-foreground')} />}
                         label="Insights"
                         onClick={() => setActiveTab('insights')}
                         isActive={activeTab === 'insights'}
@@ -452,3 +452,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+    
