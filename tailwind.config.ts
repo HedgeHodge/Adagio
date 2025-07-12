@@ -11,7 +11,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        'custom': '700px',
+        'md': '768px',
         'wide': '1185px',
       },
       fontFamily: {
