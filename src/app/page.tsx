@@ -357,11 +357,8 @@ export default function HomePage() {
 
                     {/* Middle Column: Changes based on screen size */}
                     <div className={cn(
-                        "custom:col-span-1 wide:col-span-1 flex flex-col items-center gap-8",
-                        // On mobile, show only the active tab (log or insights)
+                        "custom:col-span-1 wide:col-span-1 flex flex-col gap-8",
                         activeTab === 'timer' && 'hidden custom:flex',
-                        // On custom (2-col), this column holds both log and insights
-                        // On wide (3-col), this is just the log column
                     )}>
                         <div className={cn("w-full", activeTab !== 'log' && 'hidden custom:block wide:block')}>
                             {LogView}
@@ -374,9 +371,9 @@ export default function HomePage() {
 
                     {/* Insights Column (only on wide screens) */}
                     <div className={cn(
-                        "wide:col-span-1 flex-col items-center",
-                        "hidden wide:flex", // Only visible on 3-column layout
-                         activeTab !== 'insights' && 'hidden' // And only if insights tab is active on mobile (logic redundant but safe)
+                        "wide:col-span-1 flex flex-col items-center",
+                        "hidden wide:flex",
+                         activeTab !== 'insights' && 'hidden'
                     )}>
                         {InsightsView}
                     </div>
