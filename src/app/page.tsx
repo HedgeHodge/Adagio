@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -292,57 +293,60 @@ export default function HomePage() {
                     <span className="hidden custom:inline">Adagio</span>
                     <span className="custom:hidden">A</span>
                 </div>
-                {currentUser ? (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
-                                <Avatar className="h-full w-full">
-                                    {currentUser.photoURL ? (
-                                        <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
-                                    ) : null}
-                                    <AvatarFallback className="bg-white/30 text-gray-800 text-xl">
-                                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
-                                        currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
-                                        <CircleUserRound className="h-6 w-6" />}
-                                    </AvatarFallback>
-                                </Avatar>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                             <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none text-foreground">
-                                        {currentUser.displayName || "User"}
-                                    </p>
-                                    {currentUser.email && (
-                                        <p className="text-xs leading-none text-muted-foreground">
-                                            {currentUser.email}
+                <div className="flex items-center gap-2">
+                    <ThemeToggleButton />
+                    {currentUser ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
+                                    <Avatar className="h-full w-full">
+                                        {currentUser.photoURL ? (
+                                            <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
+                                        ) : null}
+                                        <AvatarFallback className="bg-white/30 text-gray-800 text-xl">
+                                            {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
+                                            currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
+                                            <CircleUserRound className="h-6 w-6" />}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                 <DropdownMenuLabel className="font-normal">
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-sm font-medium leading-none text-foreground">
+                                            {currentUser.displayName || "User"}
                                         </p>
-                                    )}
-                                </div>
-                             </DropdownMenuLabel>
-                             <DropdownMenuSeparator />
-                             {isPremium && (
-                                <DropdownMenuItem disabled className="opacity-100 cursor-default focus:bg-transparent focus:text-primary">
-                                    <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-                                    <span className="text-sm font-medium text-primary">Premium Member</span>
-                                </DropdownMenuItem>
-                             )}
-                             <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>Sign Out</span>
-                             </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                ) : (
-                    <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
-                         <Avatar className="h-full w-full">
-                           <AvatarFallback className="bg-white/30 text-gray-800">
-                                <CircleUserRound className="h-6 w-6" />
-                           </AvatarFallback>
-                         </Avatar>
-                    </Button>
-                )}
+                                        {currentUser.email && (
+                                            <p className="text-xs leading-none text-muted-foreground">
+                                                {currentUser.email}
+                                            </p>
+                                        )}
+                                    </div>
+                                 </DropdownMenuLabel>
+                                 <DropdownMenuSeparator />
+                                 {isPremium && (
+                                    <DropdownMenuItem disabled className="opacity-100 cursor-default focus:bg-transparent focus:text-primary">
+                                        <CheckCircle className="mr-2 h-4 w-4 text-primary" />
+                                        <span className="text-sm font-medium text-primary">Premium Member</span>
+                                    </DropdownMenuItem>
+                                 )}
+                                 <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Sign Out</span>
+                                 </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
+                             <Avatar className="h-full w-full">
+                               <AvatarFallback className="bg-white/30 text-gray-800">
+                                    <CircleUserRound className="h-6 w-6" />
+                               </AvatarFallback>
+                             </Avatar>
+                        </Button>
+                    )}
+                </div>
             </header>
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
