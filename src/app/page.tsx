@@ -346,8 +346,8 @@ export default function HomePage() {
             </header>
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
-                 <div className="grid grid-cols-1 custom:grid-cols-2 lg:col-span-1 custom:mx-auto gap-8 items-start max-w-7xl">
-                    {/* Timer Column */}
+                 <div className="grid grid-cols-1 custom:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+                    {/* Timer Column (Left) */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
                         activeTab !== 'timer' && 'hidden custom:flex'
@@ -355,25 +355,20 @@ export default function HomePage() {
                         {TimerView}
                     </div>
 
-                    {/* Insights Column */}
+                    {/* Log Column (Middle) */}
+                    <div className={cn(
+                        "custom:col-span-1 flex flex-col items-center",
+                        activeTab !== 'log' && 'hidden custom:flex'
+                    )}>
+                        {LogView}
+                    </div>
+
+                    {/* Insights Column (Right) */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
                         activeTab !== 'insights' && 'hidden custom:flex'
                     )}>
                         {InsightsView}
-                    </div>
-
-                    {/* Log Column */}
-                    <div className={cn(
-                        "custom:col-span-2 lg:col-span-1 flex flex-col h-full items-center",
-                        activeTab !== 'log' && 'hidden custom:flex'
-                    )}>
-                        <Card className="w-fit shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mb-8 mx-auto">
-                            <CardContent className="flex flex-col md:flex-row items-center justify-center py-4 gap-4">
-                                <Button variant="ghost" onClick={pomodoro.populateTestData}>Populate Test Data</Button>
-                            </CardContent>
-                        </Card>
-                        {LogView}
                     </div>
                 </div>
             </main>
