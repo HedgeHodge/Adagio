@@ -377,14 +377,14 @@ export function usePomodoro() {
     }));
   }, []);
 
- const logWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
+ const logWorkEntry = useCallback((session: ActivePomodoroSession, newProjectName?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
 
     const now = Date.now();
     const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
     if (calculatedDurationMinutes <= 0 && session.currentTime === 0) return null;
 
-    const finalProjectName = session.project;
+    const finalProjectName = newProjectName || session.project;
 
     const newLogEntry: PomodoroLogEntry = {
       id: `${now}-${session.id}`,
@@ -393,7 +393,6 @@ export function usePomodoro() {
       type: 'work',
       duration: calculatedDurationMinutes,
       project: finalProjectName,
-      summary: summary,
       sessionId: session.id,
     };
 
@@ -460,8 +459,8 @@ export function usePomodoro() {
     if (notificationSentRefs.current[sessionId]) delete notificationSentRefs.current[sessionId];
   }, [activeSessions, toast]);
 
-  const logSessionFromSummary = useCallback((session: ActivePomodoroSession, summary?: string) => {
-      const loggedEntry = logWorkEntry(session, summary);
+  const logSessionFromSummary = useCallback((session: ActivePomodoroSession, newProjectName?: string) => {
+      const loggedEntry = logWorkEntry(session, newProjectName);
       if (loggedEntry) {
         toast({
             title: "Work entry logged!",
@@ -472,6 +471,10 @@ export function usePomodoro() {
       // Reset the specific session that was just logged, including its tasks
       setActiveSessions(prev => prev.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: []} : s));
   }, [logWorkEntry, toast, formatTime]);
+
+  const closeSummaryModal = useCallback(() => {
+    setSessionToSummarize(null);
+  }, []);
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => { setSettings(prev => ({ ...prev, ...newSettings })); }, []);
   const deleteLogEntry = useCallback((id: string) => { setPomodoroLog(prevLog => { const updatedLog = prevLog.filter(entry => entry.id !== id); return isPremium ? updatedLog : filterLogForFreeTier(updatedLog); }); toast({ title: "Entry deleted", variant: "destructive" }); }, [toast, isPremium, filterLogForFreeTier]);
@@ -717,7 +720,7 @@ export function usePomodoro() {
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
-    sessionToSummarize, logSessionFromSummary, removeRecentProject,
+    sessionToSummarize, logSessionFromSummary, removeRecentProject, closeSummaryModal,
     inputProjectName, setInputProjectName,
     customDateRange, setCustomDateRange,
     isEntriesModalOpen, openEntriesModal, closeEntriesModal, entriesForModal, selectedChartProject,
@@ -725,5 +728,3 @@ export function usePomodoro() {
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData
   };
 }
-
-    

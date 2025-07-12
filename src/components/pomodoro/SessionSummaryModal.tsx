@@ -21,12 +21,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface SessionSummaryModalProps {
   isOpen: boolean;
   session: ActivePomodoroSession;
-  onSave: (session: ActivePomodoroSession) => Promise<void>;
+  onClose: () => void;
+  onSave: (session: ActivePomodoroSession, summaryOverride?: string) => Promise<void>;
   isSummarizing: boolean;
   isPremium: boolean;
 }
 
-export function SessionSummaryModal({ isOpen, session, onSave, isSummarizing, isPremium }: SessionSummaryModalProps) {
+export function SessionSummaryModal({ isOpen, session, onClose, onSave, isSummarizing, isPremium }: SessionSummaryModalProps) {
   const completedTasks = session.tasks.filter(task => task.completed);
 
   const handleSave = () => {
@@ -34,8 +35,8 @@ export function SessionSummaryModal({ isOpen, session, onSave, isSummarizing, is
   };
   
   return (
-    <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Session Complete!</DialogTitle>
           <DialogDescription className="text-muted-foreground">

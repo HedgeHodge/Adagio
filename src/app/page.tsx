@@ -99,24 +99,26 @@ export default function HomePage() {
         pomodoro.addSession(pomodoro.inputProjectName);
     };
 
-    const handleSummarizeAndSave = async (session: any) => {
+    const handleSummarizeAndSave = async (session: any, summaryOverride?: string) => {
         setIsSummarizing(true);
-        let summary;
-        const completedTasks = session.tasks.filter((task: any) => task.completed).map((t: any) => t.text);
+        let finalSummary = summaryOverride;
 
-        if (isPremium && completedTasks.length > 0) {
-            try {
-                const result = await summarizeSession({ tasks: completedTasks });
-                summary = result.projectName;
-            } catch (error) {
-                console.error("AI summarization failed, falling back.", error);
-                summary = session.project;
+        if (!finalSummary) {
+            const completedTasks = session.tasks.filter((task: any) => task.completed).map((t: any) => t.text);
+            if (isPremium && completedTasks.length > 0) {
+                try {
+                    const result = await summarizeSession({ tasks: completedTasks });
+                    finalSummary = result.projectName;
+                } catch (error) {
+                    console.error("AI summarization failed, falling back.", error);
+                    finalSummary = session.project;
+                }
+            } else {
+                finalSummary = session.project;
             }
-        } else if (completedTasks.length > 0) {
-            summary = session.project;
         }
-
-        pomodoro.logSessionFromSummary(session, summary);
+        
+        pomodoro.logSessionFromSummary(session, finalSummary);
         setIsSummarizing(false);
     };
 
@@ -315,7 +317,7 @@ export default function HomePage() {
                                         {currentUser.photoURL ? (
                                             <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
                                         ) : null}
-                                        <AvatarFallback className="bg-white/30 text-gray-800 text-xl">
+                                        <AvatarFallback className="bg-white/30 text-foreground text-xl">
                                             {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
                                             currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
                                             <CircleUserRound className="h-6 w-6" />}
@@ -361,7 +363,7 @@ export default function HomePage() {
                     ) : (
                         <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
                              <Avatar className="h-full w-full">
-                               <AvatarFallback className="bg-white/30 text-gray-800">
+                               <AvatarFallback className="bg-white/30 text-foreground">
                                     <CircleUserRound className="h-6 w-6" />
                                </AvatarFallback>
                              </Avatar>
@@ -383,11 +385,11 @@ export default function HomePage() {
                         "custom:col-span-1 wide:col-span-1 flex flex-col items-start gap-8 w-full",
                         activeTab === 'timer' && 'hidden custom:flex',
                     )}>
-                        <div className={cn("w-full", activeTab !== 'log' && 'hidden custom:block wide:block')}>
-                            <div className="max-w-md w-full">{LogView}</div>
+                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden custom:block wide:block')}>
+                            {LogView}
                         </div>
-                        <div className={cn("w-full", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
-                           <div className="max-w-md w-full">{InsightsView}</div>
+                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
+                           {InsightsView}
                         </div>
                     </div>
 
@@ -429,7 +431,7 @@ export default function HomePage() {
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
-            {pomodoro.sessionToSummarize && <SessionSummaryModal isOpen={!!pomodoro.sessionToSummarize} session={pomodoro.sessionToSummarize} onSave={handleSummarizeAndSave} isSummarizing={isSummarizing} isPremium={isPremium} />}
+            {pomodoro.sessionToSummarize && <SessionSummaryModal isOpen={!!pomodoro.sessionToSummarize} session={pomodoro.sessionToSummarize} onClose={pomodoro.closeSummaryModal} onSave={handleSummarizeAndSave} isSummarizing={isSummarizing} isPremium={isPremium} />}
             {pomodoro.activeSessionToEdit && <EditActiveSessionModal isOpen={pomodoro.isEditActiveSessionModalOpen} onClose={pomodoro.closeEditActiveSessionModal} session={pomodoro.activeSessionToEdit} onSave={pomodoro.updateActiveSessionStartTime} />}
             {pomodoro.selectedChartProject && <ProjectEntriesModal isOpen={pomodoro.isEntriesModalOpen} onClose={pomodoro.closeEntriesModal} projectName={pomodoro.selectedChartProject} entries={pomodoro.entriesForModal} />}
             
