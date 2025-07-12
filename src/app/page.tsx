@@ -178,7 +178,10 @@ export default function HomePage() {
                         transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 30 }}
                         className="w-full max-w-md"
                     >
-                        <Card className="w-full shadow-lg relative overflow-hidden bg-card/70 backdrop-blur-sm rounded-3xl max-w-md">
+                        <Card className={cn(
+                            "w-full shadow-lg relative overflow-hidden bg-card/70 backdrop-blur-sm rounded-3xl max-w-md z-0",
+                            session.isRunning && session.currentInterval === 'work' && 'animate-radiate'
+                        )}>
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-10" onClick={() => pomodoro.removeSession(session.id)}>
                                 <X className="h-4 w-4" />
                             </Button>
@@ -299,8 +302,8 @@ export default function HomePage() {
         <div className="relative flex flex-col h-screen w-full overflow-hidden">
             <header className="flex justify-between items-center w-full p-6 md:p-8 z-20 shrink-0">
                 <div className="font-handwritten text-4xl font-bold text-foreground select-none">
-                    <span className="hidden md:inline">Adagio</span>
-                    <span className="md:hidden">A</span>
+                    <span className="hidden md:inline">Pomodoro Flow</span>
+                    <span className="md:hidden">PF</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <ThemeToggleButton />

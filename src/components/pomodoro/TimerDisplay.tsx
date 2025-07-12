@@ -9,13 +9,12 @@ interface TimerDisplayProps {
   formattedTime: string;
   intervalType: IntervalType;
   isRunning: boolean;
-  // project?: string; // Project name will be displayed by the parent card now
 }
 
 const getIntervalLabelText = (intervalType: IntervalType): string => {
   switch (intervalType) {
     case 'work':
-      return "Focusing"; // Simpler label as project name is outside
+      return "Focusing";
     case 'shortBreak':
       return "Short Break";
     case 'longBreak':
@@ -26,7 +25,7 @@ const getIntervalLabelText = (intervalType: IntervalType): string => {
 };
 
 export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDisplayProps) {
-  const animationKey = `${intervalType}-${isRunning}`; // Ensure re-animation on status change too
+  const animationKey = `${intervalType}-${isRunning}`;
   const isBreak = intervalType === 'shortBreak' || intervalType === 'longBreak';
 
   return (
@@ -36,8 +35,7 @@ export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDi
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
-        "flex flex-col items-center justify-center p-4 rounded-lg w-full", // Removed shadow, mb, bg-card
-        isRunning && intervalType === 'work' ? 'animate-pulse-bg' : ''
+        "flex flex-col items-center justify-center p-4 rounded-lg w-full",
       )}
     >
       <motion.h2 
@@ -50,7 +48,7 @@ export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDi
       </motion.h2>
       <motion.div 
         className={cn(
-        "text-6xl md:text-7xl font-bold transition-opacity duration-300", // Smaller font for card context
+        "text-6xl md:text-7xl font-bold transition-opacity duration-300",
         !isRunning && intervalType === 'work' ? "opacity-70" : "opacity-100",
         isBreak ? 'text-muted-foreground' : 'text-primary'
        )}

@@ -60,3 +60,12 @@
     @apply bg-gradient-to-b from-[#0D1B2A] to-[#F3D4B4];
   }
 }
+
+@layer components {
+  .animate-radiate::after {
+    content: '';
+    @apply absolute inset-0 rounded-[inherit] -z-10;
+    background-color: hsl(var(--primary) / 0.25);
+    animation: radiate 2.5s infinite ease-out;
+  }
+}
