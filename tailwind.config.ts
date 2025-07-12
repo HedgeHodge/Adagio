@@ -12,6 +12,7 @@ export default {
     extend: {
       screens: {
         'custom': '700px',
+        'wide': '1185px',
       },
       fontFamily: {
         body: ['var(--font-nunito-sans)', 'sans-serif'],
@@ -102,3 +103,5 @@ export default {
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
+
+    

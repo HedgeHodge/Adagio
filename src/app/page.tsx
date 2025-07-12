@@ -346,8 +346,8 @@ export default function HomePage() {
             </header>
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
-                 <div className="grid grid-cols-1 custom:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
-                    {/* Timer Column (Left) */}
+                 <div className="grid grid-cols-1 custom:grid-cols-2 wide:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+                    {/* Timer Column */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
                         activeTab !== 'timer' && 'hidden custom:flex'
@@ -355,7 +355,7 @@ export default function HomePage() {
                         {TimerView}
                     </div>
 
-                    {/* Log Column (Middle) */}
+                    {/* Log Column */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
                         activeTab !== 'log' && 'hidden custom:flex'
@@ -363,9 +363,9 @@ export default function HomePage() {
                         {LogView}
                     </div>
 
-                    {/* Insights Column (Right) */}
+                    {/* Insights Column */}
                     <div className={cn(
-                        "custom:col-span-1 flex flex-col items-center",
+                        "custom:col-span-2 wide:col-span-1 flex flex-col items-center", // Spans 2 cols on custom, 1 on wide
                         activeTab !== 'insights' && 'hidden custom:flex'
                     )}>
                         {InsightsView}
@@ -407,3 +407,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+    
