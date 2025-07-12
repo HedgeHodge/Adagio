@@ -1,25 +1,32 @@
 
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Nunito_Sans, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/layout/Providers';
 
-const inter = Inter({
+const nunito_sans = Nunito_Sans({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-nunito-sans',
+});
+
+const pacifico = Pacifico({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: '400',
+  variable: '--font-pacifico',
 });
 
 export const metadata: Metadata = {
-  title: 'Pomodoro Flow',
+  title: 'Adagio',
   description: 'A simple and beautiful Pomodoro timer to help you focus.',
-  applicationName: 'Pomodoro Flow',
+  applicationName: 'Adagio',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Pomodoro Flow',
+    title: 'Adagio',
   },
   formatDetection: {
     telephone: false,
@@ -28,8 +35,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F0FFF0' },
-    { media: '(prefers-color-scheme: dark)', color: '#3CB371' },
+    { media: '(prefers-color-scheme: light)', color: '#D4E9E2' },
+    { media: '(prefers-color-scheme: dark)', color: '#F3D4B4' },
   ],
 };
 
@@ -39,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${nunito_sans.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
         <Providers>
             {children}

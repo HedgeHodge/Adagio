@@ -302,8 +302,8 @@ export default function HomePage() {
         <div className="relative flex flex-col h-screen w-full overflow-hidden">
             <header className="flex justify-between items-center w-full p-6 md:p-8 z-20 shrink-0">
                 <div className="font-handwritten text-4xl font-bold text-foreground select-none">
-                    <span className="hidden md:inline">Pomodoro Flow</span>
-                    <span className="md:hidden">PF</span>
+                    <span className="hidden md:inline">Adagio</span>
+                    <span className="md:hidden">A</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <ThemeToggleButton />
@@ -452,5 +452,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
