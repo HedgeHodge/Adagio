@@ -377,14 +377,12 @@ export function usePomodoro() {
     }));
   }, []);
 
- const logWorkEntry = useCallback((session: ActivePomodoroSession, newProjectName?: string) => {
+ const logWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
 
     const now = Date.now();
     const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
     if (calculatedDurationMinutes <= 0 && session.currentTime === 0) return null;
-
-    const finalProjectName = newProjectName || session.project;
 
     const newLogEntry: PomodoroLogEntry = {
       id: `${now}-${session.id}`,
@@ -392,7 +390,8 @@ export function usePomodoro() {
       endTime: new Date(now).toISOString(),
       type: 'work',
       duration: calculatedDurationMinutes,
-      project: finalProjectName,
+      project: session.project,
+      summary: summary,
       sessionId: session.id,
     };
 
@@ -459,8 +458,8 @@ export function usePomodoro() {
     if (notificationSentRefs.current[sessionId]) delete notificationSentRefs.current[sessionId];
   }, [activeSessions, toast]);
 
-  const logSessionFromSummary = useCallback((session: ActivePomodoroSession, newProjectName?: string) => {
-      const loggedEntry = logWorkEntry(session, newProjectName);
+  const logSessionFromSummary = useCallback((session: ActivePomodoroSession, summary?: string) => {
+      const loggedEntry = logWorkEntry(session, summary);
       if (loggedEntry) {
         toast({
             title: "Work entry logged!",
@@ -473,8 +472,14 @@ export function usePomodoro() {
   }, [logWorkEntry, toast, formatTime]);
 
   const closeSummaryModal = useCallback(() => {
+    if (sessionToSummarize) {
+      // If the user closes the modal without saving, we should not log the entry.
+      // We just reset the sessionToSummarize state.
+      // The active session remains paused, ready to be resumed or removed.
+      toast({ title: "Logging Canceled", description: `"${sessionToSummarize.project}" session was not logged.`, variant: "default" });
+    }
     setSessionToSummarize(null);
-  }, []);
+  }, [sessionToSummarize, toast]);
 
   const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => { setSettings(prev => ({ ...prev, ...newSettings })); }, []);
   const deleteLogEntry = useCallback((id: string) => { setPomodoroLog(prevLog => { const updatedLog = prevLog.filter(entry => entry.id !== id); return isPremium ? updatedLog : filterLogForFreeTier(updatedLog); }); toast({ title: "Entry deleted", variant: "destructive" }); }, [toast, isPremium, filterLogForFreeTier]);

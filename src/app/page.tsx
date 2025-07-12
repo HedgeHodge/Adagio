@@ -99,26 +99,21 @@ export default function HomePage() {
         pomodoro.addSession(pomodoro.inputProjectName);
     };
 
-    const handleSummarizeAndSave = async (session: any, summaryOverride?: string) => {
+    const handleSummarizeAndSave = async (session: any) => {
         setIsSummarizing(true);
-        let finalSummary = summaryOverride;
+        let summary;
 
-        if (!finalSummary) {
-            const completedTasks = session.tasks.filter((task: any) => task.completed).map((t: any) => t.text);
-            if (isPremium && completedTasks.length > 0) {
-                try {
-                    const result = await summarizeSession({ tasks: completedTasks });
-                    finalSummary = result.projectName;
-                } catch (error) {
-                    console.error("AI summarization failed, falling back.", error);
-                    finalSummary = session.project;
-                }
-            } else {
-                finalSummary = session.project;
+        const completedTasks = session.tasks.filter((task: any) => task.completed).map((t: any) => t.text);
+        if (isPremium && completedTasks.length > 0) {
+            try {
+                const result = await summarizeSession({ tasks: completedTasks, projectName: session.project });
+                summary = result.summary;
+            } catch (error) {
+                console.error("AI summarization failed, logging without summary.", error);
             }
         }
         
-        pomodoro.logSessionFromSummary(session, finalSummary);
+        pomodoro.logSessionFromSummary(session, summary);
         setIsSummarizing(false);
     };
 

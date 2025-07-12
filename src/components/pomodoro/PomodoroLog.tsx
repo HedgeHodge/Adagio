@@ -144,15 +144,15 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
                             <div className="font-medium text-sm text-foreground truncate">
                               {entry.project || 'Untitled Entry'} ({formatDuration(entry.duration)})
                             </div>
-                            {entry.summary && (
-                              <div className="text-xs text-primary/90 flex items-start mt-1">
-                                <Briefcase className="mr-1.5 h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                                <span className="flex-1">{entry.summary}</span>
-                              </div>
-                            )}
                             <div className="text-xs text-muted-foreground mt-0.5">
                               {format(parseISO(entry.startTime), "HH:mm")} - {format(parseISO(entry.endTime), "HH:mm")}
                             </div>
+                            {entry.summary && (
+                              <div className="text-xs text-primary/90 flex items-start mt-2 p-2 bg-primary/5 rounded-md border border-primary/10">
+                                <Briefcase className="mr-1.5 h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                                <span className="flex-1 italic">{entry.summary}</span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center ml-2 space-x-1 shrink-0">
                             <Button

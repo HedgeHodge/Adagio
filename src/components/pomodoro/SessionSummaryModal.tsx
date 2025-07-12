@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
@@ -22,7 +23,7 @@ interface SessionSummaryModalProps {
   isOpen: boolean;
   session: ActivePomodoroSession;
   onClose: () => void;
-  onSave: (session: ActivePomodoroSession, summaryOverride?: string) => Promise<void>;
+  onSave: (session: ActivePomodoroSession) => Promise<void>;
   isSummarizing: boolean;
   isPremium: boolean;
 }
@@ -37,7 +38,7 @@ export function SessionSummaryModal({ isOpen, session, onClose, onSave, isSummar
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl">
-        <DialogHeader>
+         <DialogHeader>
           <DialogTitle className="text-foreground">Session Complete!</DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Log your work for "<strong>{session.project}</strong>".
@@ -60,7 +61,7 @@ export function SessionSummaryModal({ isOpen, session, onClose, onSave, isSummar
               </ScrollArea>
             </div>
           ) : (
-             <p className="text-sm text-muted-foreground text-center py-4">No tasks were marked as complete for this session. The entry will be logged with the original project name.</p>
+             <p className="text-sm text-muted-foreground text-center py-4">No tasks were marked as complete for this session. The entry will be logged without a summary.</p>
           )}
 
            {!isPremium && completedTasks.length > 0 && (
@@ -68,20 +69,25 @@ export function SessionSummaryModal({ isOpen, session, onClose, onSave, isSummar
               <Sparkles className="h-4 w-4" />
               <AlertTitle>Unlock AI Summaries!</AlertTitle>
               <AlertDescription>
-                Upgrade to Premium to automatically generate a concise project name from your completed tasks. For now, it will be logged as "{session.project}".
+                Upgrade to Premium to automatically generate a concise summary of your completed tasks for this log entry.
               </AlertDescription>
             </Alert>
            )}
         </div>
 
-        <DialogFooter>
-          <Button type="button" onClick={handleSave} disabled={isSummarizing} className="w-full">
-            {isSummarizing ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Summarizing...</>
-            ) : (
-                isPremium && completedTasks.length > 0 ? <><Sparkles className="mr-2 h-4 w-4" /> Summarize & Save Log</> : "Save Log"
-            )}
-          </Button>
+        <DialogFooter className="sm:justify-between gap-2">
+            <DialogClose asChild>
+                <Button type="button" variant="outline" onClick={onClose}>
+                    Don't Log
+                </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleSave} disabled={isSummarizing} className="w-full sm:w-auto">
+                {isSummarizing ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Summarizing...</>
+                ) : (
+                    isPremium && completedTasks.length > 0 ? <><Sparkles className="mr-2 h-4 w-4" /> Summarize & Save</> : "Save Log"
+                )}
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
