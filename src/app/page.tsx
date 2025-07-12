@@ -12,7 +12,7 @@ import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
 import { EditActiveSessionModal } from '@/components/pomodoro/EditActiveSessionModal';
 import { ProjectEntriesModal } from '@/components/pomodoro/ProjectEntriesModal';
 import { summarizeSession } from '@/ai/flows/summarize-session-flow';
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
@@ -27,6 +27,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,7 +58,8 @@ import {
     Sparkles,
     CheckCircle,
     LogOut,
-    Beaker
+    Beaker,
+    Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -337,6 +348,10 @@ export default function HomePage() {
                                     <span>Populate Test Data</span>
                                  </DropdownMenuItem>
                                  <DropdownMenuSeparator />
+                                 <DropdownMenuItem onClick={() => pomodoro.setIsWipeConfirmOpen(true)} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Wipe All Data</span>
+                                 </DropdownMenuItem>
                                  <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Sign Out</span>
@@ -357,7 +372,6 @@ export default function HomePage() {
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
                  <div className="grid grid-cols-1 custom:grid-cols-2 wide:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
-                    {/* Timer Column (always visible on desktop) */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
                         activeTab !== 'timer' && 'hidden custom:flex'
@@ -365,27 +379,24 @@ export default function HomePage() {
                         {TimerView}
                     </div>
 
-                    {/* Middle Column: Changes based on screen size */}
                     <div className={cn(
                         "custom:col-span-1 wide:col-span-1 flex flex-col items-start gap-8 w-full",
                         activeTab === 'timer' && 'hidden custom:flex',
                     )}>
-                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden custom:block wide:block')}>
-                            {LogView}
+                        <div className={cn("w-full", activeTab !== 'log' && 'hidden custom:block wide:block')}>
+                            <div className="max-w-md w-full">{LogView}</div>
                         </div>
-                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
-                           {/* This view only shows here on the 2-col layout */}
-                           {InsightsView}
+                        <div className={cn("w-full", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
+                           <div className="max-w-md w-full">{InsightsView}</div>
                         </div>
                     </div>
 
-                    {/* Insights Column (only on wide screens) */}
                     <div className={cn(
                         "wide:col-span-1 flex flex-col items-center",
                         "hidden wide:flex",
-                         activeTab !== 'insights' && 'hidden'
+                         activeTab !== 'insights' && 'hidden wide:flex'
                     )}>
-                        {InsightsView}
+                       <div className="max-w-md w-full">{InsightsView}</div>
                     </div>
                 </div>
             </main>
@@ -421,6 +432,23 @@ export default function HomePage() {
             {pomodoro.sessionToSummarize && <SessionSummaryModal isOpen={!!pomodoro.sessionToSummarize} session={pomodoro.sessionToSummarize} onSave={handleSummarizeAndSave} isSummarizing={isSummarizing} isPremium={isPremium} />}
             {pomodoro.activeSessionToEdit && <EditActiveSessionModal isOpen={pomodoro.isEditActiveSessionModalOpen} onClose={pomodoro.closeEditActiveSessionModal} session={pomodoro.activeSessionToEdit} onSave={pomodoro.updateActiveSessionStartTime} />}
             {pomodoro.selectedChartProject && <ProjectEntriesModal isOpen={pomodoro.isEntriesModalOpen} onClose={pomodoro.closeEntriesModal} projectName={pomodoro.selectedChartProject} entries={pomodoro.entriesForModal} />}
+            
+            <AlertDialog open={pomodoro.isWipeConfirmOpen} onOpenChange={pomodoro.setIsWipeConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete all your sessions, logs, and recent projects from this device and from your account if you are signed in.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={pomodoro.wipeAllData} className={buttonVariants({ variant: "destructive" })}>
+                        Yes, wipe everything
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

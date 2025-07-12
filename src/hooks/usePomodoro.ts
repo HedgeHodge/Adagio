@@ -103,6 +103,8 @@ export function usePomodoro() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [inputProjectName, setInputProjectName] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isWipeConfirmOpen, setIsWipeConfirmOpen] = useState(false);
+
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -647,6 +649,35 @@ export function usePomodoro() {
     });
   }, [toast]);
 
+  const wipeAllData = useCallback(() => {
+    // Clear local state
+    setPomodoroLog([]);
+    setActiveSessions([]);
+    setRecentProjects([]);
+    
+    // Clear localStorage
+    localStorage.removeItem(LOCAL_LOG_KEY);
+    localStorage.removeItem(LOCAL_ACTIVE_SESSIONS_KEY);
+    localStorage.removeItem(LOCAL_RECENT_PROJECTS_KEY);
+
+    // Clear Firestore data if user is logged in
+    if (currentUser) {
+      saveDataToFirestore(currentUser.uid, {
+        pomodoroLog: [],
+        activeSessions: [],
+        recentProjects: [],
+      });
+    }
+
+    setIsWipeConfirmOpen(false);
+    toast({
+      title: "All Data Wiped",
+      description: "Your local and cloud-synced data has been cleared.",
+      variant: "destructive"
+    });
+  }, [currentUser, saveDataToFirestore, toast]);
+
+
   useEffect(() => {
     const anySessionOnBreak = activeSessions.some(s => s.currentInterval === 'shortBreak' || s.currentInterval === 'longBreak');
     if (anySessionOnBreak && !isFetchingQuote) {
@@ -690,6 +721,9 @@ export function usePomodoro() {
     inputProjectName, setInputProjectName,
     customDateRange, setCustomDateRange,
     isEntriesModalOpen, openEntriesModal, closeEntriesModal, entriesForModal, selectedChartProject,
-    isSettingsModalOpen, openSettingsModal, closeSettingsModal
+    isSettingsModalOpen, openSettingsModal, closeSettingsModal,
+    isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData
   };
 }
+
+    
