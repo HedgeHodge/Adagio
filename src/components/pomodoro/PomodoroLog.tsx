@@ -62,7 +62,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
 
   const renderLoader = () => (
     <Card className={cn(
-      "w-full shadow-lg rounded-3xl",
+      "w-full shadow-lg rounded-3xl max-w-md",
       isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
     )}>
       <CardHeader>
@@ -92,7 +92,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
 
   return (
     <Card className={cn(
-      "w-full shadow-lg rounded-3xl",
+      "w-full shadow-lg rounded-3xl max-w-md",
       isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
     )}>
       <CardHeader>
@@ -116,7 +116,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
         ) : (
           <ScrollArea className={cn("h-[240px]", isMobileLayout && "h-full")}>
             <div className="p-6 pt-0">
-              {groupDates.map((dateStr) => {
+              {groupDates.map((dateStr, index) => {
                 const entriesForDate = groupedLog[dateStr];
                 const dateObj = parseISO(dateStr);
 
@@ -130,7 +130,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
                 }
 
                 return (
-                  <div key={dateStr}>
+                  <div key={dateStr} className={cn(index > 0 && "mt-4")}>
                     <div className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm -mx-6 px-6 pt-4 pb-2 border-b">
                         <h3 className="text-sm font-semibold text-foreground">{dateText}</h3>
                     </div>
