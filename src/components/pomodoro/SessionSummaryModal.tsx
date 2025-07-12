@@ -11,7 +11,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
@@ -75,12 +74,7 @@ export function SessionSummaryModal({ isOpen, session, onClose, onSave, isSummar
            )}
         </div>
 
-        <DialogFooter className="sm:justify-between gap-2">
-            <DialogClose asChild>
-                <Button type="button" variant="outline" onClick={onClose}>
-                    Don't Log
-                </Button>
-            </DialogClose>
+        <DialogFooter>
             <Button type="button" onClick={handleSave} disabled={isSummarizing} className="w-full sm:w-auto">
                 {isSummarizing ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Summarizing...</>
