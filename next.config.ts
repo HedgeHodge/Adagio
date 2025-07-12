@@ -37,6 +37,7 @@ const nextConfig: NextConfig = {
 };
 
 const withPWA = withPWAInit({
+  dest: 'public',
   register: true,
   skipWaiting: true,
   disable: isDev,

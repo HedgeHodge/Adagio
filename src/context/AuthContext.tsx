@@ -6,13 +6,14 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { auth, db } from '@/lib/firebase';
 import { 
   GoogleAuthProvider, 
-  signInWithFedCM,
+  signInWithPopup,
   signOut as firebaseSignOut, 
   onAuthStateChanged,
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   setPersistence,
-  indexedDBLocalPersistence
+  browserLocalPersistence,
+  browserSessionPersistence
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; 
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   const handleUser = useCallback(async (user: User | null) => {
+    setLoading(true);
     if (user) {
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
@@ -62,27 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setPersistence(auth, indexedDBLocalPersistence)
+    // Use local persistence to keep the user signed in across sessions (including offline)
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        const unsubscribe = onAuthStateChanged(auth, handleUser);
+        return () => unsubscribe();
+      })
       .catch((err) => {
         console.error("Firebase persistence error:", err);
+        // Fallback or just continue with default persistence
+        const unsubscribe = onAuthStateChanged(auth, handleUser);
+        return () => unsubscribe();
       });
-      
-    const unsubscribe = onAuthStateChanged(auth, handleUser);
-    
-    return () => unsubscribe();
   }, [handleUser]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithFedCM(auth, provider);
+      const result = await signInWithPopup(auth, provider);
       // The onAuthStateChanged listener will handle user creation/update.
       toast({
         title: "Signed In Successfully",
         description: `Welcome back, ${result.user.displayName || result.user.email}!`,
       });
     } catch (error: any) {
-        console.error("Error during Google FedCM sign-in:", error);
+        console.error("Error during Google sign-in:", error);
         let title = "Google Sign-In Error";
         let description = "An unknown error occurred during sign-in. Please try again.";
 
@@ -152,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmailPassword = async (email: string, password: string) => {
     await createUserWithEmailAndPassword(auth, email, password);
-    toast({ title: "Account Created!", description: "Welcome to Adagio!" });
+    toast({ title: "Account Created!", description: "Welcome to Pomodoro Flow!" });
   };
 
   const signInWithEmailPassword = async (email: string, password: string) => {
