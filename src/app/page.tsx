@@ -289,7 +289,7 @@ export default function HomePage() {
     return (
         <div className="relative flex flex-col h-screen w-full overflow-hidden">
             <header className="flex justify-between items-center w-full p-6 md:p-8 z-20 shrink-0">
-                <div className="font-handwritten text-4xl font-bold text-gray-800 select-none">
+                <div className="font-handwritten text-4xl font-bold text-foreground select-none">
                     <span className="hidden custom:inline">Adagio</span>
                     <span className="custom:hidden">A</span>
                 </div>
