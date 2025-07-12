@@ -225,7 +225,7 @@ export default function HomePage() {
     );
 
     const InsightsView = (
-        <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md mx-auto">
+        <Card className="w-full max-w-md shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mx-auto">
             <CardHeader>
                 <div>
                     <CardTitle>Productivity Insights</CardTitle>
@@ -357,10 +357,10 @@ export default function HomePage() {
 
                     {/* Middle Column: Changes based on screen size */}
                     <div className={cn(
-                        "custom:col-span-1 wide:col-span-1 flex flex-col gap-8",
+                        "custom:col-span-1 wide:col-span-1 flex flex-col items-center gap-8",
                         activeTab === 'timer' && 'hidden custom:flex',
                     )}>
-                        <div className={cn("w-full", activeTab !== 'log' && 'hidden custom:block wide:block')}>
+                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden custom:block wide:block')}>
                             {LogView}
                         </div>
                         <div className={cn("w-full", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>

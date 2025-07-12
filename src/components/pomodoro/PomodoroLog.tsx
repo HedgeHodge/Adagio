@@ -62,7 +62,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
 
   const renderLoader = () => (
     <Card className={cn(
-      "w-full max-w-md md:max-w-2xl mx-auto mt-8 bg-card shadow-lg rounded-3xl",
+      "w-full shadow-lg rounded-3xl",
       isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
     )}>
       <CardHeader>
@@ -92,7 +92,7 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
 
   return (
     <Card className={cn(
-      "w-full max-w-md md:max-w-2xl mx-auto mt-8 bg-card shadow-lg rounded-3xl",
+      "w-full shadow-lg rounded-3xl",
       isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
     )}>
       <CardHeader>
