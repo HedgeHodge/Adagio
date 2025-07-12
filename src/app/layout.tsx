@@ -3,8 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Nunito_Sans, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { Providers } from '@/components/layout/Providers';
 
 const nunito_sans = Nunito_Sans({
   subsets: ['latin'],
@@ -49,12 +48,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${nunito_sans.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
-        <ThemeProvider>
-          <AuthProvider>
+        <Providers>
             {children}
             <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
