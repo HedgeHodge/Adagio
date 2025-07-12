@@ -47,7 +47,8 @@ import {
     Loader2,
     Sparkles,
     CheckCircle,
-    LogOut
+    LogOut,
+    Beaker
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -331,6 +332,11 @@ export default function HomePage() {
                                         <span className="text-sm font-medium text-primary">Premium Member</span>
                                     </DropdownMenuItem>
                                  )}
+                                 <DropdownMenuItem onClick={pomodoro.populateTestData} className="cursor-pointer">
+                                    <Beaker className="mr-2 h-4 w-4" />
+                                    <span>Populate Test Data</span>
+                                 </DropdownMenuItem>
+                                 <DropdownMenuSeparator />
                                  <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Sign Out</span>
