@@ -347,7 +347,7 @@ export default function HomePage() {
 
             <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 custom:pb-8">
                  <div className="grid grid-cols-1 custom:grid-cols-2 wide:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
-                    {/* Timer Column */}
+                    {/* Timer Column (always visible on desktop) */}
                     <div className={cn(
                         "custom:col-span-1 flex flex-col items-center",
                         activeTab !== 'timer' && 'hidden custom:flex'
@@ -355,18 +355,28 @@ export default function HomePage() {
                         {TimerView}
                     </div>
 
-                    {/* Log Column */}
+                    {/* Middle Column: Changes based on screen size */}
                     <div className={cn(
-                        "custom:col-span-1 flex flex-col items-center",
-                        activeTab !== 'log' && 'hidden custom:flex'
+                        "custom:col-span-1 wide:col-span-1 flex flex-col items-center gap-8",
+                        // On mobile, show only the active tab (log or insights)
+                        activeTab === 'timer' && 'hidden custom:flex',
+                        // On custom (2-col), this column holds both log and insights
+                        // On wide (3-col), this is just the log column
                     )}>
-                        {LogView}
+                        <div className={cn("w-full", activeTab !== 'log' && 'hidden custom:block wide:block')}>
+                            {LogView}
+                        </div>
+                        <div className={cn("w-full", activeTab !== 'insights' && 'hidden custom:block wide:hidden')}>
+                           {/* This view only shows here on the 2-col layout */}
+                           {InsightsView}
+                        </div>
                     </div>
 
-                    {/* Insights Column */}
+                    {/* Insights Column (only on wide screens) */}
                     <div className={cn(
-                        "custom:col-span-2 wide:col-span-1 flex flex-col items-center", // Spans 2 cols on custom, 1 on wide
-                        activeTab !== 'insights' && 'hidden custom:flex'
+                        "wide:col-span-1 flex-col items-center",
+                        "hidden wide:flex", // Only visible on 3-column layout
+                         activeTab !== 'insights' && 'hidden' // And only if insights tab is active on mobile (logic redundant but safe)
                     )}>
                         {InsightsView}
                     </div>
@@ -407,5 +417,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
