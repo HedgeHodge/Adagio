@@ -131,10 +131,10 @@ export default function HomePage() {
                                 placeholder="What are you working on?"
                                 value={pomodoro.inputProjectName}
                                 onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
-                                className="h-12 text-base bg-background/70 flex-grow"
+                                className="h-11 text-base bg-background/70 flex-grow"
                                 disabled={pomodoro.isDataLoading}
                             />
-                            <Button type="submit" size="lg" className="rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
+                            <Button type="submit" size="lg" className="rounded-lg aspect-square h-11" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
                                 <Plus className="h-5 w-5" />
                                 <span className="sr-only">Add</span>
                             </Button>
