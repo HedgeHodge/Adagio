@@ -53,7 +53,7 @@ export function TimerControls({
             <Button
               onClick={onStart}
               size="lg"
-              className="px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-2xl"
+              className="px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-lg"
               variant={isBreakInterval ? 'secondary' : 'default'}
             >
               <Play className="mr-1.5 h-5 w-5" /> Start
@@ -66,7 +66,7 @@ export function TimerControls({
               variant="outline"
               size="lg"
               className={cn(
-                "px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-2xl",
+                "px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-lg",
                 isBreakInterval
                   ? "border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   : "border-primary text-primary hover:bg-primary/10"
