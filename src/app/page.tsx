@@ -177,11 +177,12 @@ export default function HomePage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -30, scale: 0.95 }}
                         transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 30 }}
-                        className={cn(
-                            "w-full max-w-md relative rounded-3xl",
-                            session.isRunning && session.currentInterval === 'work' && 'animate-radiate'
-                        )}
+                        className="w-full max-w-md relative"
                     >
+                       <div className={cn(
+                          "w-full max-w-md relative rounded-3xl",
+                           session.isRunning && session.currentInterval === 'work' && 'animate-radiate'
+                       )}>
                         <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10">
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-20" onClick={() => pomodoro.removeSession(session.id)}>
                                 <X className="h-4 w-4" />
@@ -222,6 +223,7 @@ export default function HomePage() {
                                 />
                             </CardContent>
                         </Card>
+                       </div>
                     </motion.div>
                 ))}
             </AnimatePresence>
