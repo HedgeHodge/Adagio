@@ -48,7 +48,7 @@ export function TaskList({ session, onAddTask, onToggleTask, onDeleteTask }: Tas
           onChange={(e) => setNewTaskText(e.target.value)}
           className="flex-grow bg-background h-9"
         />
-        <Button type="submit" size="icon" className="h-9 w-9 rounded-lg" aria-label="Add task">
+        <Button type="submit" className="h-9 w-9 rounded-lg" aria-label="Add task">
           <PlusCircle className="h-5 w-5" />
         </Button>
       </form>
