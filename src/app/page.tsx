@@ -134,7 +134,7 @@ export default function HomePage() {
                                 className="h-11 text-base bg-background/70 flex-grow"
                                 disabled={pomodoro.isDataLoading}
                             />
-                            <Button type="submit" size="lg" className="rounded-lg aspect-square h-11" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
+                            <Button type="submit" className="h-11 w-11 rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
                                 <Plus className="h-5 w-5" />
                                 <span className="sr-only">Add</span>
                             </Button>
