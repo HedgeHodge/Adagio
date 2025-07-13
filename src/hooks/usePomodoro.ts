@@ -259,7 +259,7 @@ export function usePomodoro() {
     setIsFetchingQuote(true);
     try {
         if (!isPremium) {
-          setMotivationalQuote({ quote: "Unlock motivational quotes with Premium!", source: "Pomodoro Flow" });
+          setMotivationalQuote({ quote: "Unlock motivational quotes with Premium!", source: "Adagio" });
           return;
         }
         setMotivationalQuote(null);
@@ -267,7 +267,7 @@ export function usePomodoro() {
         setMotivationalQuote(result);
     } catch (error) {
       console.error("Failed to fetch motivational quote:", error);
-      setMotivationalQuote({ quote: "Keep up the great work!", source: "Pomodoro Flow" });
+      setMotivationalQuote({ quote: "Keep up the great work!", source: "Adagio" });
     } finally {
       setIsFetchingQuote(false);
     }
@@ -689,7 +689,7 @@ export function usePomodoro() {
   useEffect(() => {
     const anySessionOnBreak = activeSessions.some(s => s.currentInterval === 'shortBreak' || s.currentInterval === 'longBreak');
     if (anySessionOnBreak && !isFetchingQuote) {
-      const needsFreshQuote = !motivationalQuote || (motivationalQuote.source === "Pomodoro Flow" && isPremium);
+      const needsFreshQuote = !motivationalQuote || (motivationalQuote.source === "Adagio" && isPremium);
       if (needsFreshQuote) fetchAndSetQuote();
     }
   }, [activeSessions, motivationalQuote, isFetchingQuote, fetchAndSetQuote, isPremium]);
