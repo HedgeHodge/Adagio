@@ -52,8 +52,8 @@ export function TimerControls({
           <motion.div key={`start-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
             <Button
               onClick={onStart}
-              size="default" // Smaller button
-              className="px-6 py-3 text-base shadow-md hover:shadow-lg transition-shadow" // Adjusted padding
+              size="lg"
+              className="px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-2xl"
               variant={isBreakInterval ? 'secondary' : 'default'}
             >
               <Play className="mr-1.5 h-5 w-5" /> Start
@@ -64,9 +64,9 @@ export function TimerControls({
             <Button
               onClick={onPause}
               variant="outline"
-              size="default" // Smaller button
+              size="lg"
               className={cn(
-                "px-6 py-3 text-base shadow-md hover:shadow-lg transition-shadow", // Adjusted padding
+                "px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-2xl",
                 isBreakInterval
                   ? "border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   : "border-primary text-primary hover:bg-primary/10"
@@ -84,18 +84,18 @@ export function TimerControls({
             onClick={onEndCurrentWorkSession} 
             variant="destructive" 
             size="icon" 
-            className="h-10 w-10" // Adjusted size
+            className="h-12 w-12 rounded-xl"
             aria-label="End Current Tracking"
             title="End Current Tracking"
           >
-            <StopCircle className="h-4 w-4" />
+            <StopCircle className="h-5 w-5" />
           </Button>
         </motion.div>
       )}
 
       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
-        <Button onClick={onReset} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted">
-          <RotateCcw className="h-4 w-4" />
+        <Button onClick={onReset} variant="ghost" size="icon" className="h-12 w-12 rounded-xl hover:bg-muted">
+          <RotateCcw className="h-5 w-5" />
           <span className="sr-only">Reset Timer</span>
         </Button>
       </motion.div>
@@ -106,11 +106,11 @@ export function TimerControls({
                 onClick={onOpenEditActiveSessionModal} 
                 variant="ghost" 
                 size="icon" 
-                className="h-10 w-10 hover:bg-muted"
+                className="h-12 w-12 rounded-xl hover:bg-muted"
                 aria-label="Edit start time"
                 title="Edit start time"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-5 w-5" />
             </Button>
         </motion.div>
       )}
@@ -120,7 +120,7 @@ export function TimerControls({
             onClick={onSwitchMode} 
             variant="ghost" 
             size="icon" 
-            className="h-10 w-10 hover:bg-muted"
+            className="h-12 w-12 rounded-xl hover:bg-muted"
             aria-label={switchModeButtonTooltip}
             title={switchModeButtonTooltip}
         >
@@ -130,8 +130,8 @@ export function TimerControls({
       </motion.div>
 
        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.25 }}>
-        <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted">
-          <Settings className="h-4 w-4" />
+        <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-12 w-12 rounded-xl hover:bg-muted">
+          <Settings className="h-5 w-5" />
           <span className="sr-only">Settings</span>
         </Button>
       </motion.div>

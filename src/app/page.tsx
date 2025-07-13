@@ -125,17 +125,18 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleAddSession} className="space-y-4">
-                        <div className="relative">
+                        <div className="flex gap-2">
                             <Input
                                 id="project-name"
                                 placeholder="What are you working on?"
                                 value={pomodoro.inputProjectName}
                                 onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
-                                className="h-12 text-base pr-28 bg-background/70"
+                                className="h-12 text-base bg-background/70 flex-grow"
                                 disabled={pomodoro.isDataLoading}
                             />
-                            <Button type="submit" size="sm" className="absolute top-1/2 right-2 -translate-y-1/2" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
-                                <Plus className="mr-1 h-4 w-4" /> Add
+                            <Button type="submit" size="lg" className="rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
+                                <Plus className="h-5 w-5" />
+                                <span className="sr-only">Add</span>
                             </Button>
                         </div>
                         {pomodoro.recentProjects.length > 0 && (
@@ -153,7 +154,7 @@ export default function HomePage() {
                                             type="button"
                                             variant="secondary"
                                             size="sm"
-                                            className="h-8 pl-3 pr-8 shadow-sm"
+                                            className="h-8 pl-3 pr-8 shadow-sm rounded-lg"
                                             onClick={() => pomodoro.addSession(proj)}
                                         >
                                             {proj}
@@ -408,18 +409,21 @@ export default function HomePage() {
                         label="Timer"
                         onClick={() => setActiveTab('timer')}
                         isActive={activeTab === 'timer'}
+                        className="rounded-2xl"
                     />
                     <ActionButton
                         icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-foreground')} />}
                         label="Log"
                         onClick={() => setActiveTab('log')}
                         isActive={activeTab === 'log'}
+                        className="rounded-2xl"
                     />
                     <ActionButton
                         icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-foreground')} />}
                         label="Insights"
                         onClick={() => setActiveTab('insights')}
                         isActive={activeTab === 'insights'}
+                        className="rounded-2xl"
                     />
                 </div>
             </footer>
