@@ -69,15 +69,18 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
         <Button
             variant="secondary"
             className={cn(
-                "w-20 h-20 bg-white/60 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-300",
-                isActive ? 'bg-white/90 scale-110 -translate-y-2' : 'hover:bg-white/80',
+                "w-20 h-20 bg-background/60 dark:bg-background/30 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-300",
+                isActive ? 'bg-white/90 dark:bg-primary/20 scale-110 -translate-y-2' : 'hover:bg-background/80 dark:hover:bg-background/50',
                 className
             )}
             {...props}
         >
             {icon}
         </Button>
-        <span className="font-semibold text-sm text-foreground transition-opacity" style={{ opacity: isActive ? 1 : 0.7 }}>{label}</span>
+        <span className={cn(
+            "font-semibold text-sm transition-opacity",
+            isActive ? 'text-primary' : 'text-muted-foreground'
+        )}>{label}</span>
     </div>
 );
 
@@ -405,23 +408,23 @@ export default function HomePage() {
             </main>
 
             <footer className="absolute bottom-0 left-0 right-0 flex justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-20 md:hidden">
-                <div className="w-full max-w-sm h-28 pointer-events-auto bg-white/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
+                <div className="w-full max-w-sm h-28 pointer-events-auto bg-background/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
                     <ActionButton
-                        icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-foreground')} />}
+                        icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-muted-foreground')} />}
                         label="Timer"
                         onClick={() => setActiveTab('timer')}
                         isActive={activeTab === 'timer'}
                         className="rounded-2xl"
                     />
                     <ActionButton
-                        icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-foreground')} />}
+                        icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-muted-foreground')} />}
                         label="Log"
                         onClick={() => setActiveTab('log')}
                         isActive={activeTab === 'log'}
                         className="rounded-2xl"
                     />
                     <ActionButton
-                        icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-foreground')} />}
+                        icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-muted-foreground')} />}
                         label="Insights"
                         onClick={() => setActiveTab('insights')}
                         isActive={activeTab === 'insights'}
