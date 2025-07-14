@@ -165,7 +165,7 @@ export default function HomePage() {
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-muted/80 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-muted/80 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                             onClick={(e) => { e.stopPropagation(); pomodoro.removeRecentProject(proj); }}
                                             aria-label={`Remove ${proj} from recent projects`}
                                         >
