@@ -51,7 +51,6 @@ import {
     ListChecks,
     BarChart2,
     Plus,
-    Play,
     X,
     Calendar as CalendarIcon,
     Loader2,
@@ -157,11 +156,10 @@ export default function HomePage() {
                                             type="button"
                                             variant="secondary"
                                             size="sm"
-                                            className="h-8 pl-3 pr-8 shadow-sm rounded-lg"
+                                            className="h-8 px-3 shadow-sm rounded-lg"
                                             onClick={() => pomodoro.addSession(proj)}
                                         >
                                             {proj}
-                                            <Play className="absolute right-2 h-4 w-4 text-primary opacity-70 group-hover:opacity-100 transition-opacity" />
                                         </Button>
                                         <Button
                                             type="button"
