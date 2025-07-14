@@ -427,7 +427,7 @@ export default function HomePage() {
                     </div>
 
                     <div className={cn(
-                        "md:col-span-1 wide:col-span-1 flex flex-col items-start gap-8 w-full",
+                        "md:col-span-1 wide:col-span-1 flex flex-col items-center gap-8 w-full",
                         activeTab === 'timer' && 'hidden md:flex',
                     )}>
                         <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden md:block wide:block')}>
@@ -523,4 +523,5 @@ export default function HomePage() {
     );
 }
 
+    
     
