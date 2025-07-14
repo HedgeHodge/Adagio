@@ -58,7 +58,8 @@ import {
     CheckCircle,
     LogOut,
     Beaker,
-    Trash2
+    Trash2,
+    Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -94,15 +95,15 @@ export default function HomePage() {
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
 
-    const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [projectToManage, setProjectToManage] = useState<string | null>(null);
+    const [isManageProjectModalOpen, setIsManageProjectModalOpen] = useState(false);
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const pomodoro = usePomodoro();
     
     const handleLongPress = useCallback((projectName: string) => {
-        setProjectToDelete(projectName);
-        setIsDeleteConfirmOpen(true);
+        setProjectToManage(projectName);
+        setIsManageProjectModalOpen(true);
     }, []);
 
     const startLongPress = (projectName: string) => {
@@ -117,11 +118,19 @@ export default function HomePage() {
     };
     
     const handleDeleteProject = () => {
-        if (projectToDelete) {
-            pomodoro.removeRecentProject(projectToDelete);
+        if (projectToManage) {
+            pomodoro.removeRecentProject(projectToManage);
         }
-        setIsDeleteConfirmOpen(false);
-        setProjectToDelete(null);
+        setIsManageProjectModalOpen(false);
+        setProjectToManage(null);
+    };
+    
+    const handleEditProject = () => {
+        if (projectToManage) {
+            pomodoro.setInputProjectName(projectToManage);
+        }
+        setIsManageProjectModalOpen(false);
+        setProjectToManage(null);
     };
 
 
@@ -491,18 +500,21 @@ export default function HomePage() {
                 </AlertDialogContent>
             </AlertDialog>
             
-            <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+            <AlertDialog open={isManageProjectModalOpen} onOpenChange={setIsManageProjectModalOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Recent Project?</AlertDialogTitle>
+                        <AlertDialogTitle>Manage Project</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to remove "<strong>{projectToDelete}</strong>" from your recent projects? This cannot be undone.
+                            Edit or delete "<strong>{projectToManage}</strong>" from your recent projects.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setProjectToManage(null)}>Cancel</AlertDialogCancel>
+                        <Button variant="outline" onClick={handleEditProject}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                        </Button>
                         <AlertDialogAction onClick={handleDeleteProject} className={buttonVariants({ variant: "destructive" })}>
-                            Delete
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
