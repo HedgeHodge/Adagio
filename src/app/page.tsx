@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { useAuth } from '@/context/AuthContext';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
@@ -94,7 +94,36 @@ export default function HomePage() {
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
 
+    const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     const pomodoro = usePomodoro();
+    
+    const handleLongPress = useCallback((projectName: string) => {
+        setProjectToDelete(projectName);
+        setIsDeleteConfirmOpen(true);
+    }, []);
+
+    const startLongPress = (projectName: string) => {
+        longPressTimerRef.current = setTimeout(() => handleLongPress(projectName), 700);
+    };
+
+    const clearLongPress = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    };
+    
+    const handleDeleteProject = () => {
+        if (projectToDelete) {
+            pomodoro.removeRecentProject(projectToDelete);
+        }
+        setIsDeleteConfirmOpen(false);
+        setProjectToDelete(null);
+    };
+
 
     const handleAddSession = (e: React.FormEvent) => {
         e.preventDefault();
@@ -151,6 +180,11 @@ export default function HomePage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.05 }}
                                         className="relative group"
+                                        onMouseDown={() => startLongPress(proj)}
+                                        onMouseUp={clearLongPress}
+                                        onMouseLeave={clearLongPress}
+                                        onTouchStart={() => startLongPress(proj)}
+                                        onTouchEnd={clearLongPress}
                                     >
                                         <Button
                                             type="button"
@@ -160,16 +194,6 @@ export default function HomePage() {
                                             onClick={() => pomodoro.addSession(proj)}
                                         >
                                             {proj}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-muted/80 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => { e.stopPropagation(); pomodoro.removeRecentProject(proj); }}
-                                            aria-label={`Remove ${proj} from recent projects`}
-                                        >
-                                            <X className="h-3 w-3" />
                                         </Button>
                                     </motion.div>
                                 ))}
@@ -466,6 +490,25 @@ export default function HomePage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Recent Project?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to remove "<strong>{projectToDelete}</strong>" from your recent projects? This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProject} className={buttonVariants({ variant: "destructive" })}>
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
+
+    
