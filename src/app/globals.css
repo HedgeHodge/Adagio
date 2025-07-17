@@ -62,11 +62,13 @@
   }
 }
 
-@layer components {
-  .animate-radiate::after {
+@layer utilities {
+  .animate-radiate::before {
     content: '';
-    @apply absolute inset-0 rounded-[inherit] -z-10;
-    background-color: hsl(var(--primary) / 0.25);
-    animation: radiate 2.5s infinite ease-out;
+    @apply absolute inset-0 -z-10;
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.25) 20%, transparent 20.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    animation: radiate 2.5s infinite ease-in-out;
   }
 }

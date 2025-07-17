@@ -130,10 +130,11 @@ export function usePomodoro() {
     const hours = Math.floor(timeInSeconds / 3600);
     const minutes = Math.floor((timeInSeconds % 3600) / 60);
     const seconds = timeInSeconds % 60;
-    let formatted = '';
-    if (hours > 0) formatted += `${hours.toString().padStart(2, '0')}:`;
-    formatted += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    return formatted;
+  
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
   const saveDataToFirestore = useCallback(async (userId: string, data: Partial<UserPomodoroData>) => {

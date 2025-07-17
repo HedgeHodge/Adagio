@@ -31,6 +31,9 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  icons: {
+    apple: '/icons/appstore.png',
+  },
 };
 
 export const viewport: Viewport = {

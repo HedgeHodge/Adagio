@@ -212,65 +212,53 @@ export default function HomePage() {
                 </CardContent>
             </Card>
 
-            <AnimatePresence>
-                {pomodoro.activeSessions.map((session, index) => (
-                    <motion.div
-                        key={session.id}
-                        layout
-                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -30, scale: 0.95 }}
-                        transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 30 }}
-                        className="w-full max-w-md relative"
-                    >
-                       <div className={cn(
-                          "w-full max-w-md relative rounded-3xl",
-                           session.isRunning && session.currentInterval === 'work' && 'animate-radiate'
-                       )}>
-                        <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10">
-                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-20" onClick={() => pomodoro.removeSession(session.id)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                            <CardHeader>
-                                <CardTitle className="truncate pr-8">{session.project}</CardTitle>
-                                {pomodoro.motivationalQuote && (session.currentInterval === 'shortBreak' || session.currentInterval === 'longBreak') && (
-                                    <CardDescription className="pt-2 italic flex items-center gap-2">
-                                        {pomodoro.isFetchingQuote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-yellow-500" />}
-                                        "{pomodoro.motivationalQuote.quote}" - {pomodoro.motivationalQuote.source}
-                                    </CardDescription>
-                                )}
-                            </CardHeader>
-                            <CardContent className="flex flex-col items-center">
-                                <TimerDisplay
-                                    formattedTime={pomodoro.formatTime(session.currentTime)}
-                                    intervalType={session.currentInterval}
-                                    isRunning={session.isRunning}
-                                />
-                                <TimerControls
-                                    sessionId={session.id}
-                                    isRunning={session.isRunning}
-                                    currentInterval={session.currentInterval}
-                                    onStart={() => pomodoro.startTimer(session.id)}
-                                    onPause={() => pomodoro.pauseTimer(session.id)}
-                                    onReset={() => pomodoro.resetTimer(session.id)}
-                                    onSwitchMode={() => pomodoro.switchMode(session.id)}
-                                    onOpenSettings={pomodoro.openSettingsModal}
-                                    onEndCurrentWorkSession={() => pomodoro.endCurrentWorkSession(session.id)}
-                                    onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
-                                    lastWorkSessionStartTime={session.lastWorkSessionStartTime}
-                                />
-                                <TaskList
-                                    session={session}
-                                    onAddTask={pomodoro.addTaskToSession}
-                                    onToggleTask={pomodoro.toggleTaskInSession}
-                                    onDeleteTask={pomodoro.deleteTaskFromSession}
-                                />
-                            </CardContent>
-                        </Card>
-                       </div>
-                    </motion.div>
-                ))}
-            </AnimatePresence>
+            {pomodoro.activeSessions.map((session) => (
+               <div
+                    key={session.id}
+                    className="w-full max-w-md relative rounded-3xl overflow-hidden"
+                >
+                    <Card className={cn("w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden", session.isRunning && session.currentInterval === 'work' && 'animate-radiate')}>
+                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-20" onClick={() => pomodoro.removeSession(session.id)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                        <CardHeader>
+                            <CardTitle className="truncate pr-8">{session.project}</CardTitle>
+                            {pomodoro.motivationalQuote && (session.currentInterval === 'shortBreak' || session.currentInterval === 'longBreak') && (
+                                <CardDescription className="pt-2 italic flex items-center gap-2">
+                                    {pomodoro.isFetchingQuote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-yellow-500" />}
+                                    "{pomodoro.motivationalQuote.quote}" - {pomodoro.motivationalQuote.source}
+                                </CardDescription>
+                            )}
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center">
+                            <TimerDisplay
+                                formattedTime={pomodoro.formatTime(session.currentTime)}
+                                intervalType={session.currentInterval}
+                                isRunning={session.isRunning}
+                            />
+                            <TimerControls
+                                sessionId={session.id}
+                                isRunning={session.isRunning}
+                                currentInterval={session.currentInterval}
+                                onStart={() => pomodoro.startTimer(session.id)}
+                                onPause={() => pomodoro.pauseTimer(session.id)}
+                                onReset={() => pomodoro.resetTimer(session.id)}
+                                onSwitchMode={() => pomodoro.switchMode(session.id)}
+                                onOpenSettings={pomodoro.openSettingsModal}
+                                onEndCurrentWorkSession={() => pomodoro.endCurrentWorkSession(session.id)}
+                                onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
+                                lastWorkSessionStartTime={session.lastWorkSessionStartTime}
+                            />
+                            <TaskList
+                                session={session}
+                                onAddTask={pomodoro.addTaskToSession}
+                                onToggleTask={pomodoro.toggleTaskInSession}
+                                onDeleteTask={pomodoro.deleteTaskFromSession}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            ))}
         </div>
     );
 
@@ -522,6 +510,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
-    
