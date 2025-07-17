@@ -61,3 +61,10 @@
     @apply bg-fixed bg-gradient-to-b from-[#0D1B2A] to-[#1A2E40];
   }
 }
+
+@layer utilities {
+  .header-fade {
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  }
+}
