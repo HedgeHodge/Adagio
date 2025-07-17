@@ -217,7 +217,7 @@ export default function HomePage() {
                     key={session.id}
                     className="w-full max-w-md relative rounded-3xl overflow-hidden"
                 >
-                    <Card className={cn("w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden", session.isRunning && session.currentInterval === 'work' && 'animate-radiate')}>
+                    <Card className={cn("w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden")}>
                         <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-20" onClick={() => pomodoro.removeSession(session.id)}>
                             <X className="h-4 w-4" />
                         </Button>

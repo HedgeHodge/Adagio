@@ -61,14 +61,3 @@
     @apply bg-gradient-to-b from-[#0D1B2A] to-[#1A2E40];
   }
 }
-
-@layer utilities {
-  .animate-radiate::before {
-    content: '';
-    @apply absolute inset-0 -z-10;
-    background-image: radial-gradient(circle, hsl(var(--primary) / 0.25) 20%, transparent 20.01%);
-    background-repeat: no-repeat;
-    background-position: 50%;
-    animation: radiate 2.5s infinite ease-in-out;
-  }
-}
