@@ -334,7 +334,7 @@ export default function HomePage() {
     );
 
     return (
-        <div className="relative flex flex-col h-screen w-full overflow-hidden">
+        <div className="relative flex flex-col h-screen w-full">
             <header className="sticky top-0 left-0 right-0 flex justify-between items-center w-full p-6 md:p-8 z-20 bg-background/40 backdrop-blur-lg pb-4">
                 <div className="font-handwritten text-4xl font-bold text-foreground select-none">
                     <span className="hidden md:inline">Adagio</span>
@@ -409,7 +409,7 @@ export default function HomePage() {
                 </div>
             </header>
 
-            <main className="flex-grow overflow-y-auto pt-2 p-4 pb-40 md:pb-8">
+            <main className="flex-grow pt-2 p-4 pb-40 md:pb-8">
                  <div className="grid grid-cols-1 md:grid-cols-2 wide:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
                     <div className={cn(
                         "md:col-span-1 flex flex-col items-center",

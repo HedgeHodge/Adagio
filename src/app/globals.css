@@ -54,10 +54,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-b from-[#D4E9E2] to-[#F3D4B4] text-foreground;
+    @apply bg-fixed bg-gradient-to-b from-[#D4E9E2] to-[#F3D4B4] text-foreground;
   }
 
   .dark body {
-    @apply bg-gradient-to-b from-[#0D1B2A] to-[#1A2E40];
+    @apply bg-fixed bg-gradient-to-b from-[#0D1B2A] to-[#1A2E40];
   }
 }
