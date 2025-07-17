@@ -42,11 +42,11 @@ export function TimerControls({
 }: TimerControlsProps) {
   const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
 
-  const switchModeButtonIcon = isBreakInterval ? <Briefcase className="h-4 w-4" /> : <Coffee className="h-4 w-4" />; // Smaller icons
+  const switchModeButtonIcon = isBreakInterval ? <Briefcase className="h-4 w-4" /> : <Coffee className="h-4 w-4" />;
   const switchModeButtonTooltip = isBreakInterval ? "Start Work" : "Take Break";
 
   return (
-    <div className="flex flex-wrap gap-2 justify-center items-center mt-2"> {/* Smaller margin, justify center */}
+    <div className="flex flex-wrap gap-1 justify-center items-center mt-2">
       <AnimatePresence mode="wait">
         {!isRunning ? (
           <motion.div key={`start-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
@@ -78,63 +78,65 @@ export function TimerControls({
         )}
       </AnimatePresence>
 
-      {isRunning && currentInterval === 'work' && onEndCurrentWorkSession && (
-        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
-          <Button 
-            onClick={onEndCurrentWorkSession} 
-            variant="destructive" 
-            size="icon" 
-            className="h-12 w-12 rounded-xl"
-            aria-label="End Current Tracking"
-            title="End Current Tracking"
-          >
-            <StopCircle className="h-5 w-5" />
+      <div className="flex items-center gap-1">
+        {isRunning && currentInterval === 'work' && onEndCurrentWorkSession && (
+          <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
+            <Button 
+              onClick={onEndCurrentWorkSession} 
+              variant="destructive" 
+              size="icon" 
+              className="h-10 w-10 rounded-lg"
+              aria-label="End Current Tracking"
+              title="End Current Tracking"
+            >
+              <StopCircle className="h-5 w-5" />
+            </Button>
+          </motion.div>
+        )}
+
+        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
+          <Button onClick={onReset} variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
+            <RotateCcw className="h-5 w-5" />
+            <span className="sr-only">Reset Timer</span>
           </Button>
         </motion.div>
-      )}
+        
+        {currentInterval === 'work' && lastWorkSessionStartTime && (
+           <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
+              <Button 
+                  onClick={onOpenEditActiveSessionModal} 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-lg hover:bg-muted"
+                  aria-label="Edit start time"
+                  title="Edit start time"
+              >
+                <Pencil className="h-5 w-5" />
+              </Button>
+          </motion.div>
+        )}
 
-      <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
-        <Button onClick={onReset} variant="ghost" size="icon" className="h-12 w-12 rounded-xl hover:bg-muted">
-          <RotateCcw className="h-5 w-5" />
-          <span className="sr-only">Reset Timer</span>
-        </Button>
-      </motion.div>
-      
-      {currentInterval === 'work' && lastWorkSessionStartTime && (
-         <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
-            <Button 
-                onClick={onOpenEditActiveSessionModal} 
-                variant="ghost" 
-                size="icon" 
-                className="h-12 w-12 rounded-xl hover:bg-muted"
-                aria-label="Edit start time"
-                title="Edit start time"
-            >
-              <Pencil className="h-5 w-5" />
-            </Button>
+        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
+          <Button 
+              onClick={onSwitchMode} 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 rounded-lg hover:bg-muted"
+              aria-label={switchModeButtonTooltip}
+              title={switchModeButtonTooltip}
+          >
+            {switchModeButtonIcon}
+            <span className="sr-only">{switchModeButtonTooltip}</span>
+          </Button>
         </motion.div>
-      )}
 
-      <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
-        <Button 
-            onClick={onSwitchMode} 
-            variant="ghost" 
-            size="icon" 
-            className="h-12 w-12 rounded-xl hover:bg-muted"
-            aria-label={switchModeButtonTooltip}
-            title={switchModeButtonTooltip}
-        >
-          {switchModeButtonIcon}
-          <span className="sr-only">{switchModeButtonTooltip}</span>
-        </Button>
-      </motion.div>
-
-       <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.25 }}>
-        <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-12 w-12 rounded-xl hover:bg-muted">
-          <Settings className="h-5 w-5" />
-          <span className="sr-only">Settings</span>
-        </Button>
-      </motion.div>
+         <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.25 }}>
+          <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
+            <Settings className="h-5 w-5" />
+            <span className="sr-only">Settings</span>
+          </Button>
+        </motion.div>
+      </div>
     </div>
   );
 }
