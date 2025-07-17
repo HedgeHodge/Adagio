@@ -46,7 +46,7 @@ export function TimerControls({
   const switchModeButtonTooltip = isBreakInterval ? "Start Work" : "Take Break";
 
   return (
-    <div className="flex space-x-2 justify-center items-center mt-2"> {/* Smaller margin, justify center */}
+    <div className="flex flex-wrap gap-2 justify-center items-center mt-2"> {/* Smaller margin, justify center */}
       <AnimatePresence mode="wait">
         {!isRunning ? (
           <motion.div key={`start-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
