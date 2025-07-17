@@ -60,6 +60,7 @@ import {
     Beaker,
     Trash2,
     Pencil,
+    Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -244,7 +245,6 @@ export default function HomePage() {
                                 onPause={() => pomodoro.pauseTimer(session.id)}
                                 onReset={() => pomodoro.resetTimer(session.id)}
                                 onSwitchMode={() => pomodoro.switchMode(session.id)}
-                                onOpenSettings={pomodoro.openSettingsModal}
                                 onEndCurrentWorkSession={() => pomodoro.endCurrentWorkSession(session.id)}
                                 onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
                                 lastWorkSessionStartTime={session.lastWorkSessionStartTime}
@@ -378,6 +378,10 @@ export default function HomePage() {
                                         <span className="text-sm font-medium text-primary">Premium Member</span>
                                     </DropdownMenuItem>
                                  )}
+                                 <DropdownMenuItem onClick={pomodoro.openSettingsModal} className="cursor-pointer">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Timer Settings</span>
+                                 </DropdownMenuItem>
                                  <DropdownMenuItem onClick={pomodoro.populateTestData} className="cursor-pointer">
                                     <Beaker className="mr-2 h-4 w-4" />
                                     <span>Populate Test Data</span>

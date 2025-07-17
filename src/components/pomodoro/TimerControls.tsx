@@ -3,7 +3,7 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Settings, Coffee, Briefcase, StopCircle, Pencil } from "lucide-react";
+import { Play, Pause, RotateCcw, Coffee, Briefcase, StopCircle, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,6 @@ interface TimerControlsProps {
   onPause: () => void; // Specific to this session
   onReset: () => void; // Specific to this session
   onSwitchMode: () => void; // Specific to this session
-  onOpenSettings: () => void; // Settings are global
   onEndCurrentWorkSession?: () => void; // Specific to this session
   onOpenEditActiveSessionModal: () => void; // Specific to this session
   lastWorkSessionStartTime: number | null; // To determine if edit is allowed
@@ -35,7 +34,6 @@ export function TimerControls({
   onPause,
   onReset,
   onSwitchMode,
-  onOpenSettings,
   onEndCurrentWorkSession,
   onOpenEditActiveSessionModal,
   lastWorkSessionStartTime
@@ -130,12 +128,6 @@ export function TimerControls({
           </Button>
         </motion.div>
 
-         <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.25 }}>
-          <Button onClick={onOpenSettings} variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Settings</span>
-          </Button>
-        </motion.div>
       </div>
     </div>
   );
