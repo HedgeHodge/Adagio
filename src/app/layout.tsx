@@ -4,6 +4,7 @@ import { Nunito_Sans, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/layout/Providers';
+import { useId } from 'react';
 
 const nunito_sans = Nunito_Sans({
   subsets: ['latin'],
@@ -49,10 +50,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const id = useId();
   return (
     <html lang="en" className={`${nunito_sans.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
-        <Providers>
+        <Providers key={id}>
             {children}
             <Toaster />
         </Providers>
