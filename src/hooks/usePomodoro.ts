@@ -8,7 +8,7 @@ import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/m
 import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, Timestamp, deleteField } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, deleteField, onSnapshot } from 'firebase/firestore';
 import type { DateRange } from 'react-day-picker';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
@@ -185,56 +185,61 @@ export function usePomodoro() {
     }
   }, []);
 
+  // Effect for real-time data synchronization with Firestore
   useEffect(() => {
-    if (!isClient) return;
-    setIsDataLoading(true);
-    const loadData = async () => {
-      let localData = loadDataFromLocalStorage();
+    if (!isClient || !currentUser) {
+      // If user logs out, load local data and stop listening
+      setIsDataLoading(true);
+      const localData = loadDataFromLocalStorage();
       setSettings(localData.settings);
+      const logToUse = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
+      setPomodoroLog(logToUse);
       setActiveSessions(localData.activeSessions);
       setRecentProjects(localData.recentProjects);
+      setIsDataLoading(false);
+      return;
+    }
 
-      if (currentUser) {
-        try {
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          const docSnap = await getDoc(userDocRef);
-          if (docSnap.exists()) {
-            const cloudData = docSnap.data() as UserPomodoroData;
-            
-            const effectiveSettings = cloudData.settings || localData.settings;
-            const cloudLog = (cloudData.pomodoroLog || []).map(cleanLogEntry);
-            const effectiveLog = isPremium ? cloudLog : filterLogForFreeTier(cloudLog);
-            const effectiveActiveSessions = (cloudData.activeSessions || localData.activeSessions).map(cleanActiveSession);
-            const effectiveRecentProjects = cloudData.recentProjects || localData.recentProjects;
+    setIsDataLoading(true);
+    const userDocRef = doc(db, 'users', currentUser.uid);
 
-            setSettings(effectiveSettings);
-            setPomodoroLog(effectiveLog);
-            setActiveSessions(effectiveActiveSessions);
-            setRecentProjects(effectiveRecentProjects);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const cloudData = docSnap.data() as UserPomodoroData;
+        
+        const effectiveSettings = cloudData.settings || DEFAULT_SETTINGS;
+        const cloudLog = (cloudData.pomodoroLog || []).map(cleanLogEntry);
+        const effectiveLog = isPremium ? cloudLog : filterLogForFreeTier(cloudLog);
+        const effectiveActiveSessions = (cloudData.activeSessions || []).map(cleanActiveSession);
+        const effectiveRecentProjects = cloudData.recentProjects || [];
 
-            localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(effectiveSettings));
-            localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(effectiveLog));
-            localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(effectiveActiveSessions));
-            localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(effectiveRecentProjects));
+        setSettings(effectiveSettings);
+        setPomodoroLog(effectiveLog);
+        setActiveSessions(effectiveActiveSessions);
+        setRecentProjects(effectiveRecentProjects);
 
-          } else {
-            const logToSave = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
-            setPomodoroLog(logToSave);
-            await saveDataToFirestore(currentUser.uid, { ...localData, pomodoroLog: logToSave, isPremium });
-          }
-        } catch (error) {
-          console.error("Error loading/syncing data with Firestore:", error);
-          const logToSave = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
-          setPomodoroLog(logToSave);
-        }
+        // Also update local storage to be in sync
+        localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(effectiveSettings));
+        localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(effectiveLog));
+        localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(effectiveActiveSessions));
+        localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(effectiveRecentProjects));
       } else {
-         const logToSave = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
-         setPomodoroLog(logToSave);
+        // If no cloud data, upload local data
+        const localData = loadDataFromLocalStorage();
+        const logToSave = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
+        setPomodoroLog(logToSave);
+        saveDataToFirestore(currentUser.uid, { ...localData, pomodoroLog: logToSave, isPremium });
       }
       setIsDataLoading(false);
-    };
-    loadData();
-  }, [currentUser, isClient, loadDataFromLocalStorage, saveDataToFirestore, isPremium, filterLogForFreeTier]);
+    }, (error) => {
+      console.error("Error with Firestore snapshot listener:", error);
+      setIsDataLoading(false);
+    });
+
+    // Cleanup subscription on component unmount or user change
+    return () => unsubscribe();
+  }, [currentUser, isClient, isPremium, filterLogForFreeTier, loadDataFromLocalStorage, saveDataToFirestore]);
+  
 
   // Persistence effects for each piece of state
   useEffect(() => { if (isClient && !isDataLoading) { localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings)); if (currentUser) saveDataToFirestore(currentUser.uid, { settings }); }}, [settings, isClient, currentUser, saveDataToFirestore, isDataLoading]);
