@@ -162,7 +162,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
             <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md">
                 <CardHeader>
-                    <CardTitle>Start a New Session</CardTitle>
+                    <CardTitle className="flex items-center"><Clock className="mr-2 h-5 w-5" />Start a New Session</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleAddSession} className="space-y-4">
@@ -276,7 +276,7 @@ export default function HomePage() {
         <Card className="w-full max-w-md shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mx-auto">
             <CardHeader>
                 <div>
-                    <CardTitle>Productivity Insights</CardTitle>
+                    <CardTitle className="flex items-center"><BarChart2 className="mr-2 h-5 w-5" />Productivity Insights</CardTitle>
                     <CardDescription>Time spent per project.</CardDescription>
                 </div>
                 <div className="flex flex-col md:flex-row items-center gap-2 pt-4">
