@@ -8,7 +8,7 @@ import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/m
 import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, Timestamp, deleteField, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 import type { DateRange } from 'react-day-picker';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
@@ -24,7 +24,6 @@ const LOCAL_ACTIVE_SESSIONS_KEY = 'pomodoroActiveSessions_v2';
 const LOCAL_RECENT_PROJECTS_KEY = 'recentProjects_v2';
 
 const MAX_RECENT_PROJECTS = 5;
-const ACTIVE_SESSIONS_FIRESTORE_DEBOUNCE_MS = 2500;
 const FREE_USER_LOG_HISTORY_DAYS = 3;
 
 function parseJSONWithDefault<T>(jsonString: string | null, defaultValue: T): T {
@@ -111,8 +110,6 @@ export function usePomodoro() {
   const notificationSentRefs = useRef<Record<string, Record<IntervalType, boolean>>>({});
   const { toast } = useToast();
 
-  const debouncedSaveActiveSessionsRef = useRef<NodeJS.Timeout | null>(null);
-
   const filterLogForFreeTier = useCallback((log: PomodoroLogEntry[]): PomodoroLogEntry[] => {
     const cutoffDateStart = startOfDay(subDays(new Date(), FREE_USER_LOG_HISTORY_DAYS -1));
     return log.filter(entry => {
@@ -137,41 +134,7 @@ export function usePomodoro() {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
-  const saveDataToFirestore = useCallback(async (userId: string, data: Partial<UserPomodoroData>) => {
-    if (!userId) return;
-    try {
-      const userDocRef = doc(db, 'users', userId);
-      const firestorePayload: { [key: string]: any } = { ...data, lastUpdated: Timestamp.now() };
-
-      Object.keys(firestorePayload).forEach(key => {
-        if (firestorePayload[key] === undefined) {
-          firestorePayload[key] = deleteField();
-        }
-      });
-      
-      if (firestorePayload.pomodoroLog) firestorePayload.pomodoroLog = firestorePayload.pomodoroLog.map(cleanLogEntry);
-      if (firestorePayload.activeSessions) firestorePayload.activeSessions = firestorePayload.activeSessions.map(cleanActiveSession);
-
-      if (firestorePayload.pomodoroLog && !isPremium) {
-        firestorePayload.pomodoroLog = filterLogForFreeTier(firestorePayload.pomodoroLog);
-      }
-
-      await setDoc(userDocRef, firestorePayload, { merge: true });
-    } catch (error) {
-      console.error("Error saving data to Firestore:", error);
-    }
-  }, [isPremium, filterLogForFreeTier]);
-
-
-  const loadDataFromLocalStorage = useCallback(() => {
-    const localSettings = parseJSONWithDefault(localStorage.getItem(LOCAL_SETTINGS_KEY), DEFAULT_SETTINGS);
-    const localLog = parseJSONWithDefault(localStorage.getItem(LOCAL_LOG_KEY), []).map(cleanLogEntry);
-    const localActiveSessions = parseJSONWithDefault(localStorage.getItem(LOCAL_ACTIVE_SESSIONS_KEY), []).map(cleanActiveSession);
-    const localRecentProjects = parseJSONWithDefault(localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY), []);
-    return { settings: localSettings, pomodoroLog: localLog, activeSessions: localActiveSessions, recentProjects: localRecentProjects };
-  }, []);
-
-
+  // Effect for setting up the component and loading initial data
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== 'undefined') {
@@ -185,18 +148,28 @@ export function usePomodoro() {
     }
   }, []);
 
+  // Load local data on initial mount or when user logs out
+  const loadLocalData = useCallback(() => {
+    const localSettings = parseJSONWithDefault(localStorage.getItem(LOCAL_SETTINGS_KEY), DEFAULT_SETTINGS);
+    const localLog = parseJSONWithDefault(localStorage.getItem(LOCAL_LOG_KEY), []).map(cleanLogEntry);
+    const localActiveSessions = parseJSONWithDefault(localStorage.getItem(LOCAL_ACTIVE_SESSIONS_KEY), []).map(cleanActiveSession);
+    const localRecentProjects = parseJSONWithDefault(localStorage.getItem(LOCAL_RECENT_PROJECTS_KEY), []);
+    
+    setSettings(localSettings);
+    const logToUse = isPremium ? localLog : filterLogForFreeTier(localLog);
+    setPomodoroLog(logToUse);
+    setActiveSessions(localActiveSessions);
+    setRecentProjects(localRecentProjects);
+
+    setIsDataLoading(false);
+  }, [isPremium, filterLogForFreeTier]);
+
   // Effect for real-time data synchronization with Firestore
   useEffect(() => {
-    if (!isClient || !currentUser) {
-      // If user logs out, load local data and stop listening
-      setIsDataLoading(true);
-      const localData = loadDataFromLocalStorage();
-      setSettings(localData.settings);
-      const logToUse = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
-      setPomodoroLog(logToUse);
-      setActiveSessions(localData.activeSessions);
-      setRecentProjects(localData.recentProjects);
-      setIsDataLoading(false);
+    if (!isClient) return;
+
+    if (!currentUser) {
+      loadLocalData();
       return;
     }
 
@@ -204,86 +177,83 @@ export function usePomodoro() {
     const userDocRef = doc(db, 'users', currentUser.uid);
 
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      let cloudData: UserPomodoroData = {};
+      
       if (docSnap.exists()) {
-        const cloudData = docSnap.data() as UserPomodoroData;
-        
-        const effectiveSettings = cloudData.settings || DEFAULT_SETTINGS;
-        const cloudLog = (cloudData.pomodoroLog || []).map(cleanLogEntry);
-        const effectiveLog = isPremium ? cloudLog : filterLogForFreeTier(cloudLog);
-        const effectiveActiveSessions = (cloudData.activeSessions || []).map(cleanActiveSession);
-        const effectiveRecentProjects = cloudData.recentProjects || [];
-
-        setSettings(effectiveSettings);
-        setPomodoroLog(effectiveLog);
-        setActiveSessions(effectiveActiveSessions);
-        setRecentProjects(effectiveRecentProjects);
-
-        // Also update local storage to be in sync
-        localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(effectiveSettings));
-        localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(effectiveLog));
-        localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(effectiveActiveSessions));
-        localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(effectiveRecentProjects));
-      } else {
-        // If no cloud data, upload local data
-        const localData = loadDataFromLocalStorage();
-        const logToSave = isPremium ? localData.pomodoroLog : filterLogForFreeTier(localData.pomodoroLog);
-        setPomodoroLog(logToSave);
-        saveDataToFirestore(currentUser.uid, { ...localData, pomodoroLog: logToSave, isPremium });
+        cloudData = docSnap.data() as UserPomodoroData;
       }
+      
+      const effectiveSettings = cloudData.settings || DEFAULT_SETTINGS;
+      const cloudLog = (cloudData.pomodoroLog || []).map(cleanLogEntry);
+      const effectiveLog = isPremium ? cloudLog : filterLogForFreeTier(cloudLog);
+      const effectiveActiveSessions = (cloudData.activeSessions || []).map(cleanActiveSession);
+      const effectiveRecentProjects = cloudData.recentProjects || [];
+
+      // Update React state
+      setSettings(effectiveSettings);
+      setPomodoroLog(effectiveLog);
+      setActiveSessions(effectiveActiveSessions);
+      setRecentProjects(effectiveRecentProjects);
+
+      // Sync to local storage
+      localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(effectiveSettings));
+      localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(effectiveLog));
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(effectiveActiveSessions));
+      localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(effectiveRecentProjects));
+      
       setIsDataLoading(false);
     }, (error) => {
       console.error("Error with Firestore snapshot listener:", error);
-      setIsDataLoading(false);
+      toast({ title: "Sync Error", description: "Could not sync data from the cloud.", variant: "destructive" });
+      loadLocalData(); // Fallback to local data on error
     });
 
-    // Cleanup subscription on component unmount or user change
     return () => unsubscribe();
-  }, [currentUser, isClient, isPremium, filterLogForFreeTier, loadDataFromLocalStorage, saveDataToFirestore]);
-  
+  }, [currentUser, isClient, isPremium, loadLocalData, filterLogForFreeTier, toast]);
 
-  // Persistence effects for each piece of state
-  useEffect(() => { if (isClient && !isDataLoading) { localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings)); if (currentUser) saveDataToFirestore(currentUser.uid, { settings }); }}, [settings, isClient, currentUser, saveDataToFirestore, isDataLoading]);
-  useEffect(() => { if (isClient && !isDataLoading) { const logToPersist = isPremium ? pomodoroLog : filterLogForFreeTier(pomodoroLog); localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(logToPersist)); if (currentUser) saveDataToFirestore(currentUser.uid, { pomodoroLog: logToPersist }); }}, [pomodoroLog, isClient, currentUser, saveDataToFirestore, isDataLoading, isPremium, filterLogForFreeTier]);
-  useEffect(() => { if (isClient && !isDataLoading) { localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(recentProjects)); if (currentUser) saveDataToFirestore(currentUser.uid, { recentProjects }); }}, [recentProjects, isClient, currentUser, saveDataToFirestore, isDataLoading]);
-
-  const persistActiveSessionsToFirestore = useCallback((userId: string, sessions: ActivePomodoroSession[]) => {
-    if (debouncedSaveActiveSessionsRef.current) clearTimeout(debouncedSaveActiveSessionsRef.current);
-    debouncedSaveActiveSessionsRef.current = setTimeout(() => {
-      saveDataToFirestore(userId, { activeSessions: sessions.map(cleanActiveSession) });
-    }, ACTIVE_SESSIONS_FIRESTORE_DEBOUNCE_MS);
-  }, [saveDataToFirestore]);
-
-  useEffect(() => {
-    if (isClient && !isDataLoading) {
-      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(activeSessions.map(cleanActiveSession)));
-      if (currentUser) persistActiveSessionsToFirestore(currentUser.uid, activeSessions);
+  const updateFirestore = useCallback(async (data: Partial<UserPomodoroData>) => {
+    if (!currentUser) return;
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    try {
+      await updateDoc(userDocRef, { ...data, lastUpdated: Timestamp.now() });
+    } catch (error) {
+       // If doc doesn't exist, create it.
+      await setDoc(userDocRef, { ...data, lastUpdated: Timestamp.now() }, { merge: true });
+      console.error("Error updating Firestore, attempting to set.", error);
     }
-  }, [activeSessions, isClient, currentUser, persistActiveSessionsToFirestore, isDataLoading]);
+  }, [currentUser]);
+
+  const updateActiveSessionsInFirestore = useCallback((sessions: ActivePomodoroSession[]) => {
+      if (!currentUser) return;
+      updateFirestore({ activeSessions: sessions.map(cleanActiveSession) });
+  }, [currentUser, updateFirestore]);
 
   // Sync timer with system time when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        setActiveSessions(prevSessions =>
-          prevSessions.map(s => {
+        setActiveSessions(currentSessions => {
+          const updatedSessions = currentSessions.map(s => {
             if (s.isRunning && s.lastWorkSessionStartTime) {
               const elapsedSeconds = Math.round((Date.now() - s.lastWorkSessionStartTime) / 1000);
-              // Only update if there's a meaningful difference to avoid rapid state changes
-              if (Math.abs(elapsedSeconds - s.currentTime) > 2) {
-                return { ...s, currentTime: elapsedSeconds };
-              }
+              return { ...s, currentTime: elapsedSeconds };
             }
             return s;
-          })
-        );
+          });
+          // Directly write the updated sessions to Firestore if user is logged in
+          if (currentUser) {
+            updateActiveSessionsInFirestore(updatedSessions);
+          }
+          return updatedSessions; // Return updated state for local updates
+        });
       }
     };
-
+  
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, [currentUser, updateActiveSessionsInFirestore]);
 
 
   const fetchAndSetQuote = useCallback(async () => {
@@ -349,12 +319,15 @@ export function usePomodoro() {
 
   const updateRecentProjects = useCallback((projectName?: string) => {
     if (!projectName || projectName.trim() === "") return;
-    setRecentProjects(prevRecent => {
-      const trimmedProjectName = projectName.trim();
-      const filtered = prevRecent.filter(p => p !== trimmedProjectName);
-      return [trimmedProjectName, ...filtered].slice(0, MAX_RECENT_PROJECTS);
-    });
-  }, []);
+    const trimmedProjectName = projectName.trim();
+    const updatedRecent = [trimmedProjectName, ...recentProjects.filter(p => p !== trimmedProjectName)].slice(0, MAX_RECENT_PROJECTS);
+    
+    setRecentProjects(updatedRecent); // Local state update
+    localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
+    if (currentUser) {
+      updateFirestore({ recentProjects: updatedRecent });
+    }
+  }, [recentProjects, currentUser, updateFirestore]);
 
   const addSession = useCallback((projectName: string) => {
     const trimmedProjectName = projectName.trim();
@@ -367,51 +340,60 @@ export function usePomodoro() {
       project: trimmedProjectName,
       tasks: [],
     });
-    setActiveSessions(prev => [...prev, newSession]);
+
+    const newSessions = [...activeSessions, newSession];
+    setActiveSessions(newSessions); // Local state update
+    localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions.map(cleanActiveSession)));
+    if (currentUser) {
+        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    }
+
     updateRecentProjects(trimmedProjectName);
     setInputProjectName('');
     if (!notificationSentRefs.current[newSession.id]) {
         notificationSentRefs.current[newSession.id] = { work: false, shortBreak: false, longBreak: false };
     }
-  }, [toast, updateRecentProjects]);
+  }, [toast, updateRecentProjects, activeSessions, currentUser, updateFirestore]);
 
   const startTimer = useCallback((sessionId: string) => {
-    setActiveSessions(prev => prev.map(s => {
+    const newSessions = activeSessions.map(s => {
       if (s.id === sessionId) {
         let { lastWorkSessionStartTime } = s;
         if (s.currentInterval === 'work') {
-          // If starting from 0, or resuming a paused session, set/adjust the start time.
           if (s.currentTime === 0 && (lastWorkSessionStartTime === null || s.isRunning === false)) {
-            // Fresh start
             lastWorkSessionStartTime = Date.now();
           } else if (s.isRunning === false) {
-            // Resuming: adjust start time to account for the paused duration.
             lastWorkSessionStartTime = Date.now() - s.currentTime * 1000;
           }
         }
         return { ...s, isRunning: true, lastWorkSessionStartTime };
       }
       return s;
-    }));
-  }, []);
+    });
+    setActiveSessions(newSessions);
+    updateActiveSessionsInFirestore(newSessions);
+  }, [activeSessions, updateActiveSessionsInFirestore]);
 
   const pauseTimer = useCallback((sessionId: string) => {
-    setActiveSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRunning: false } : s));
-  }, []);
+    const newSessions = activeSessions.map(s => s.id === sessionId ? { ...s, isRunning: false } : s);
+    setActiveSessions(newSessions);
+    updateActiveSessionsInFirestore(newSessions);
+  }, [activeSessions, updateActiveSessionsInFirestore]);
 
   const resetTimer = useCallback((sessionId: string) => {
-    setActiveSessions(prev => prev.map(s => {
+    const newSessions = activeSessions.map(s => {
       if (s.id === sessionId) {
         if (notificationSentRefs.current[s.id]) {
            notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
         }
-        // Only reset the start time if it's a work interval being reset
         const newLastWorkSessionStartTime = s.currentInterval === 'work' ? null : s.lastWorkSessionStartTime;
         return { ...s, isRunning: false, currentTime: 0, lastWorkSessionStartTime: newLastWorkSessionStartTime };
       }
       return s;
-    }));
-  }, []);
+    });
+    setActiveSessions(newSessions);
+    updateActiveSessionsInFirestore(newSessions);
+  }, [activeSessions, updateActiveSessionsInFirestore]);
 
  const logWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
@@ -420,7 +402,7 @@ export function usePomodoro() {
     const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
     if (calculatedDurationMinutes <= 0 && session.currentTime === 0) return null;
 
-    const newLogEntry: PomodoroLogEntry = {
+    const newLogEntry: PomodoroLogEntry = cleanLogEntry({
       id: `${now}-${session.id}`,
       startTime: new Date(session.lastWorkSessionStartTime).toISOString(),
       endTime: new Date(now).toISOString(),
@@ -429,34 +411,40 @@ export function usePomodoro() {
       project: session.project,
       summary: summary,
       sessionId: session.id,
-    };
-
-    const cleanedNewLogEntry = cleanLogEntry(newLogEntry);
-    setPomodoroLog(prevLog => {
-      const newFullLog = [cleanedNewLogEntry, ...prevLog];
-      return isPremium ? newFullLog : filterLogForFreeTier(newFullLog);
     });
-    updateRecentProjects(cleanedNewLogEntry.project);
-    return cleanedNewLogEntry;
-  }, [updateRecentProjects, isPremium, filterLogForFreeTier, setPomodoroLog]);
+    
+    const newLog = [newLogEntry, ...pomodoroLog];
+    const logToSave = isPremium ? newLog : filterLogForFreeTier(newLog);
+    setPomodoroLog(logToSave); // Local state
+    localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(logToSave));
+    if (currentUser) {
+        updateFirestore({ pomodoroLog: logToSave });
+    }
+
+    updateRecentProjects(newLogEntry.project);
+    return newLogEntry;
+  }, [updateRecentProjects, isPremium, filterLogForFreeTier, pomodoroLog, currentUser, updateFirestore]);
 
   const endCurrentWorkSession = useCallback((sessionId: string) => {
     const sessionToEnd = activeSessions.find(s => s.id === sessionId && s.currentInterval === 'work' && s.isRunning);
     if (sessionToEnd) {
         setSessionToSummarize(sessionToEnd);
-        setActiveSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRunning: false, currentTime: 0 } : s));
+        const newSessions = activeSessions.map(s => s.id === sessionId ? { ...s, isRunning: false, currentTime: 0 } : s);
+        setActiveSessions(newSessions);
+        updateActiveSessionsInFirestore(newSessions);
     }
-  }, [activeSessions]);
+  }, [activeSessions, updateActiveSessionsInFirestore]);
 
   const switchMode = useCallback((sessionId: string) => {
-    setActiveSessions(prevSessions => prevSessions.map(s => {
+    let sessionToSummarizeCandidate: ActivePomodoroSession | null = null;
+    const newSessions = activeSessions.map(s => {
       if (s.id === sessionId) {
         let nextInterval: IntervalType;
         let newCompletedPomodoros = s.pomodorosCompletedThisSet;
         let newLastWorkSessionStartTime = s.lastWorkSessionStartTime;
 
         if (s.currentInterval === 'work') {
-          setSessionToSummarize(s); // Trigger summary modal
+          sessionToSummarizeCandidate = s;
           newCompletedPomodoros++;
           nextInterval = (newCompletedPomodoros % settings.pomodorosPerSet === 0) ? 'longBreak' : 'shortBreak';
         } else { 
@@ -470,8 +458,13 @@ export function usePomodoro() {
         return { ...s, isRunning: false, currentInterval: nextInterval, pomodorosCompletedThisSet: newCompletedPomodoros, currentTime: 0, lastWorkSessionStartTime: newLastWorkSessionStartTime };
       }
       return s;
-    }));
-  }, [settings.pomodorosPerSet]);
+    });
+
+    if (sessionToSummarizeCandidate) setSessionToSummarize(sessionToSummarizeCandidate);
+    setActiveSessions(newSessions);
+    updateActiveSessionsInFirestore(newSessions);
+
+  }, [settings.pomodorosPerSet, activeSessions, updateActiveSessionsInFirestore]);
 
   const removeSession = useCallback((sessionId: string) => {
     let sessionToLog: ActivePomodoroSession | undefined;
@@ -482,17 +475,19 @@ export function usePomodoro() {
       sessionToLog = { ...currentSession }; 
     }
 
-    setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
+    const newSessions = activeSessions.filter(s => s.id !== sessionId);
+    setActiveSessions(newSessions);
+    updateActiveSessionsInFirestore(newSessions);
 
     if (sessionToLog) {
-      setSessionToSummarize(sessionToLog); // Also trigger summary on remove
+      setSessionToSummarize(sessionToLog);
     } else {
         toast({title: `Session "${projectNameForToast}" removed`});
     }
 
     if (timerRefs.current[sessionId]) { clearInterval(timerRefs.current[sessionId]!); delete timerRefs.current[sessionId]; }
     if (notificationSentRefs.current[sessionId]) delete notificationSentRefs.current[sessionId];
-  }, [activeSessions, toast]);
+  }, [activeSessions, toast, updateActiveSessionsInFirestore]);
 
   const logSessionFromSummary = useCallback((session: ActivePomodoroSession, summary?: string) => {
       const loggedEntry = logWorkEntry(session, summary);
@@ -503,98 +498,122 @@ export function usePomodoro() {
         });
       }
       setSessionToSummarize(null);
-      // Reset the specific session that was just logged, including its tasks
-      setActiveSessions(prev => prev.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: []} : s));
-  }, [logWorkEntry, toast, formatTime]);
+      
+      const newSessions = activeSessions.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: []} : s);
+      setActiveSessions(newSessions);
+      updateActiveSessionsInFirestore(newSessions);
+  }, [logWorkEntry, toast, formatTime, activeSessions, updateActiveSessionsInFirestore]);
 
   const closeSummaryModal = useCallback(() => {
     if (sessionToSummarize) {
-      // If the user closes the modal without saving, we should not log the entry.
-      // We just reset the sessionToSummarize state.
-      // The active session remains paused, ready to be resumed or removed.
       toast({ title: "Logging Canceled", description: `"${sessionToSummarize.project}" session was not logged.`, variant: "default" });
     }
     setSessionToSummarize(null);
   }, [sessionToSummarize, toast]);
 
-  const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => { setSettings(prev => ({ ...prev, ...newSettings })); }, []);
-  const deleteLogEntry = useCallback((id: string) => { setPomodoroLog(prevLog => { const updatedLog = prevLog.filter(entry => entry.id !== id); return isPremium ? updatedLog : filterLogForFreeTier(updatedLog); }); toast({ title: "Entry deleted", variant: "destructive" }); }, [toast, isPremium, filterLogForFreeTier]);
+  const updateSettings = useCallback((newSettings: Partial<PomodoroSettings>) => { 
+    const updatedSettings = { ...settings, ...newSettings };
+    setSettings(updatedSettings);
+    localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(updatedSettings));
+    if(currentUser) updateFirestore({ settings: updatedSettings });
+  }, [settings, currentUser, updateFirestore]);
+
+  const deleteLogEntry = useCallback((id: string) => { 
+    const updatedLog = pomodoroLog.filter(entry => entry.id !== id);
+    const logToSave = isPremium ? updatedLog : filterLogForFreeTier(updatedLog);
+    setPomodoroLog(logToSave); // Local state
+    localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(logToSave));
+    if (currentUser) {
+        updateFirestore({ pomodoroLog: logToSave });
+    }
+    toast({ title: "Entry deleted", variant: "destructive" }); 
+  }, [pomodoroLog, isPremium, filterLogForFreeTier, currentUser, updateFirestore, toast]);
   
   const openEditModal = useCallback((entry: PomodoroLogEntry) => { setEntryToEdit(cleanLogEntry(entry)); setIsEditModalOpen(true); }, []);
   const closeEditModal = useCallback(() => { setIsEditModalOpen(false); setEntryToEdit(null); }, []);
 
   const updateLogEntry = useCallback((updatedEntryData: PomodoroLogEntry) => {
     const cleanedUpdatedEntry = cleanLogEntry(updatedEntryData);
-    setPomodoroLog(prevLog => {
-      const newLog = prevLog.map(entry => entry.id === cleanedUpdatedEntry.id ? cleanedUpdatedEntry : entry);
-      return isPremium ? newLog : filterLogForFreeTier(newLog);
-    });
+    const newLog = pomodoroLog.map(entry => entry.id === cleanedUpdatedEntry.id ? cleanedUpdatedEntry : entry);
+    const logToSave = isPremium ? newLog : filterLogForFreeTier(newLog);
+
+    setPomodoroLog(logToSave);
+    localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(logToSave));
+    if (currentUser) {
+        updateFirestore({ pomodoroLog: logToSave });
+    }
+
     if (cleanedUpdatedEntry.project) updateRecentProjects(cleanedUpdatedEntry.project);
     toast({ title: "Entry updated successfully!" });
     closeEditModal();
-  }, [toast, closeEditModal, updateRecentProjects, isPremium, filterLogForFreeTier]);
+  }, [toast, closeEditModal, updateRecentProjects, isPremium, filterLogForFreeTier, pomodoroLog, currentUser, updateFirestore]);
 
   const addManualLogEntry = useCallback((newEntryData: Omit<PomodoroLogEntry, 'id' | 'type' | 'sessionId'>) => {
     const newEntry: PomodoroLogEntry = { ...newEntryData, id: `${Date.now()}-manual`, type: 'work' };
     const cleanedNewEntry = cleanLogEntry(newEntry);
-    setPomodoroLog(prevLog => {
-      const newFullLog = [cleanedNewEntry, ...prevLog].sort((a,b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
-      return isPremium ? newFullLog : filterLogForFreeTier(newFullLog);
-    });
+    
+    const newFullLog = [cleanedNewEntry, ...pomodoroLog].sort((a,b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
+    const logToSave = isPremium ? newFullLog : filterLogForFreeTier(newFullLog);
+    
+    setPomodoroLog(logToSave);
+    localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(logToSave));
+    if (currentUser) {
+        updateFirestore({ pomodoroLog: logToSave });
+    }
+
     if (cleanedNewEntry.project) updateRecentProjects(cleanedNewEntry.project);
     toast({ title: "Manual entry added!" });
-  }, [isPremium, filterLogForFreeTier, updateRecentProjects, toast]);
+  }, [isPremium, filterLogForFreeTier, updateRecentProjects, toast, pomodoroLog, currentUser, updateFirestore]);
   
   const openEditActiveSessionModal = useCallback((session: ActivePomodoroSession) => { setActiveSessionToEdit(cleanActiveSession(session)); setIsEditActiveSessionModalOpen(true); }, []);
   const closeEditActiveSessionModal = useCallback(() => { setIsEditActiveSessionModalOpen(false); setActiveSessionToEdit(null); }, []);
+  
   const updateActiveSessionStartTime = useCallback((sessionId: string, newStartTime: number) => {
-    setActiveSessions(prev => prev.map(s => {
+    const newSessions = activeSessions.map(s => {
       if (s.id === sessionId && s.lastWorkSessionStartTime !== null) {
         const newCurrentTime = Math.max(0, Math.round((Date.now() - newStartTime) / 1000));
         if (notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id].work = false;
         return { ...s, lastWorkSessionStartTime: newStartTime, currentTime: newCurrentTime };
       }
       return s;
-    }));
+    });
+    setActiveSessions(newSessions);
+    updateActiveSessionsInFirestore(newSessions);
     closeEditActiveSessionModal();
     toast({ title: "Start time updated!" });
-  }, [closeEditActiveSessionModal, toast]);
+  }, [closeEditActiveSessionModal, toast, activeSessions, updateActiveSessionsInFirestore]);
+
+  const updateSessionTasks = (sessionId: string, newTasks: Task[]) => {
+      const newSessions = activeSessions.map(session =>
+        session.id === sessionId ? { ...session, tasks: newTasks } : session
+      );
+      setActiveSessions(newSessions);
+      updateActiveSessionsInFirestore(newSessions);
+  };
 
   const addTaskToSession = useCallback((sessionId: string, text: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
     const newTask = cleanTask({ id: Date.now().toString(), text, completed: false });
-    setActiveSessions(prev =>
-      prev.map(session =>
-        session.id === sessionId
-          ? { ...session, tasks: [newTask, ...session.tasks] }
-          : session
-      )
-    );
-  }, []);
+    const newTasks = [newTask, ...session.tasks];
+    updateSessionTasks(sessionId, newTasks);
+  }, [activeSessions]);
   
   const toggleTaskInSession = useCallback((sessionId: string, taskId: string) => {
-    setActiveSessions(prev =>
-      prev.map(session =>
-        session.id === sessionId
-          ? {
-              ...session,
-              tasks: session.tasks.map(task =>
-                task.id === taskId ? { ...task, completed: !task.completed } : task
-              ),
-            }
-          : session
-      )
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    const newTasks = session.tasks.map(task =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
     );
-  }, []);
+    updateSessionTasks(sessionId, newTasks);
+  }, [activeSessions]);
   
   const deleteTaskFromSession = useCallback((sessionId: string, taskId: string) => {
-    setActiveSessions(prev =>
-      prev.map(session =>
-        session.id === sessionId
-          ? { ...session, tasks: session.tasks.filter(task => task.id !== taskId) }
-          : session
-      )
-    );
-  }, []);
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    const newTasks = session.tasks.filter(task => task.id !== taskId);
+    updateSessionTasks(sessionId, newTasks);
+  }, [activeSessions]);
 
   const getLogEntriesForPeriod = useCallback((log: PomodoroLogEntry[], filter: TimeFilter, range?: DateRange): PomodoroLogEntry[] => {
     const now = new Date();
@@ -616,7 +635,6 @@ export function usePomodoro() {
         return log;
     }
   }, []);
-
 
   const processedChartData = useMemo((): ChartDataPoint[] => {
     if (!isClient || isDataLoading) return [];
@@ -669,29 +687,39 @@ export function usePomodoro() {
     testLogEntries.push(createEntry(subMonths(now, 1), testProjects[3], 40));
 
     const cleanedEntries = testLogEntries.map(cleanLogEntry);
-    setPomodoroLog(prevLog => {
-        const existingIds = new Set(prevLog.map(e => e.id));
-        const newEntries = cleanedEntries.filter(e => !existingIds.has(e.id));
-        const combined = [...prevLog, ...newEntries];
-        const sorted = combined.sort((a,b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
-        return isPremium ? sorted : filterLogForFreeTier(sorted);
-    });
+    const existingIds = new Set(pomodoroLog.map(e => e.id));
+    const newEntries = cleanedEntries.filter(e => !existingIds.has(e.id));
+    const combined = [...pomodoroLog, ...newEntries];
+    const sorted = combined.sort((a,b) => parseISO(b.endTime).getTime() - parseISO(a.endTime).getTime());
+    const logToSave = isPremium ? sorted : filterLogForFreeTier(sorted);
+    
+    setPomodoroLog(logToSave);
+    localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(logToSave));
+    if (currentUser) {
+      updateFirestore({ pomodoroLog: logToSave });
+    }
 
-    setRecentProjects(prev => {
-        const combined = [...testProjects, ...prev];
-        return [...new Set(combined)].slice(0, MAX_RECENT_PROJECTS);
-    });
+    updateRecentProjects(testProjects[0]);
+    updateRecentProjects(testProjects[1]);
+    updateRecentProjects(testProjects[2]);
+    updateRecentProjects(testProjects[3]);
+    updateRecentProjects(testProjects[4]);
 
     toast({ title: "Test Data Populated!", description: "10 new log entries added." });
-  }, [isPremium, filterLogForFreeTier, toast]);
+  }, [isPremium, filterLogForFreeTier, toast, pomodoroLog, currentUser, updateFirestore, updateRecentProjects]);
 
   const removeRecentProject = useCallback((projectName: string) => {
-    setRecentProjects(prev => prev.filter(p => p !== projectName));
+    const updatedRecent = recentProjects.filter(p => p !== projectName);
+    setRecentProjects(updatedRecent);
+    localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
+    if (currentUser) {
+        updateFirestore({ recentProjects: updatedRecent });
+    }
     toast({
       title: "Project Removed",
       description: `"${projectName}" has been removed from your recent projects.`,
     });
-  }, [toast]);
+  }, [toast, recentProjects, currentUser, updateFirestore]);
 
   const wipeAllData = useCallback(() => {
     // Clear local state
@@ -704,9 +732,8 @@ export function usePomodoro() {
     localStorage.removeItem(LOCAL_ACTIVE_SESSIONS_KEY);
     localStorage.removeItem(LOCAL_RECENT_PROJECTS_KEY);
 
-    // Clear Firestore data if user is logged in
     if (currentUser) {
-      saveDataToFirestore(currentUser.uid, {
+      updateFirestore({
         pomodoroLog: [],
         activeSessions: [],
         recentProjects: [],
@@ -719,7 +746,7 @@ export function usePomodoro() {
       description: "Your local and cloud-synced data has been cleared.",
       variant: "destructive"
     });
-  }, [currentUser, saveDataToFirestore, toast]);
+  }, [currentUser, updateFirestore, toast]);
 
 
   useEffect(() => {
@@ -769,3 +796,5 @@ export function usePomodoro() {
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData
   };
 }
+
+    
