@@ -255,6 +255,32 @@ export function usePomodoro() {
     }
   }, [activeSessions, isClient, currentUser, persistActiveSessionsToFirestore, isDataLoading]);
 
+  // Sync timer with system time when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setActiveSessions(prevSessions =>
+          prevSessions.map(s => {
+            if (s.isRunning && s.lastWorkSessionStartTime) {
+              const elapsedSeconds = Math.round((Date.now() - s.lastWorkSessionStartTime) / 1000);
+              // Only update if there's a meaningful difference to avoid rapid state changes
+              if (Math.abs(elapsedSeconds - s.currentTime) > 2) {
+                return { ...s, currentTime: elapsedSeconds };
+              }
+            }
+            return s;
+          })
+        );
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []); // Empty dependency array ensures this runs once on mount
+
+
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
     setIsFetchingQuote(true);
@@ -349,9 +375,12 @@ export function usePomodoro() {
       if (s.id === sessionId) {
         let { lastWorkSessionStartTime } = s;
         if (s.currentInterval === 'work') {
+          // If starting from 0, or resuming a paused session, set/adjust the start time.
           if (s.currentTime === 0 && (lastWorkSessionStartTime === null || s.isRunning === false)) {
+            // Fresh start
             lastWorkSessionStartTime = Date.now();
-          } else if (lastWorkSessionStartTime === null && s.isRunning === false) {
+          } else if (s.isRunning === false) {
+            // Resuming: adjust start time to account for the paused duration.
             lastWorkSessionStartTime = Date.now() - s.currentTime * 1000;
           }
         }
@@ -371,6 +400,7 @@ export function usePomodoro() {
         if (notificationSentRefs.current[s.id]) {
            notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
         }
+        // Only reset the start time if it's a work interval being reset
         const newLastWorkSessionStartTime = s.currentInterval === 'work' ? null : s.lastWorkSessionStartTime;
         return { ...s, isRunning: false, currentTime: 0, lastWorkSessionStartTime: newLastWorkSessionStartTime };
       }
