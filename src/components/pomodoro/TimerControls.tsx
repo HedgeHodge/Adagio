@@ -3,7 +3,7 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Coffee, Briefcase, StopCircle, Pencil } from "lucide-react";
+import { Play, Pause, StopCircle, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +13,6 @@ interface TimerControlsProps {
   currentInterval: IntervalType;
   onStart: () => void; // Specific to this session
   onPause: () => void; // Specific to this session
-  onReset: () => void; // Specific to this session
   onEndCurrentWorkSession?: () => void; // Specific to this session
   onOpenEditActiveSessionModal: () => void; // Specific to this session
   lastWorkSessionStartTime: number | null; // To determine if edit is allowed
@@ -31,7 +30,6 @@ export function TimerControls({
   currentInterval,
   onStart,
   onPause,
-  onReset,
   onEndCurrentWorkSession,
   onOpenEditActiveSessionModal,
   lastWorkSessionStartTime

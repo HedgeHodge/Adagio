@@ -25,7 +25,6 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   upgradeUserToPremium: () => Promise<void>;
-  togglePremiumStatus: () => Promise<void>;
   signUpWithEmailPassword: (email: string, password: string) => Promise<void>; 
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   isPremiumSplashVisible: boolean;
@@ -146,27 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const togglePremiumStatus = async () => {
-    if (!currentUser) {
-      toast({ title: "Not signed in", description: "You need to be signed in to toggle premium status.", variant: "destructive" });
-      return;
-    }
-    const newPremiumStatus = !isPremium;
-    try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await setDoc(userDocRef, { isPremium: newPremiumStatus, lastUpdated: Timestamp.now() }, { merge: true });
-      setIsPremium(newPremiumStatus);
-      if (newPremiumStatus) {
-        showPremiumSplash();
-      } else {
-        toast({ title: "Premium Status Toggled", description: `You are now on the Free tier.` });
-      }
-    } catch (error) {
-      console.error("Error toggling premium status:", error);
-      toast({ title: "Toggle Failed", description: "Could not toggle premium status. Please try again.", variant: "destructive" });
-    }
-  };
-
   const signUpWithEmailPassword = async (email: string, password: string) => {
     await createUserWithEmailAndPassword(auth, email, password);
     toast({ title: "Account Created!", description: "Welcome to Pomodoro Flow!" });
@@ -183,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     signOut,
     upgradeUserToPremium,
-    togglePremiumStatus,
     signUpWithEmailPassword, 
     signInWithEmailPassword,
     isPremiumSplashVisible,

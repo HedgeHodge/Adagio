@@ -23,8 +23,8 @@ interface PremiumSplashModalProps {
 const ConfettiPiece = ({ x, y, rotate, color }: { x: number, y: number, rotate: number, color: string }) => {
     const variants = {
         initial: {
-            x: '50vw',
-            y: '50vh',
+            x: '50%',
+            y: '50%',
             opacity: 0,
             scale: 0.5,
         },
@@ -56,8 +56,8 @@ const ConfettiPiece = ({ x, y, rotate, color }: { x: number, y: number, rotate: 
 export function PremiumSplashModal({ isOpen, onOpenChange }: PremiumSplashModalProps) {
     const { theme } = useTheme();
 
-    const lightColors = ["#fde68a", "#fca5a5", "#86efac", "#a5b4fc", "#f9a8d4", "#a7f3d0"];
-    const darkColors = ["#fde047", "#f87171", "#4ade80", "#818cf8", "#f472b6", "#6ee7b7"];
+    const lightColors = ["#fde68a", "#fca5a5", "#86efac", "#a5b4fc", "#f9a8d4", "#a7f3d0", "#fdba74", "#67e8f9"];
+    const darkColors = ["#fde047", "#f87171", "#4ade80", "#818cf8", "#f472b6", "#6ee7b7", "#fb923c", "#22d3ee"];
     const confettiColors = theme === 'dark' ? darkColors : lightColors;
 
     const confettiPieces = Array.from({ length: 50 }).map((_, i) => ({

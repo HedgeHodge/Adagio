@@ -390,20 +390,6 @@ export function usePomodoro() {
     updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
   }, [activeSessions, updateFirestore]);
 
-  const resetTimer = useCallback((sessionId: string) => {
-    const newSessions = activeSessions.map(s => {
-      if (s.id === sessionId) {
-        if (notificationSentRefs.current[s.id]) {
-           notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
-        }
-        const newLastWorkSessionStartTime = s.currentInterval === 'work' ? null : s.lastWorkSessionStartTime;
-        return { ...s, isRunning: false, currentTime: 0, lastWorkSessionStartTime: newLastWorkSessionStartTime };
-      }
-      return s;
-    });
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, updateFirestore]);
-
   const _actuallyLogWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
     
@@ -763,7 +749,7 @@ export function usePomodoro() {
   return {
     settings, updateSettings, activeSessions, pomodoroLog, 
     addTaskToSession, toggleTaskInSession, deleteTaskFromSession,
-    addSession, removeSession, startTimer, pauseTimer, resetTimer, endCurrentWorkSession,
+    addSession, removeSession, startTimer, pauseTimer,
     deleteLogEntry, formatTime, isClient, recentProjects, motivationalQuote, isFetchingQuote,
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
@@ -775,6 +761,7 @@ export function usePomodoro() {
     isSettingsModalOpen, openSettingsModal, closeSettingsModal,
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData,
     hasExceededFreeLogLimit,
-    isShortSessionConfirmOpen, closeShortSessionConfirm
+    isShortSessionConfirmOpen, closeShortSessionConfirm,
+    endCurrentWorkSession
   };
 }
