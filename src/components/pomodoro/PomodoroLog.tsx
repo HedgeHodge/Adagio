@@ -3,10 +3,10 @@
 
 import type { PomodoroLogEntry } from '@/types/pomodoro';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListChecks, Briefcase, Trash2, Pencil, PlusCircle, Loader2 } from 'lucide-react';
+import { ListChecks, Briefcase, Trash2, Pencil, PlusCircle, Loader2, Sparkles } from 'lucide-react';
 import { format, parseISO, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +16,9 @@ interface PomodoroLogProps {
   onEditEntry: (entry: PomodoroLogEntry) => void;
   onAddEntry?: () => void;
   isMobileLayout?: boolean;
+  hasExceededFreeLogLimit?: boolean;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
 const formatDuration = (minutes: number): string => {
@@ -30,7 +33,16 @@ const formatDuration = (minutes: number): string => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
-export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMobileLayout = false }: PomodoroLogProps) {
+export function PomodoroLog({ 
+  log, 
+  onDeleteEntry, 
+  onEditEntry, 
+  onAddEntry, 
+  isMobileLayout = false,
+  hasExceededFreeLogLimit = false,
+  isPremium = false,
+  onUpgrade
+}: PomodoroLogProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -184,6 +196,17 @@ export function PomodoroLog({ log, onDeleteEntry, onEditEntry, onAddEntry, isMob
           </ScrollArea>
         )}
       </CardContent>
+      {hasExceededFreeLogLimit && !isPremium && (
+        <CardFooter className="p-4 border-t">
+          <div className="text-center w-full text-sm text-muted-foreground p-2 rounded-lg bg-muted/50 border">
+            <p>Your log history is limited on the free plan.</p>
+            <Button variant="link" className="p-0 h-auto text-primary" onClick={onUpgrade}>
+              <Sparkles className="mr-1.5 h-4 w-4" />
+              Upgrade to keep your full history.
+            </Button>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 }

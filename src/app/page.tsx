@@ -89,7 +89,7 @@ type ActiveTab = 'timer' | 'log' | 'insights';
 
 export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
-    const { currentUser, isPremium, signOut } = useAuth();
+    const { currentUser, isPremium, signOut, upgradeUserToPremium } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
@@ -218,7 +218,11 @@ export default function HomePage() {
                     key={session.id}
                     className="w-full max-w-md relative rounded-3xl overflow-hidden"
                 >
-                    <Card className={cn("w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden")}>
+                    <Card className={cn(
+                        "w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden",
+                        "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
+                        session.isRunning && "after:animate-ripple after:border-primary"
+                    )}>
                         <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-20" onClick={() => pomodoro.removeSession(session.id)}>
                             <X className="h-4 w-4" />
                         </Button>
@@ -269,6 +273,9 @@ export default function HomePage() {
             onEditEntry={pomodoro.openEditModal}
             onAddEntry={() => setIsAddEntryModalOpen(true)}
             isMobileLayout={true}
+            hasExceededFreeLogLimit={pomodoro.hasExceededFreeLogLimit}
+            isPremium={isPremium}
+            onUpgrade={upgradeUserToPremium}
         />
     );
 
@@ -372,7 +379,12 @@ export default function HomePage() {
                                     </div>
                                  </DropdownMenuLabel>
                                  <DropdownMenuSeparator />
-                                 {isPremium && (
+                                 {!isPremium ? (
+                                    <DropdownMenuItem onClick={upgradeUserToPremium} className="cursor-pointer text-primary focus:text-primary focus:bg-primary/10">
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        <span>Upgrade to Premium</span>
+                                    </DropdownMenuItem>
+                                 ) : (
                                     <DropdownMenuItem disabled className="opacity-100 cursor-default focus:bg-transparent focus:text-primary">
                                         <CheckCircle className="mr-2 h-4 w-4 text-primary" />
                                         <span className="text-sm font-medium text-primary">Premium Member</span>
@@ -514,5 +526,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
