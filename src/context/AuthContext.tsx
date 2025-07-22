@@ -27,7 +27,10 @@ interface AuthContextType {
   upgradeUserToPremium: () => Promise<void>;
   togglePremiumStatus: () => Promise<void>;
   signUpWithEmailPassword: (email: string, password: string) => Promise<void>; 
-  signInWithEmailPassword: (email: string, password: string) => Promise<void>; 
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>;
+  isPremiumSplashVisible: boolean;
+  showPremiumSplash: () => void;
+  hidePremiumSplash: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [isPremiumSplashVisible, setIsPremiumSplashVisible] = useState(false);
+
+  const showPremiumSplash = () => setIsPremiumSplashVisible(true);
+  const hidePremiumSplash = () => setIsPremiumSplashVisible(false);
 
   const handleUser = useCallback(async (user: User | null) => {
     setLoading(true);
@@ -132,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDocRef = doc(db, 'users', currentUser.uid);
       await setDoc(userDocRef, { isPremium: true, lastUpdated: Timestamp.now() }, { merge: true });
       setIsPremium(true);
-      toast({ title: "Upgrade Successful!", description: "You now have access to premium features." });
+      showPremiumSplash();
     } catch (error) {
       console.error("Error upgrading to premium:", error);
       toast({ title: "Upgrade Failed", description: "Could not upgrade to premium. Please try again.", variant: "destructive" });
@@ -149,7 +156,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDocRef = doc(db, 'users', currentUser.uid);
       await setDoc(userDocRef, { isPremium: newPremiumStatus, lastUpdated: Timestamp.now() }, { merge: true });
       setIsPremium(newPremiumStatus);
-      toast({ title: "Premium Status Toggled", description: `You are now on the ${newPremiumStatus ? 'Premium' : 'Free'} tier.` });
+      if (newPremiumStatus) {
+        showPremiumSplash();
+      } else {
+        toast({ title: "Premium Status Toggled", description: `You are now on the Free tier.` });
+      }
     } catch (error) {
       console.error("Error toggling premium status:", error);
       toast({ title: "Toggle Failed", description: "Could not toggle premium status. Please try again.", variant: "destructive" });
@@ -174,7 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     upgradeUserToPremium,
     togglePremiumStatus,
     signUpWithEmailPassword, 
-    signInWithEmailPassword, 
+    signInWithEmailPassword,
+    isPremiumSplashVisible,
+    showPremiumSplash,
+    hidePremiumSplash,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

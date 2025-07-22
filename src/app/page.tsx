@@ -64,6 +64,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
+import { PremiumSplashModal } from '@/components/auth/PremiumSplashModal';
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
@@ -89,7 +90,7 @@ type ActiveTab = 'timer' | 'log' | 'insights';
 
 export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
-    const { currentUser, isPremium, signOut, upgradeUserToPremium } = useAuth();
+    const { currentUser, isPremium, signOut, upgradeUserToPremium, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
@@ -480,6 +481,8 @@ export default function HomePage() {
 
             {!currentUser && <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />}
             {currentUser && <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />}
+            {currentUser && isPremiumSplashVisible && <PremiumSplashModal isOpen={isPremiumSplashVisible} onOpenChange={hidePremiumSplash} />}
+
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
