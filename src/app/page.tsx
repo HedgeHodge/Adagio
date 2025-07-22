@@ -113,7 +113,11 @@ export default function HomePage() {
     }, [currentUser, loading]);
 
     if (loading || isSplashVisible) {
-        return <SplashScreen />;
+        return (
+            <AnimatePresence>
+                {(loading || isSplashVisible) && <SplashScreen />}
+            </AnimatePresence>
+        );
     }
 
     if (!currentUser) {
