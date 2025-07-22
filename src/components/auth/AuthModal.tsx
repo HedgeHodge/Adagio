@@ -146,7 +146,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-card sm:rounded-3xl">
+      <DialogContent className="sm:max-w-[425px] bg-card rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-semibold text-foreground">
             {activeTab === 'signIn' ? 'Welcome Back!' : 'Create Account'}

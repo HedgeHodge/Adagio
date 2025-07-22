@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from '@/context/AuthContext';
@@ -33,7 +34,7 @@ export function AccountModal({ isOpen, onOpenChange }: AccountModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card sm:rounded-3xl">
+      <DialogContent className="sm:max-w-md bg-card rounded-3xl sm:rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-semibold text-foreground">Account</DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
