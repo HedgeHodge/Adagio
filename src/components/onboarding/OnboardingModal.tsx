@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, BrainCircuit, Coffee, Target, Sparkles, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -84,6 +84,12 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onComplete(); }}>
       <DialogContent className="sm:max-w-md bg-card sm:rounded-3xl p-0 overflow-hidden">
+        {/* Hidden header for accessibility, content is animated separately */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{steps[page].title}</DialogTitle>
+          <DialogDescription>{steps[page].description}</DialogDescription>
+        </DialogHeader>
+
         <div className="h-[480px] flex flex-col">
           <div className="flex-grow flex flex-col items-center justify-center text-center p-8 overflow-hidden relative">
             <AnimatePresence initial={false} custom={direction}>
@@ -139,5 +145,3 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
     </Dialog>
   );
 }
-
-    
