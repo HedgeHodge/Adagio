@@ -23,14 +23,14 @@ interface PremiumSplashModalProps {
 const ConfettiPiece = ({ x, y, rotate, color }: { x: number, y: number, rotate: number, color: string }) => {
     const variants = {
         initial: {
-            x: '50%',
-            y: '50%',
+            x: '50vw',
+            y: '50vh',
             opacity: 0,
             scale: 0.5,
         },
         animate: {
-            x: `${x}%`,
-            y: `${y}%`,
+            x: `${x}vw`,
+            y: `${y}vh`,
             opacity: [0, 0.7, 1, 1, 0],
             scale: [0.5, 1, 1, 0.8, 0],
             rotate,
@@ -44,7 +44,7 @@ const ConfettiPiece = ({ x, y, rotate, color }: { x: number, y: number, rotate: 
     return (
         <motion.div
             className="absolute w-2 h-4"
-            style={{ backgroundColor: color, left: 0, top: 0 }}
+            style={{ backgroundColor: color }}
             variants={variants}
             initial="initial"
             animate="animate"
@@ -56,14 +56,14 @@ const ConfettiPiece = ({ x, y, rotate, color }: { x: number, y: number, rotate: 
 export function PremiumSplashModal({ isOpen, onOpenChange }: PremiumSplashModalProps) {
     const { theme } = useTheme();
 
-    const lightColors = ["#fde68a", "#fca5a5", "#86efac", "#a5b4fc", "#f9a8d4", "#a7f3d0"]; // Added Pink, Mint
-    const darkColors = ["#fde047", "#f87171", "#4ade80", "#818cf8", "#f472b6", "#6ee7b7"]; // Brighter versions
+    const lightColors = ["#fde68a", "#fca5a5", "#86efac", "#a5b4fc", "#f9a8d4", "#a7f3d0"];
+    const darkColors = ["#fde047", "#f87171", "#4ade80", "#818cf8", "#f472b6", "#6ee7b7"];
     const confettiColors = theme === 'dark' ? darkColors : lightColors;
 
     const confettiPieces = Array.from({ length: 50 }).map((_, i) => ({
       id: i,
-      x: Math.random() * 200 - 50,
-      y: Math.random() * 200 - 50,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
       rotate: Math.random() * 360,
       color: confettiColors[i % confettiColors.length],
     }));
