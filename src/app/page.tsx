@@ -261,10 +261,10 @@ export default function HomePage() {
             {pomodoro.activeSessions.map((session) => (
                <div
                     key={session.id}
-                    className="w-full max-w-md relative rounded-3xl overflow-hidden"
+                    className="w-full max-w-md relative rounded-3xl overflow-hidden shadow-lg"
                 >
                     <Card className={cn(
-                        "w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden",
+                        "w-full bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden",
                         "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
                         session.isRunning && "after:animate-ripple after:border-primary"
                     )}>
