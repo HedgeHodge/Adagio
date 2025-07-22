@@ -30,6 +30,7 @@ interface AuthContextType {
   isPremiumSplashVisible: boolean;
   showPremiumSplash: () => void;
   hidePremiumSplash: () => void;
+  togglePremiumStatus: () => void; // For testing
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +44,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const showPremiumSplash = () => setIsPremiumSplashVisible(true);
   const hidePremiumSplash = () => setIsPremiumSplashVisible(false);
+
+  // This is a helper for development/testing to easily toggle premium state
+  const togglePremiumStatus = async () => {
+    if (!currentUser) return;
+    const newPremiumStatus = !isPremium;
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    await setDoc(userDocRef, { isPremium: newPremiumStatus }, { merge: true });
+    setIsPremium(newPremiumStatus);
+    if(newPremiumStatus) showPremiumSplash();
+  }
 
   const handleUser = useCallback(async (user: User | null) => {
     setLoading(true);
@@ -119,6 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      // Manually set user to null immediately to trigger state changes in consumers
+      setCurrentUser(null);
+      setIsPremium(false);
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -147,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmailPassword = async (email: string, password: string) => {
     await createUserWithEmailAndPassword(auth, email, password);
-    toast({ title: "Account Created!", description: "Welcome to Pomodoro Flow!" });
+    toast({ title: "Account Created!", description: "Welcome to Adagio!" });
   };
 
   const signInWithEmailPassword = async (email: string, password: string) => {
@@ -166,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isPremiumSplashVisible,
     showPremiumSplash,
     hidePremiumSplash,
+    togglePremiumStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

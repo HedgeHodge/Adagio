@@ -640,6 +640,7 @@ export function usePomodoro() {
         endTime: endTime.toISOString(),
         type: 'work',
         duration,
+        project,
         summary: `Completed key features for ${project}.`,
       };
     };
@@ -767,5 +768,3 @@ export function usePomodoro() {
     endCurrentWorkSession
   };
 }
-
-    
