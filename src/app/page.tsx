@@ -180,15 +180,20 @@ export default function HomePage() {
                         opacity: isAddCardExpanded ? 1 : 0.9
                     }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className="w-full overflow-hidden"
+                    className="w-full overflow-hidden shadow-lg rounded-3xl"
                 >
-                    <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md">
+                    <Card className="w-full bg-card/70 backdrop-blur-sm rounded-3xl max-w-md h-full">
                         <CardHeader>
                             <CardTitle className="flex items-center justify-between">
                                 <span className="flex items-center"><Clock className="mr-2 h-5 w-5" />Start a New Session</span>
                                 {!isAddCardExpanded && (
                                     <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(true)}>
                                         <Plus className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                {isAddCardExpanded && pomodoro.activeSessions.length > 0 && (
+                                    <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(false)}>
+                                        <X className="h-5 w-5" />
                                     </Button>
                                 )}
                             </CardTitle>
