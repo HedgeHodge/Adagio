@@ -1,14 +1,15 @@
 
 import type { Metadata, Viewport } from 'next';
-import { Inter, Pacifico } from 'next/font/google';
+import { Poppins, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/layout/Providers';
 import { useId } from 'react';
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
+  weight: ['400', '500', '600', '700'],
   variable: '--font-body',
 });
 
@@ -52,7 +53,7 @@ export default function RootLayout({
 }>) {
   const id = useId();
   return (
-    <html lang="en" className={`${inter.variable} ${pacifico.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${poppins.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
         <Providers key={id}>
             {children}
