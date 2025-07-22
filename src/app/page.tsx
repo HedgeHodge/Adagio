@@ -93,15 +93,26 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
 type ActiveTab = 'timer' | 'log' | 'insights';
 
 export default function HomePage() {
-    const { currentUser, loading, isPremium, signOut, upgradeUserToPremium, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
+    const { currentUser, loading } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(!currentUser);
-    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-    
-    useEffect(() => {
-        setIsAuthModalOpen(!currentUser);
-    }, [currentUser]);
+    const [isSplashVisible, setIsSplashVisible] = useState(true);
 
-    if (loading) {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsSplashVisible(false);
+        }, 2000); // Minimum splash screen time: 2 seconds
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        // Keep auth modal sync with user status, but only if not loading
+        if (!loading) {
+            setIsAuthModalOpen(!currentUser);
+        }
+    }, [currentUser, loading]);
+
+    if (loading || isSplashVisible) {
         return <SplashScreen />;
     }
 
