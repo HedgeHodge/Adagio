@@ -1,12 +1,12 @@
 
 import type { Metadata, Viewport } from 'next';
-import { EB_Garamond, Pacifico } from 'next/font/google';
+import { Inter, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/layout/Providers';
 import { useId } from 'react';
 
-const eb_garamond = EB_Garamond({
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-body',
@@ -52,7 +52,7 @@ export default function RootLayout({
 }>) {
   const id = useId();
   return (
-    <html lang="en" className={`${eb_garamond.variable} ${pacifico.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
         <Providers key={id}>
             {children}
