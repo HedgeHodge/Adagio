@@ -70,7 +70,7 @@ export function PremiumSplashModal({ isOpen, onOpenChange }: PremiumSplashModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card sm:rounded-3xl overflow-hidden">
+      <DialogContent className="sm:max-w-md bg-card rounded-3xl overflow-hidden relative">
         <div className="absolute inset-0 pointer-events-none">
             {isOpen && confettiPieces.map(piece => <ConfettiPiece key={piece.id} {...piece} />)}
         </div>
