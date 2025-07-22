@@ -171,38 +171,38 @@ export default function HomePage() {
 
     const TimerView = (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-            <AnimatePresence initial={false}>
-                <motion.div
-                    key="add-session-card"
-                    initial={{ height: 'auto', opacity: 1 }}
-                    animate={{ 
-                        height: isAddCardExpanded ? 'auto' : '5rem',
-                        opacity: isAddCardExpanded ? 1 : 0.9
-                    }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className="w-full overflow-hidden shadow-lg rounded-3xl"
-                >
-                    <Card className="w-full bg-card/70 backdrop-blur-sm rounded-3xl max-w-md h-full">
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                                <span className="flex items-center"><Clock className="mr-2 h-5 w-5" />Start a New Session</span>
-                                {!isAddCardExpanded && (
-                                    <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(true)}>
-                                        <Plus className="h-5 w-5" />
-                                    </Button>
-                                )}
-                                {isAddCardExpanded && pomodoro.activeSessions.length > 0 && (
-                                    <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(false)}>
-                                        <X className="h-5 w-5" />
-                                    </Button>
-                                )}
-                            </CardTitle>
-                        </CardHeader>
+            <motion.div
+                layout
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="w-full shadow-lg rounded-3xl"
+            >
+                <Card className={cn(
+                    "w-full bg-card/70 backdrop-blur-sm rounded-3xl max-w-md transition-opacity",
+                    !isAddCardExpanded && "opacity-90"
+                )}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <span className="flex items-center"><Clock className="mr-2 h-5 w-5" />Start a New Session</span>
+                            {!isAddCardExpanded && (
+                                <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(true)}>
+                                    <Plus className="h-5 w-5" />
+                                </Button>
+                            )}
+                            {isAddCardExpanded && pomodoro.activeSessions.length > 0 && (
+                                <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(false)}>
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <AnimatePresence initial={false}>
                         {isAddCardExpanded && (
                             <motion.div
+                                key="content"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.3 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
                             >
                                 <CardContent>
                                     <form onSubmit={handleAddSession} className="space-y-4">
@@ -253,9 +253,9 @@ export default function HomePage() {
                                 </CardContent>
                             </motion.div>
                         )}
-                    </Card>
-                </motion.div>
-            </AnimatePresence>
+                    </AnimatePresence>
+                </Card>
+            </motion.div>
 
 
             {pomodoro.activeSessions.map((session) => (
