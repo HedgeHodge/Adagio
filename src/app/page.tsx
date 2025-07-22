@@ -530,6 +530,23 @@ export default function HomePage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            <AlertDialog open={pomodoro.isShortSessionConfirmOpen} onOpenChange={pomodoro.closeShortSessionConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Log Short Session?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This session is less than one minute long. Are you sure you want to log it?
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => pomodoro.closeShortSessionConfirm(false)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => pomodoro.closeShortSessionConfirm(true)}>
+                        Yes, log it
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

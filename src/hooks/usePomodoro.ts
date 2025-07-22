@@ -80,6 +80,10 @@ const cleanActiveSession = (session: any): ActivePomodoroSession => {
     return cleanedSession as ActivePomodoroSession;
 };
 
+interface SessionToConfirm {
+    session: ActivePomodoroSession;
+    summary?: string;
+}
 
 export function usePomodoro() {
   const { currentUser, isPremium } = useAuth();
@@ -104,7 +108,8 @@ export function usePomodoro() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isWipeConfirmOpen, setIsWipeConfirmOpen] = useState(false);
   const [hasExceededFreeLogLimit, setHasExceededFreeLogLimit] = useState(false);
-
+  const [isShortSessionConfirmOpen, setIsShortSessionConfirmOpen] = useState(false);
+  const [sessionToConfirm, setSessionToConfirm] = useState<SessionToConfirm | null>(null);
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -399,12 +404,11 @@ export function usePomodoro() {
     updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
   }, [activeSessions, updateFirestore]);
 
- const logWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
+  const _actuallyLogWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
-
+    
     const now = Date.now();
     const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
-    if (calculatedDurationMinutes <= 0 && session.currentTime === 0) return null;
 
     const newLogEntry: PomodoroLogEntry = cleanLogEntry({
       id: `${now}-${session.id}`,
@@ -418,10 +422,45 @@ export function usePomodoro() {
     });
     
     updateFirestore({ pomodoroLog: arrayUnion(newLogEntry) });
-
     updateRecentProjects(newLogEntry.project);
-    return newLogEntry;
-  }, [updateRecentProjects, updateFirestore]);
+    
+    toast({
+      title: "Work entry logged!",
+      description: `${newLogEntry.project || 'Work'}: ${formatTime(newLogEntry.duration * 60)}`,
+    });
+    
+    // Reset the session state after logging
+    const newSessions = activeSessions.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false} : s);
+    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+  }, [activeSessions, updateFirestore, updateRecentProjects, toast, formatTime]);
+
+
+ const logWorkEntry = useCallback((session: ActivePomodoroSession, summary?: string) => {
+    if (!session.lastWorkSessionStartTime) return null;
+
+    const now = Date.now();
+    const calculatedDurationMinutes = Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60));
+
+    if (calculatedDurationMinutes < 1) {
+        setSessionToConfirm({ session, summary });
+        setIsShortSessionConfirmOpen(true);
+        return;
+    }
+    
+    _actuallyLogWorkEntry(session, summary);
+  }, [_actuallyLogWorkEntry]);
+  
+  const closeShortSessionConfirm = useCallback((shouldLog: boolean) => {
+      setIsShortSessionConfirmOpen(false);
+      if (shouldLog && sessionToConfirm) {
+          _actuallyLogWorkEntry(sessionToConfirm.session, sessionToConfirm.summary);
+      } else if (sessionToConfirm) {
+           // Reset session if user cancels logging the short session
+           const newSessions = activeSessions.map(s => s.id === sessionToConfirm.session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false} : s);
+           updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+      }
+      setSessionToConfirm(null);
+  }, [sessionToConfirm, _actuallyLogWorkEntry, activeSessions, updateFirestore]);
 
   const endCurrentWorkSession = useCallback((sessionId: string) => {
     const sessionToEnd = activeSessions.find(s => s.id === sessionId && s.currentInterval === 'work' && s.isRunning);
@@ -488,19 +527,9 @@ export function usePomodoro() {
   }, [activeSessions, toast, updateFirestore]);
 
   const logSessionFromSummary = useCallback((session: ActivePomodoroSession, summary?: string) => {
-      const loggedEntry = logWorkEntry(session, summary);
-      if (loggedEntry) {
-        toast({
-            title: "Work entry logged!",
-            description: `${loggedEntry.project || 'Work'}: ${formatTime(loggedEntry.duration * 60)}`,
-        });
-      }
+      logWorkEntry(session, summary);
       setSessionToSummarize(null);
-      
-      const newSessions = activeSessions.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false} : s);
-      
-      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [logWorkEntry, toast, formatTime, activeSessions, updateFirestore]);
+  }, [logWorkEntry]);
 
   const closeSummaryModal = useCallback(() => {
     if (sessionToSummarize) {
@@ -777,5 +806,6 @@ export function usePomodoro() {
     isSettingsModalOpen, openSettingsModal, closeSettingsModal,
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData,
     hasExceededFreeLogLimit,
+    isShortSessionConfirmOpen, closeShortSessionConfirm
   };
 }
