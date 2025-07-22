@@ -68,6 +68,7 @@ import { AccountModal } from '@/components/auth/AccountModal';
 import { PremiumSplashModal } from '@/components/auth/PremiumSplashModal';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { SplashScreen } from '@/components/layout/SplashScreen';
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
@@ -91,12 +92,6 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
 
 type ActiveTab = 'timer' | 'log' | 'insights';
 
-const LoadingScreen = () => (
-    <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-    </div>
-);
-
 export default function HomePage() {
     const { currentUser, loading, isPremium, signOut, upgradeUserToPremium, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(!currentUser);
@@ -107,7 +102,7 @@ export default function HomePage() {
     }, [currentUser]);
 
     if (loading) {
-        return <LoadingScreen />;
+        return <SplashScreen />;
     }
 
     if (!currentUser) {
