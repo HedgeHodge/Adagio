@@ -304,15 +304,15 @@ export function usePomodoro() {
                     if (!notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
 
                     if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
-                      toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` });
+                      setTimeout(() => toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` }), 0);
                       if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
                       notificationSentRefs.current[s.id].work = true;
                     } else if (s.currentInterval === 'shortBreak' && !notificationSentRefs.current[s.id].shortBreak && newTime >= settings.shortBreakDuration * 60) {
-                      toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.shortBreakDuration}-min break is up.` });
+                      setTimeout(() => toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.shortBreakDuration}-min break is up.` }), 0);
                       if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
                       notificationSentRefs.current[s.id].shortBreak = true;
                     } else if (s.currentInterval === 'longBreak' && !notificationSentRefs.current[s.id].longBreak && newTime >= settings.longBreakDuration * 60) {
-                      toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.longBreakDuration}-min break is up.` });
+                      setTimeout(() => toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.longBreakDuration}-min break is up.` }), 0);
                       if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
                       notificationSentRefs.current[s.id].longBreak = true;
                     }
@@ -767,3 +767,5 @@ export function usePomodoro() {
     endCurrentWorkSession
   };
 }
+
+    
