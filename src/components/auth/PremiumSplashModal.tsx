@@ -56,8 +56,8 @@ const ConfettiPiece = ({ x, y, rotate, color }: { x: number, y: number, rotate: 
 export function PremiumSplashModal({ isOpen, onOpenChange }: PremiumSplashModalProps) {
     const { theme } = useTheme();
 
-    const lightColors = ["#fde68a", "#fca5a5", "#86efac", "#a5b4fc"]; // Pastel Yellow, Red, Green, Blue
-    const darkColors = ["#fde047", "#f87171", "#4ade80", "#818cf8"]; // Brighter Yellow, Red, Green, Blue
+    const lightColors = ["#fde68a", "#fca5a5", "#86efac", "#a5b4fc", "#f9a8d4", "#a7f3d0"]; // Added Pink, Mint
+    const darkColors = ["#fde047", "#f87171", "#4ade80", "#818cf8", "#f472b6", "#6ee7b7"]; // Brighter versions
     const confettiColors = theme === 'dark' ? darkColors : lightColors;
 
     const confettiPieces = Array.from({ length: 50 }).map((_, i) => ({
@@ -70,41 +70,43 @@ export function PremiumSplashModal({ isOpen, onOpenChange }: PremiumSplashModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card rounded-3xl overflow-hidden relative">
-        <div className="absolute inset-0 pointer-events-none">
-            {isOpen && confettiPieces.map(piece => <ConfettiPiece key={piece.id} {...piece} />)}
-        </div>
-        <DialogHeader className="pt-8 text-center z-10">
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", damping: 10, stiffness: 100, delay: 0.2 }}
-            className="flex justify-center"
-          >
-            <CheckCircle className="h-20 w-20 text-primary" />
-          </motion.div>
-          <DialogTitle className="text-3xl font-bold text-foreground mt-4">
-            Welcome to Premium!
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-lg mt-2">
-            You've unlocked all features. Thanks for your support!
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex flex-col items-center gap-4 py-4 z-10">
-            <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                <Sparkles className="h-5 w-5" />
-                <span>AI Summaries & Full History Unlocked</span>
+      <DialogContent className="sm:max-w-md bg-card rounded-3xl overflow-hidden">
+        <div className="relative">
+            <div className="absolute inset-0 pointer-events-none">
+                {isOpen && confettiPieces.map(piece => <ConfettiPiece key={piece.id} {...piece} />)}
             </div>
-        </div>
+            <DialogHeader className="pt-8 text-center z-10">
+            <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", damping: 10, stiffness: 100, delay: 0.2 }}
+                className="flex justify-center"
+            >
+                <CheckCircle className="h-20 w-20 text-primary" />
+            </motion.div>
+            <DialogTitle className="text-3xl font-bold text-foreground mt-4">
+                Welcome to Premium!
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-lg mt-2">
+                You've unlocked all features. Thanks for your support!
+            </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex flex-col items-center gap-4 py-4 z-10">
+                <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+                    <Sparkles className="h-5 w-5" />
+                    <span>AI Summaries & Full History Unlocked</span>
+                </div>
+            </div>
 
-        <DialogFooter className="z-10">
-            <DialogClose asChild>
-                <Button type="button" className="w-full" size="lg" onClick={() => onOpenChange(false)}>
-                    Start Focusing
-                </Button>
-            </DialogClose>
-        </DialogFooter>
+            <DialogFooter className="z-10">
+                <DialogClose asChild>
+                    <Button type="button" className="w-full" size="lg" onClick={() => onOpenChange(false)}>
+                        Start Focusing
+                    </Button>
+                </DialogClose>
+            </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
