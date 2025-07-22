@@ -14,7 +14,6 @@ interface TimerControlsProps {
   onStart: () => void; // Specific to this session
   onPause: () => void; // Specific to this session
   onReset: () => void; // Specific to this session
-  onSwitchMode: () => void; // Specific to this session
   onEndCurrentWorkSession?: () => void; // Specific to this session
   onOpenEditActiveSessionModal: () => void; // Specific to this session
   lastWorkSessionStartTime: number | null; // To determine if edit is allowed
@@ -33,15 +32,11 @@ export function TimerControls({
   onStart,
   onPause,
   onReset,
-  onSwitchMode,
   onEndCurrentWorkSession,
   onOpenEditActiveSessionModal,
   lastWorkSessionStartTime
 }: TimerControlsProps) {
   const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
-
-  const switchModeButtonIcon = isBreakInterval ? <Briefcase className="h-4 w-4" /> : <Coffee className="h-4 w-4" />;
-  const switchModeButtonTooltip = isBreakInterval ? "Start Work" : "Take Break";
 
   return (
     <div className="flex flex-wrap gap-1 justify-center items-center mt-2">
@@ -106,21 +101,6 @@ export function TimerControls({
               </Button>
           </motion.div>
         )}
-
-        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
-          <Button 
-              onClick={onSwitchMode} 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 rounded-lg hover:bg-muted"
-              aria-label={switchModeButtonTooltip}
-              title={switchModeButtonTooltip}
-          >
-            {switchModeButtonIcon}
-            <span className="sr-only">{switchModeButtonTooltip}</span>
-          </Button>
-        </motion.div>
-
       </div>
     </div>
   );

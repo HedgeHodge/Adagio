@@ -472,37 +472,6 @@ export function usePomodoro() {
     }
   }, [activeSessions, updateFirestore]);
 
-  const switchMode = useCallback((sessionId: string) => {
-    let sessionToSummarizeCandidate: ActivePomodoroSession | null = null;
-    
-    const newSessions = activeSessions.map(s => {
-      if (s.id === sessionId) {
-        let nextInterval: IntervalType;
-        let newCompletedPomodoros = s.pomodorosCompletedThisSet;
-        let newLastWorkSessionStartTime = s.lastWorkSessionStartTime;
-
-        if (s.currentInterval === 'work') {
-          sessionToSummarizeCandidate = s;
-          newCompletedPomodoros++;
-          nextInterval = (newCompletedPomodoros % settings.pomodorosPerSet === 0) ? 'longBreak' : 'shortBreak';
-        } else { 
-          nextInterval = 'work';
-          newLastWorkSessionStartTime = Date.now(); 
-          if (s.currentInterval === 'longBreak') newCompletedPomodoros = 0;
-        }
-
-        if (notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
-
-        return { ...s, isRunning: false, currentInterval: nextInterval, pomodorosCompletedThisSet: newCompletedPomodoros, currentTime: 0, lastWorkSessionStartTime: newLastWorkSessionStartTime };
-      }
-      return s;
-    });
-
-    if (sessionToSummarizeCandidate) setSessionToSummarize(sessionToSummarizeCandidate);
-
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [settings.pomodorosPerSet, activeSessions, updateFirestore]);
-
   const removeSession = useCallback((sessionId: string) => {
     let sessionToLog: ActivePomodoroSession | undefined;
     const currentSession = activeSessions.find(s => s.id === sessionId);
@@ -794,7 +763,7 @@ export function usePomodoro() {
   return {
     settings, updateSettings, activeSessions, pomodoroLog, 
     addTaskToSession, toggleTaskInSession, deleteTaskFromSession,
-    addSession, removeSession, startTimer, pauseTimer, resetTimer, switchMode, endCurrentWorkSession,
+    addSession, removeSession, startTimer, pauseTimer, resetTimer, endCurrentWorkSession,
     deleteLogEntry, formatTime, isClient, recentProjects, motivationalQuote, isFetchingQuote,
     activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
