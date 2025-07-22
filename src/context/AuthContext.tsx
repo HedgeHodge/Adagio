@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             description = error.message || description;
         }
 
-        toast({ title, description, variant: "destructive", duration: 10000 });
+        toast({ title, description, variant: "destructive" });
     }
   };
 
