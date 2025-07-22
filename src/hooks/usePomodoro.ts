@@ -2,7 +2,7 @@
 "use client";
 
 import type { PomodoroSettings, PomodoroLogEntry, IntervalType, TimeFilter, ChartDataPoint, ActivePomodoroSession, UserPomodoroData, Task } from '@/types/pomodoro';
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
 import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths, endOfDay } from 'date-fns';
@@ -296,30 +296,32 @@ export function usePomodoro() {
       if (session.isRunning) {
         if (!timerRefs.current[session.id]) {
           timerRefs.current[session.id] = setInterval(() => {
-            setActiveSessions(prevSessions =>
-              prevSessions.map(s => {
-                if (s.id === session.id && s.isRunning) {
-                  const newTime = s.currentTime + 1;
-                  if (!notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
+            startTransition(() => {
+              setActiveSessions(prevSessions =>
+                prevSessions.map(s => {
+                  if (s.id === session.id && s.isRunning) {
+                    const newTime = s.currentTime + 1;
+                    if (!notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
 
-                  if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
-                    toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` });
-                    if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                    notificationSentRefs.current[s.id].work = true;
-                  } else if (s.currentInterval === 'shortBreak' && !notificationSentRefs.current[s.id].shortBreak && newTime >= settings.shortBreakDuration * 60) {
-                    toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.shortBreakDuration}-min break is up.` });
-                    if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                    notificationSentRefs.current[s.id].shortBreak = true;
-                  } else if (s.currentInterval === 'longBreak' && !notificationSentRefs.current[s.id].longBreak && newTime >= settings.longBreakDuration * 60) {
-                    toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.longBreakDuration}-min break is up.` });
-                    if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                    notificationSentRefs.current[s.id].longBreak = true;
+                    if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
+                      toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` });
+                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
+                      notificationSentRefs.current[s.id].work = true;
+                    } else if (s.currentInterval === 'shortBreak' && !notificationSentRefs.current[s.id].shortBreak && newTime >= settings.shortBreakDuration * 60) {
+                      toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.shortBreakDuration}-min break is up.` });
+                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
+                      notificationSentRefs.current[s.id].shortBreak = true;
+                    } else if (s.currentInterval === 'longBreak' && !notificationSentRefs.current[s.id].longBreak && newTime >= settings.longBreakDuration * 60) {
+                      toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.longBreakDuration}-min break is up.` });
+                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
+                      notificationSentRefs.current[s.id].longBreak = true;
+                    }
+                    return { ...s, currentTime: newTime };
                   }
-                  return { ...s, currentTime: newTime };
-                }
-                return s;
-              })
-            );
+                  return s;
+                })
+              );
+            });
           }, 1000);
         }
       } else {
