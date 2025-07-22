@@ -92,13 +92,6 @@ export function TimerControls({
           </motion.div>
         )}
 
-        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
-          <Button onClick={onReset} variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
-            <RotateCcw className="h-5 w-5" />
-            <span className="sr-only">Reset Timer</span>
-          </Button>
-        </motion.div>
-        
         {currentInterval === 'work' && lastWorkSessionStartTime && (
            <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
               <Button 
