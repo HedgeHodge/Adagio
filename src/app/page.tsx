@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { useAuth } from '@/context/AuthContext';
 import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
@@ -100,8 +100,18 @@ export default function HomePage() {
     const [projectToManage, setProjectToManage] = useState<string | null>(null);
     const [isManageProjectModalOpen, setIsManageProjectModalOpen] = useState(false);
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+    
+    const [isAddCardExpanded, setIsAddCardExpanded] = useState(true);
 
     const pomodoro = usePomodoro();
+
+    useEffect(() => {
+        if (pomodoro.activeSessions.length > 0) {
+            setIsAddCardExpanded(false);
+        } else {
+            setIsAddCardExpanded(true);
+        }
+    }, [pomodoro.activeSessions.length]);
     
     const handleLongPress = useCallback((projectName: string) => {
         setProjectToManage(projectName);
@@ -161,58 +171,86 @@ export default function HomePage() {
 
     const TimerView = (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-            <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center"><Clock className="mr-2 h-5 w-5" />Start a New Session</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleAddSession} className="space-y-4">
-                        <div className="flex gap-2">
-                            <Input
-                                id="project-name"
-                                placeholder="What are you working on?"
-                                value={pomodoro.inputProjectName}
-                                onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
-                                className="h-11 text-base bg-background/70 flex-grow"
-                                disabled={pomodoro.isDataLoading}
-                            />
-                            <Button type="submit" className="h-11 w-11 rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
-                                <Plus className="h-5 w-5" />
-                                <span className="sr-only">Add</span>
-                            </Button>
-                        </div>
-                        {pomodoro.recentProjects.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm text-muted-foreground mr-1">Recent:</span>
-                                {pomodoro.recentProjects.map((proj, i) => (
-                                    <motion.div
-                                        key={proj}
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.05 }}
-                                        className="relative group"
-                                        onMouseDown={() => startLongPress(proj)}
-                                        onMouseUp={clearLongPress}
-                                        onMouseLeave={clearLongPress}
-                                        onTouchStart={() => startLongPress(proj)}
-                                        onTouchEnd={clearLongPress}
-                                    >
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="h-8 px-3 shadow-sm rounded-lg"
-                                            onClick={() => pomodoro.addSession(proj)}
-                                        >
-                                            {proj}
-                                        </Button>
-                                    </motion.div>
-                                ))}
-                            </div>
+            <AnimatePresence initial={false}>
+                <motion.div
+                    key="add-session-card"
+                    initial={{ height: 'auto', opacity: 1 }}
+                    animate={{ 
+                        height: isAddCardExpanded ? 'auto' : '5rem',
+                        opacity: isAddCardExpanded ? 1 : 0.9
+                    }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="w-full overflow-hidden"
+                >
+                    <Card className="w-full shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl max-w-md">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <span className="flex items-center"><Clock className="mr-2 h-5 w-5" />Start a New Session</span>
+                                {!isAddCardExpanded && (
+                                    <Button size="icon" variant="outline" className="rounded-full h-9 w-9" onClick={() => setIsAddCardExpanded(true)}>
+                                        <Plus className="h-5 w-5" />
+                                    </Button>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        {isAddCardExpanded && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2, duration: 0.3 }}
+                            >
+                                <CardContent>
+                                    <form onSubmit={handleAddSession} className="space-y-4">
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="project-name"
+                                                placeholder="What are you working on?"
+                                                value={pomodoro.inputProjectName}
+                                                onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
+                                                className="h-11 text-base bg-background/70 flex-grow"
+                                                disabled={pomodoro.isDataLoading}
+                                            />
+                                            <Button type="submit" className="h-11 w-11 rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
+                                                <Plus className="h-5 w-5" />
+                                                <span className="sr-only">Add</span>
+                                            </Button>
+                                        </div>
+                                        {pomodoro.recentProjects.length > 0 && (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="text-sm text-muted-foreground mr-1">Recent:</span>
+                                                {pomodoro.recentProjects.map((proj, i) => (
+                                                    <motion.div
+                                                        key={proj}
+                                                        initial={{ opacity: 0, y: -10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: i * 0.05 }}
+                                                        className="relative group"
+                                                        onMouseDown={() => startLongPress(proj)}
+                                                        onMouseUp={clearLongPress}
+                                                        onMouseLeave={clearLongPress}
+                                                        onTouchStart={() => startLongPress(proj)}
+                                                        onTouchEnd={clearLongPress}
+                                                    >
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className="h-8 px-3 shadow-sm rounded-lg"
+                                                            onClick={() => pomodoro.addSession(proj)}
+                                                        >
+                                                            {proj}
+                                                        </Button>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </form>
+                                </CardContent>
+                            </motion.div>
                         )}
-                    </form>
-                </CardContent>
-            </Card>
+                    </Card>
+                </motion.div>
+            </AnimatePresence>
 
 
             {pomodoro.activeSessions.map((session) => (
