@@ -91,10 +91,39 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
 
 type ActiveTab = 'timer' | 'log' | 'insights';
 
+const LoadingScreen = () => (
+    <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
+);
+
 export default function HomePage() {
+    const { currentUser, loading, isPremium, signOut, upgradeUserToPremium, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(!currentUser);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    
+    useEffect(() => {
+        setIsAuthModalOpen(!currentUser);
+    }, [currentUser]);
+
+    if (loading) {
+        return <LoadingScreen />;
+    }
+
+    if (!currentUser) {
+        return (
+             <div className="h-screen w-screen flex items-center justify-center bg-background/40 backdrop-blur-lg">
+                <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+            </div>
+        );
+    }
+
+    return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
     const { currentUser, isPremium, signOut, upgradeUserToPremium, togglePremiumStatus, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const [isSummarizing, setIsSummarizing] = useState(false);
@@ -460,7 +489,7 @@ export default function HomePage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     ) : (
-                        <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAuthModalOpen(true)}>
+                        <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAccountModalOpen(true)}>
                              <Avatar className="h-full w-full">
                                <AvatarFallback className="bg-white/30 text-foreground">
                                     <CircleUserRound className="h-6 w-6" />
@@ -528,7 +557,6 @@ export default function HomePage() {
                 </div>
             </footer>
 
-            {!currentUser && <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />}
             {currentUser && <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />}
             {currentUser && isPremiumSplashVisible && <PremiumSplashModal isOpen={isPremiumSplashVisible} onOpenChange={hidePremiumSplash} />}
 
@@ -597,5 +625,3 @@ export default function HomePage() {
         </div>
     );
 }
-
-    
