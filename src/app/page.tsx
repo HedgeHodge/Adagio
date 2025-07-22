@@ -90,7 +90,7 @@ type ActiveTab = 'timer' | 'log' | 'insights';
 
 export default function HomePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
-    const { currentUser, isPremium, signOut, upgradeUserToPremium, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
+    const { currentUser, isPremium, signOut, upgradeUserToPremium, togglePremiumStatus, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
@@ -398,6 +398,10 @@ export default function HomePage() {
                                  <DropdownMenuItem onClick={pomodoro.populateTestData} className="cursor-pointer">
                                     <Beaker className="mr-2 h-4 w-4" />
                                     <span>Populate Test Data</span>
+                                 </DropdownMenuItem>
+                                 <DropdownMenuItem onClick={togglePremiumStatus} className="cursor-pointer">
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    <span>Toggle Premium</span>
                                  </DropdownMenuItem>
                                  <DropdownMenuSeparator />
                                  <DropdownMenuItem onClick={() => pomodoro.setIsWipeConfirmOpen(true)} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
