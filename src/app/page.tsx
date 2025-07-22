@@ -61,10 +61,13 @@ import {
     Trash2,
     Pencil,
     Settings,
+    HelpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
 import { PremiumSplashModal } from '@/components/auth/PremiumSplashModal';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
@@ -104,6 +107,7 @@ export default function HomePage() {
     const [isAddCardExpanded, setIsAddCardExpanded] = useState(true);
 
     const pomodoro = usePomodoro();
+    const { showOnboarding, isFirstTime, setOnboardingCompleted } = useOnboarding();
 
     useEffect(() => {
         if (pomodoro.activeSessions.length > 0) {
@@ -391,6 +395,9 @@ export default function HomePage() {
                     <span className="md:hidden">A</span>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={showOnboarding}>
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
                     <ThemeToggleButton />
                     {currentUser ? (
                         <DropdownMenu>
@@ -525,6 +532,8 @@ export default function HomePage() {
             {currentUser && <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />}
             {currentUser && isPremiumSplashVisible && <PremiumSplashModal isOpen={isPremiumSplashVisible} onOpenChange={hidePremiumSplash} />}
 
+            <OnboardingModal isOpen={isFirstTime} onComplete={setOnboardingCompleted} />
+
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
@@ -588,3 +597,5 @@ export default function HomePage() {
         </div>
     );
 }
+
+    
