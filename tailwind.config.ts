@@ -15,7 +15,7 @@ export default {
         'wide': '1185px',
       },
       fontFamily: {
-        body: ['var(--font-nunito-sans)', 'sans-serif'],
+        body: ['var(--font-body)', 'serif'],
         handwritten: ['var(--font-pacifico)', 'cursive'],
         code: ['monospace'],
       },

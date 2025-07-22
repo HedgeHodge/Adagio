@@ -1,15 +1,15 @@
 
 import type { Metadata, Viewport } from 'next';
-import { Nunito_Sans, Pacifico } from 'next/font/google';
+import { EB_Garamond, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/layout/Providers';
 import { useId } from 'react';
 
-const nunito_sans = Nunito_Sans({
+const eb_garamond = EB_Garamond({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-nunito-sans',
+  variable: '--font-body',
 });
 
 const pacifico = Pacifico({
@@ -52,7 +52,7 @@ export default function RootLayout({
 }>) {
   const id = useId();
   return (
-    <html lang="en" className={`${nunito_sans.variable} ${pacifico.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${eb_garamond.variable} ${pacifico.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased">
         <Providers key={id}>
             {children}
