@@ -680,7 +680,7 @@ export function usePomodoro() {
     const testLogEntries: PomodoroLogEntry[] = [];
     const testProjects = ['Client A Website', 'Internal Dashboard', 'Q3 Financials', 'Mobile App Design', 'API Integration'];
 
-    const createEntry = (date: Date, project: string, duration: number): PomodoroLogEntry => {
+    const createEntry = (date: Date, project: string, duration: number, tasks: string[]): PomodoroLogEntry => {
       const endTime = date;
       const startTime = new Date(endTime.getTime() - duration * 60 * 1000);
       return {
@@ -690,26 +690,26 @@ export function usePomodoro() {
         type: 'work',
         duration,
         project,
-        summary: `Completed key features for ${project}.`,
+        summary: `Completed: ${tasks.join(', ')}.`,
       };
     };
 
     // Today
-    testLogEntries.push(createEntry(new Date(now.getTime() - 1 * 60 * 60 * 1000), testProjects[0], 25));
-    testLogEntries.push(createEntry(new Date(now.getTime() - 3 * 60 * 60 * 1000), testProjects[1], 50));
+    testLogEntries.push(createEntry(new Date(now.getTime() - 1 * 60 * 60 * 1000), testProjects[0], 25, ['Deployed staging environment', 'Fixed hero banner bug']));
+    testLogEntries.push(createEntry(new Date(now.getTime() - 3 * 60 * 60 * 1000), testProjects[1], 50, ['Implemented new charting library', 'Added user authentication endpoints']));
     // Yesterday
-    testLogEntries.push(createEntry(subDays(now, 1), testProjects[0], 45));
-    testLogEntries.push(createEntry(subDays(now, 1), testProjects[2], 30));
+    testLogEntries.push(createEntry(subDays(now, 1), testProjects[0], 45, ['Wireframed the new landing page', 'Met with stakeholders for feedback']));
+    testLogEntries.push(createEntry(subDays(now, 1), testProjects[2], 30, ['Finalized Q3 expense report']));
     // This week
-    testLogEntries.push(createEntry(subDays(now, 3), testProjects[3], 60));
+    testLogEntries.push(createEntry(subDays(now, 3), testProjects[3], 60, ['Created high-fidelity mockups for the iOS app', 'Designed app icon']));
     // Last week
-    testLogEntries.push(createEntry(subWeeks(now, 1), testProjects[1], 90));
-    testLogEntries.push(createEntry(subWeeks(now, 1), testProjects[4], 20));
+    testLogEntries.push(createEntry(subWeeks(now, 1), testProjects[1], 90, ['Refactored database schema', 'Optimized slow-running queries']));
+    testLogEntries.push(createEntry(subWeeks(now, 1), testProjects[4], 20, ['Tested the payment gateway integration']));
     // This month (but > 1 week ago)
-    testLogEntries.push(createEntry(subWeeks(now, 2), testProjects[2], 75));
+    testLogEntries.push(createEntry(subWeeks(now, 2), testProjects[2], 75, ['Drafted the Q3 P&L statement', 'Prepared slides for the financial review']));
     // Last month
-    testLogEntries.push(createEntry(subMonths(now, 1), testProjects[0], 120));
-    testLogEntries.push(createEntry(subMonths(now, 1), testProjects[3], 40));
+    testLogEntries.push(createEntry(subMonths(now, 1), testProjects[0], 120, ['Launched the new marketing website', 'Monitored initial analytics and performance']));
+    testLogEntries.push(createEntry(subMonths(now, 1), testProjects[3], 40, ['Created user flow diagrams for the new checkout process']));
 
     const cleanedEntries = testLogEntries.map(cleanLogEntry);
     const existingIds = new Set(pomodoroLog.map(e => e.id));
