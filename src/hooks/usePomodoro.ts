@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, Timestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 import type { DateRange } from 'react-day-picker';
+import { summarizePeriod } from '@/ai/flows/summarize-period-flow';
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
@@ -116,6 +117,10 @@ export function usePomodoro() {
   const [hasExceededFreeLogLimit, setHasExceededFreeLogLimit] = useState(false);
   const [isShortSessionConfirmOpen, setIsShortSessionConfirmOpen] = useState(false);
   const [sessionToConfirm, setSessionToConfirm] = useState<SessionToConfirm | null>(null);
+
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [periodSummary, setPeriodSummary] = useState<string | null>(null);
+  const [isPeriodSummaryModalOpen, setIsPeriodSummaryModalOpen] = useState(false);
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -641,6 +646,34 @@ export function usePomodoro() {
     return { totalMinutes, totalSessions, averageSessionMinutes };
   }, [filteredLogForPeriod]);
 
+  const generatePeriodSummary = useCallback(async () => {
+    if (filteredLogForPeriod.length === 0) {
+        toast({ title: "No Data", description: "There is no data in the selected period to summarize." });
+        return;
+    }
+    setIsGeneratingSummary(true);
+    try {
+        let summary;
+        if (isPremium) {
+            const result = await summarizePeriod({ entries: filteredLogForPeriod });
+            summary = result.periodSummary;
+        } else {
+            summary = "This is a sample summary. Upgrade to Premium to get personalized summaries of your work periods based on your actual data and accomplishments.";
+        }
+        setPeriodSummary(summary);
+        setIsPeriodSummaryModalOpen(true);
+    } catch (error) {
+        console.error("AI period summarization failed.", error);
+        toast({ title: "Error", description: "Could not generate summary.", variant: "destructive" });
+    } finally {
+        setIsGeneratingSummary(false);
+    }
+  }, [filteredLogForPeriod, isPremium, toast]);
+
+  const closePeriodSummaryModal = useCallback(() => {
+    setIsPeriodSummaryModalOpen(false);
+    setPeriodSummary(null);
+  }, []);
 
   const populateTestData = useCallback(() => {
     const now = new Date();
@@ -781,6 +814,8 @@ export function usePomodoro() {
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData,
     hasExceededFreeLogLimit,
     isShortSessionConfirmOpen, closeShortSessionConfirm,
-    endCurrentWorkSession
+    endCurrentWorkSession,
+    isGeneratingSummary, generatePeriodSummary, periodSummary, isPeriodSummaryModalOpen, closePeriodSummaryModal,
+    filteredLogForPeriod
   };
 }

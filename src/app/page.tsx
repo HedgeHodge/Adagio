@@ -61,6 +61,7 @@ import {
     Trash2,
     Pencil,
     Settings,
+    BookText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -70,6 +71,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { SplashScreen } from '@/components/layout/SplashScreen';
 import { DevToolsModal } from '@/components/dev/DevToolsModal';
 import { InsightsStats } from '@/components/pomodoro/InsightsStats';
+import { PeriodSummaryModal } from '@/components/pomodoro/PeriodSummaryModal';
 
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
@@ -429,6 +431,21 @@ function AuthenticatedApp() {
                     <CardDescription className="mb-2">Time spent per project</CardDescription>
                     <ProjectTimeChart data={pomodoro.processedChartData} onBarClick={(projectName) => pomodoro.openEntriesModal(projectName)} />
                 </div>
+                 <Button 
+                    onClick={pomodoro.generatePeriodSummary} 
+                    className="w-full"
+                    disabled={pomodoro.isGeneratingSummary || pomodoro.filteredLogForPeriod.length === 0}
+                >
+                    {pomodoro.isGeneratingSummary ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</>
+                    ) : (
+                       isPremium ? (
+                           <><Sparkles className="mr-2 h-4 w-4" />Generate Summary</>
+                       ) : (
+                           <><BookText className="mr-2 h-4 w-4" />Generate Summary</>
+                       )
+                    )}
+                </Button>
             </CardContent>
         </Card>
     );
@@ -594,6 +611,17 @@ function AuthenticatedApp() {
             {pomodoro.activeSessionToEdit && <EditActiveSessionModal isOpen={pomodoro.isEditActiveSessionModalOpen} onClose={pomodoro.closeEditActiveSessionModal} session={pomodoro.activeSessionToEdit} onSave={pomodoro.updateActiveSessionStartTime} />}
             {pomodoro.selectedChartProject && <ProjectEntriesModal isOpen={pomodoro.isEntriesModalOpen} onClose={pomodoro.closeEntriesModal} projectName={pomodoro.selectedChartProject} entries={pomodoro.entriesForModal} />}
             
+             {pomodoro.periodSummary && (
+                <PeriodSummaryModal 
+                    isOpen={pomodoro.isPeriodSummaryModalOpen} 
+                    onClose={pomodoro.closePeriodSummaryModal}
+                    summary={pomodoro.periodSummary}
+                    entries={pomodoro.filteredLogForPeriod}
+                    isPremium={isPremium}
+                    onUpgrade={upgradeUserToPremium}
+                />
+            )}
+
             <AlertDialog open={pomodoro.isWipeConfirmOpen} onOpenChange={pomodoro.setIsWipeConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
