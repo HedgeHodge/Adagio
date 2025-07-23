@@ -77,7 +77,7 @@ const ActionButton = ({ icon, label, className = '', isActive, ...props }: { ico
             variant="secondary"
             className={cn(
                 "w-20 h-20 bg-background/60 dark:bg-background/30 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-300",
-                isActive ? 'bg-white/90 dark:bg-primary/20 scale-110 -translate-y-2' : 'hover:bg-background/80 dark:hover:bg-background/50',
+                isActive ? 'bg-white dark:bg-secondary scale-110 -translate-y-2' : 'hover:bg-background/80 dark:hover:bg-background/50',
                 className
             )}
             {...props}
@@ -645,5 +645,3 @@ function AuthenticatedApp() {
         </div>
     );
 }
-
-    
