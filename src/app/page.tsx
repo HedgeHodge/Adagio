@@ -61,7 +61,6 @@ import {
     Trash2,
     Pencil,
     Settings,
-    HelpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -69,6 +68,8 @@ import { PremiumSplashModal } from '@/components/auth/PremiumSplashModal';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { SplashScreen } from '@/components/layout/SplashScreen';
+import { DevToolsModal } from '@/components/dev/DevToolsModal';
+
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
@@ -135,6 +136,7 @@ function AuthenticatedApp() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('timer');
     const { currentUser, isPremium, signOut, upgradeUserToPremium, togglePremiumStatus, isPremiumSplashVisible, hidePremiumSplash } = useAuth();
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [isDevToolsModalOpen, setIsDevToolsModalOpen] = useState(false);
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
@@ -437,9 +439,6 @@ function AuthenticatedApp() {
                     <span className="md:hidden">A</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={showOnboarding}>
-                        <HelpCircle className="h-5 w-5" />
-                    </Button>
                     <ThemeToggleButton />
                     {currentUser ? (
                         <DropdownMenu>
@@ -486,9 +485,9 @@ function AuthenticatedApp() {
                                     <Settings className="mr-2 h-4 w-4" />
                                     <span>Timer Settings</span>
                                  </DropdownMenuItem>
-                                 <DropdownMenuItem onClick={pomodoro.populateTestData} className="cursor-pointer">
+                                 <DropdownMenuItem onClick={() => setIsDevToolsModalOpen(true)} className="cursor-pointer">
                                     <Beaker className="mr-2 h-4 w-4" />
-                                    <span>Populate Test Data</span>
+                                    <span>Dev Tools</span>
                                  </DropdownMenuItem>
                                  <DropdownMenuSeparator />
                                  <DropdownMenuItem onClick={() => pomodoro.setIsWipeConfirmOpen(true)} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
@@ -572,6 +571,14 @@ function AuthenticatedApp() {
 
             {currentUser && <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />}
             {currentUser && isPremiumSplashVisible && <PremiumSplashModal isOpen={isPremiumSplashVisible} onOpenChange={hidePremiumSplash} />}
+            {currentUser && <DevToolsModal
+                isOpen={isDevToolsModalOpen}
+                onOpenChange={setIsDevToolsModalOpen}
+                onPopulateData={pomodoro.populateTestData}
+                onTogglePremium={togglePremiumStatus}
+                onShowOnboarding={showOnboarding}
+                isPremium={isPremium}
+             />}
 
             <OnboardingModal isOpen={isFirstTime} onComplete={setOnboardingCompleted} />
 
@@ -638,3 +645,5 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
