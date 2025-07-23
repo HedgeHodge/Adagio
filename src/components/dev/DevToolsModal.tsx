@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Beaker, HelpCircle, Database, Sparkles } from 'lucide-react';
+import { Beaker, HelpCircle, Database, Sparkles, Trash2 } from 'lucide-react';
+import { Separator } from "../ui/separator";
 
 interface DevToolsModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface DevToolsModalProps {
   onPopulateData: () => void;
   onTogglePremium: () => void;
   onShowOnboarding: () => void;
+  onWipeAllData: () => void;
 }
 
 export function DevToolsModal({
@@ -31,6 +33,7 @@ export function DevToolsModal({
   onPopulateData,
   onTogglePremium,
   onShowOnboarding,
+  onWipeAllData
 }: DevToolsModalProps) {
 
   const handleAndClose = (fn: () => void) => {
@@ -79,6 +82,14 @@ export function DevToolsModal({
             Show Onboarding Guide
           </Button>
 
+          <Separator className="my-2" />
+          
+          <Button onClick={() => handleAndClose(onWipeAllData)} variant="destructive">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Wipe All Data
+          </Button>
+
+
         </div>
 
         <DialogFooter>
@@ -92,5 +103,7 @@ export function DevToolsModal({
     </Dialog>
   );
 }
+
+    
 
     

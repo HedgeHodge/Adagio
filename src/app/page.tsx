@@ -512,10 +512,6 @@ function AuthenticatedApp() {
                                     <span>Dev Tools</span>
                                  </DropdownMenuItem>
                                  <DropdownMenuSeparator />
-                                 <DropdownMenuItem onClick={() => pomodoro.setIsWipeConfirmOpen(true)} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Wipe All Data</span>
-                                 </DropdownMenuItem>
                                  <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Sign Out</span>
@@ -599,6 +595,7 @@ function AuthenticatedApp() {
                 onPopulateData={pomodoro.populateTestData}
                 onTogglePremium={togglePremiumStatus}
                 onShowOnboarding={showOnboarding}
+                onWipeAllData={() => pomodoro.setIsWipeConfirmOpen(true)}
                 isPremium={isPremium}
              />}
 
@@ -678,3 +675,5 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
