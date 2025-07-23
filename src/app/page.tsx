@@ -69,6 +69,7 @@ import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { SplashScreen } from '@/components/layout/SplashScreen';
 import { DevToolsModal } from '@/components/dev/DevToolsModal';
+import { InsightsStats } from '@/components/pomodoro/InsightsStats';
 
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
@@ -372,7 +373,7 @@ function AuthenticatedApp() {
             <CardHeader>
                 <div>
                     <CardTitle className="flex items-center"><BarChart2 className="mr-2 h-5 w-5" />Productivity Insights</CardTitle>
-                    <CardDescription>Time spent per project.</CardDescription>
+                    <CardDescription>Your performance for the selected period.</CardDescription>
                 </div>
                 <div className="flex flex-col md:flex-row items-center gap-2 pt-4">
                     <Popover>
@@ -422,8 +423,12 @@ function AuthenticatedApp() {
                     </Select>
                 </div>
             </CardHeader>
-            <CardContent>
-                <ProjectTimeChart data={pomodoro.processedChartData} onBarClick={(projectName) => pomodoro.openEntriesModal(projectName)} />
+            <CardContent className="space-y-4">
+                <InsightsStats stats={pomodoro.insightsStats} />
+                <div>
+                    <CardDescription className="mb-2">Time spent per project</CardDescription>
+                    <ProjectTimeChart data={pomodoro.processedChartData} onBarClick={(projectName) => pomodoro.openEntriesModal(projectName)} />
+                </div>
             </CardContent>
         </Card>
     );

@@ -85,6 +85,12 @@ interface SessionToConfirm {
     summary?: string;
 }
 
+export interface InsightsStatsData {
+  totalMinutes: number;
+  totalSessions: number;
+  averageSessionMinutes: number;
+}
+
 export function usePomodoro() {
   const { currentUser, isPremium } = useAuth();
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_SETTINGS);
@@ -613,18 +619,28 @@ export function usePomodoro() {
     }
   }, []);
 
-  const processedChartData = useMemo((): ChartDataPoint[] => {
+  const filteredLogForPeriod = useMemo(() => {
     if (!isClient || isDataLoading) return [];
+    return getLogEntriesForPeriod(pomodoroLog, activeFilter, customDateRange);
+  }, [pomodoroLog, activeFilter, customDateRange, isClient, isDataLoading, getLogEntriesForPeriod]);
 
-    const filteredLogForChartPeriod = getLogEntriesForPeriod(pomodoroLog, activeFilter, customDateRange);
 
+  const processedChartData = useMemo((): ChartDataPoint[] => {
     const aggregation: Record<string, number> = {};
-    filteredLogForChartPeriod.forEach(entry => {
+    filteredLogForPeriod.forEach(entry => {
       const projectName = entry.project || 'No Project';
       aggregation[projectName] = (aggregation[projectName] || 0) + entry.duration;
     });
     return Object.entries(aggregation).map(([name, totalMinutes]) => ({ name, totalMinutes })).sort((a, b) => b.totalMinutes - a.totalMinutes);
-  }, [pomodoroLog, activeFilter, customDateRange, isClient, isDataLoading, getLogEntriesForPeriod]);
+  }, [filteredLogForPeriod]);
+
+  const insightsStats = useMemo((): InsightsStatsData => {
+    const totalMinutes = filteredLogForPeriod.reduce((sum, entry) => sum + entry.duration, 0);
+    const totalSessions = filteredLogForPeriod.length;
+    const averageSessionMinutes = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
+    return { totalMinutes, totalSessions, averageSessionMinutes };
+  }, [filteredLogForPeriod]);
+
 
   const populateTestData = useCallback(() => {
     const now = new Date();
@@ -754,7 +770,7 @@ export function usePomodoro() {
     addTaskToSession, toggleTaskInSession, deleteTaskFromSession,
     addSession, removeSession, startTimer, pauseTimer,
     deleteLogEntry, formatTime, isClient, recentProjects, motivationalQuote, isFetchingQuote,
-    activeFilter, setActiveFilter, processedChartData, isEditModalOpen, entryToEdit, openEditModal,
+    activeFilter, setActiveFilter, processedChartData, insightsStats, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
     sessionToSummarize, logSessionFromSummary, removeRecentProject, closeSummaryModal,
