@@ -50,10 +50,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   const [hostname, setHostname] = useState<string>('');
 
   useEffect(() => {
-    if (isOpen && typeof window !== 'undefined') {
+    // Correctly handle client-side-only code
+    if (typeof window !== 'undefined') {
       setHostname(window.location.hostname);
     }
-  }, [isOpen]);
+  }, []);
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -283,3 +284,5 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     </Dialog>
   );
 }
+
+    
