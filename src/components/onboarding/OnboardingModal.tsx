@@ -132,9 +132,13 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
           </div>
 
           <div className="flex items-center justify-between p-6 bg-muted/30">
-            <Button variant="ghost" onClick={handleBack} disabled={page === 0} className={cn(page === 0 && "opacity-0")}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
+            {page > 0 ? (
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+            ) : (
+                <div /> // This empty div keeps the "Next" button on the right
+            )}
             <Button onClick={handleNext}>
               {page === steps.length - 1 ? 'Get Started' : 'Next'}
               {page < steps.length - 1 && <ArrowRight className="ml-2 h-4 w-4" />}
