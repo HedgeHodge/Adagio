@@ -48,11 +48,16 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hostname, setHostname] = useState<string>('');
+  const [isConfigValid, setIsConfigValid] = useState(true);
 
   useEffect(() => {
     // Correctly handle client-side-only code
     if (typeof window !== 'undefined') {
       setHostname(window.location.hostname);
+    }
+    // Check for essential Firebase config
+    if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+      setIsConfigValid(false);
     }
   }, []);
 
@@ -157,132 +162,146 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signIn">Sign In</TabsTrigger>
-            <TabsTrigger value="signUp">Sign Up</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="signIn">
-            <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="signIn-email">Email</Label>
-                <Input
-                  id="signIn-email"
-                  type="email"
-                  {...signInForm.register('email')}
-                  className="mt-1 bg-background"
-                  placeholder="you@example.com"
-                  disabled={isSubmitting}
-                />
-                {signInForm.formState.errors.email && (
-                  <p className="text-sm text-destructive mt-1">{signInForm.formState.errors.email.message}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="signIn-password">Password</Label>
-                <Input
-                  id="signIn-password"
-                  type="password"
-                  {...signInForm.register('password')}
-                  className="mt-1 bg-background"
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                />
-                {signInForm.formState.errors.password && (
-                  <p className="text-sm text-destructive mt-1">{signInForm.formState.errors.password.message}</p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Sign In'}
-              </Button>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="signUp">
-            <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="signUp-email">Email</Label>
-                <Input
-                  id="signUp-email"
-                  type="email"
-                  {...signUpForm.register('email')}
-                  className="mt-1 bg-background"
-                  placeholder="you@example.com"
-                  disabled={isSubmitting}
-                />
-                {signUpForm.formState.errors.email && (
-                  <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.email.message}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="signUp-password">Password</Label>
-                <Input
-                  id="signUp-password"
-                  type="password"
-                  {...signUpForm.register('password')}
-                  className="mt-1 bg-background"
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                />
-                {signUpForm.formState.errors.password && (
-                  <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.password.message}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="signUp-confirmPassword">Confirm Password</Label>
-                <Input
-                  id="signUp-confirmPassword"
-                  type="password"
-                  {...signUpForm.register('confirmPassword')}
-                  className="mt-1 bg-background"
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                />
-                {signUpForm.formState.errors.confirmPassword && (
-                  <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.confirmPassword.message}</p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                 {isSubmitting ? <Loader2 className="animate-spin" /> : 'Sign Up'}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
-
-        {error && (
-          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive flex items-start">
-            <AlertCircle className="h-4 w-4 mr-2 shrink-0 mt-0.5" />
-            <span className="flex-1">{error}</span>
+        {!isConfigValid ? (
+          <div className="mt-4">
+             <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Firebase Configuration Error</AlertTitle>
+              <AlertDescription>
+                Your app is missing essential Firebase environment variables. This is likely the cause of the 'unauthorized domain' error.
+                <br /><br />
+                Please go to your project settings on your deployment provider (e.g., Vercel) and ensure that all `NEXT_PUBLIC_FIREBASE_*` variables from your `.env` file are set correctly.
+              </AlertDescription>
+            </Alert>
           </div>
-        )}
+        ) : (
+          <>
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signIn">Sign In</TabsTrigger>
+                <TabsTrigger value="signUp">Sign Up</TabsTrigger>
+              </TabsList>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
+              <TabsContent value="signIn">
+                <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="signIn-email">Email</Label>
+                    <Input
+                      id="signIn-email"
+                      type="email"
+                      {...signInForm.register('email')}
+                      className="mt-1 bg-background"
+                      placeholder="you@example.com"
+                      disabled={isSubmitting}
+                    />
+                    {signInForm.formState.errors.email && (
+                      <p className="text-sm text-destructive mt-1">{signInForm.formState.errors.email.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="signIn-password">Password</Label>
+                    <Input
+                      id="signIn-password"
+                      type="password"
+                      {...signInForm.register('password')}
+                      className="mt-1 bg-background"
+                      placeholder="••••••••"
+                      disabled={isSubmitting}
+                    />
+                    {signInForm.formState.errors.password && (
+                      <p className="text-sm text-destructive mt-1">{signInForm.formState.errors.password.message}</p>
+                    )}
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'Sign In'}
+                  </Button>
+                </form>
+              </TabsContent>
 
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="animate-spin" /> : (
-            <>
-              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+              <TabsContent value="signUp">
+                <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="signUp-email">Email</Label>
+                    <Input
+                      id="signUp-email"
+                      type="email"
+                      {...signUpForm.register('email')}
+                      className="mt-1 bg-background"
+                      placeholder="you@example.com"
+                      disabled={isSubmitting}
+                    />
+                    {signUpForm.formState.errors.email && (
+                      <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.email.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="signUp-password">Password</Label>
+                    <Input
+                      id="signUp-password"
+                      type="password"
+                      {...signUpForm.register('password')}
+                      className="mt-1 bg-background"
+                      placeholder="••••••••"
+                      disabled={isSubmitting}
+                    />
+                    {signUpForm.formState.errors.password && (
+                      <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.password.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="signUp-confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="signUp-confirmPassword"
+                      type="password"
+                      {...signUpForm.register('confirmPassword')}
+                      className="mt-1 bg-background"
+                      placeholder="••••••••"
+                      disabled={isSubmitting}
+                    />
+                    {signUpForm.formState.errors.confirmPassword && (
+                      <p className="text-sm text-destructive mt-1">{signUpForm.formState.errors.confirmPassword.message}</p>
+                    )}
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'Sign Up'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+
+            {error && (
+              <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive flex items-start">
+                <AlertCircle className="h-4 w-4 mr-2 shrink-0 mt-0.5" />
+                <span className="flex-1">{error}</span>
+              </div>
+            )}
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin" /> : (
+                <>
+                  <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
               Google
-            </>
-          )}
-        </Button>
+                </>
+              )}
+            </Button>
 
-        <DialogFooter className="mt-2 pt-4 text-center text-xs text-muted-foreground">
-          By continuing, you agree to Adagio's Terms of Service and Privacy Policy.
-        </DialogFooter>
+            <DialogFooter className="mt-2 pt-4 text-center text-xs text-muted-foreground">
+              By continuing, you agree to Adagio's Terms of Service and Privacy Policy.
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
-
-    
