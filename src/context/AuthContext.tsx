@@ -56,13 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const handleUser = useCallback(async (user: User | null) => {
-    setLoading(true);
     if (user) {
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists() && docSnap.data()) {
         setIsPremium(docSnap.data().isPremium === true);
       } else {
+        // Create user document if it doesn't exist
         await setDoc(userDocRef, { 
           isPremium: false, 
           email: user.email, 
@@ -81,29 +81,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Use local persistence to keep the user signed in across sessions (including offline)
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
-        const unsubscribe = onAuthStateChanged(auth, handleUser);
-        return () => unsubscribe();
-      })
-      .catch((err) => {
-        console.error("Firebase persistence error:", err);
-        // Fallback or just continue with default persistence
-        const unsubscribe = onAuthStateChanged(auth, handleUser);
-        return () => unsubscribe();
-      });
+    const unsubscribe = onAuthStateChanged(auth, handleUser);
+    // Unsubscribe to the listener when the component unmounts
+    return () => unsubscribe();
   }, [handleUser]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider);
       // The onAuthStateChanged listener will handle user creation/update.
-      toast({
-        title: "Signed In Successfully",
-        description: `Welcome back, ${result.user.displayName || result.user.email}!`,
-      });
     } catch (error: any) {
         console.error("Error during Google sign-in:", error);
         let title = "Google Sign-In Error";
@@ -124,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         toast({ title, description, variant: "destructive" });
+        throw error; // re-throw error for the modal to handle its state
     }
   };
 
@@ -160,12 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpWithEmailPassword = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-    toast({ title: "Account Created!", description: "Welcome to Adagio!" });
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged will handle the rest
+    } catch (error) {
+        console.error("Error signing up:", error);
+        throw error;
+    }
   };
 
   const signInWithEmailPassword = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        console.error("Error signing in:", error);
+        throw error;
+    }
   };
 
   const value = {
@@ -183,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     togglePremiumStatus,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
