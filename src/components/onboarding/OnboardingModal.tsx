@@ -82,8 +82,8 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
   const Icon = steps[page].icon;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onComplete(); }}>
-      <DialogContent className="sm:max-w-md bg-card sm:rounded-3xl p-0 overflow-hidden">
+    <Dialog open={isOpen}>
+      <DialogContent className="sm:max-w-md bg-card sm:rounded-3xl p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
         {/* Hidden header for accessibility, content is animated separately */}
         <DialogHeader className="sr-only">
           <DialogTitle>{steps[page].title}</DialogTitle>

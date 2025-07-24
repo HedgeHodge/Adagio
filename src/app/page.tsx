@@ -151,7 +151,7 @@ function AuthenticatedApp() {
     const [isAddCardExpanded, setIsAddCardExpanded] = useState(true);
 
     const pomodoro = usePomodoro();
-    const { showOnboarding, isFirstTime, setOnboardingCompleted } = useOnboarding();
+    const { showOnboarding, isFirstTime, setOnboardingCompleted } = useOnboarding(currentUser);
 
     useEffect(() => {
         if (pomodoro.activeSessions.length > 0) {
@@ -456,7 +456,7 @@ function AuthenticatedApp() {
                 {/* Background div */}
                 <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade pointer-events-none"></div>
                 {/* Content div */}
-                <div className="relative z-10 flex h-full justify-between items-center px-6 md:px-8 pb-3">
+                <div className="relative z-10 flex h-full justify-between items-start px-6 md:px-8 pb-3">
                     <div className="font-handwritten text-4xl font-bold text-foreground select-none">
                         <span className="hidden md:inline">Adagio</span>
                         <span className="md:hidden">A</span>
