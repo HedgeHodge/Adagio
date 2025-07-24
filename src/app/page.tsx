@@ -296,7 +296,8 @@ function AuthenticatedApp() {
                                                     </motion.div>
                                                 ))}
                                             </div>
-                                        </form>
+                                        )}
+                                    </form>
                                 </CardContent>
                             </motion.div>
                         )}
