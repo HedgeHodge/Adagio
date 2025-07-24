@@ -296,8 +296,7 @@ function AuthenticatedApp() {
                                                     </motion.div>
                                                 ))}
                                             </div>
-                                        )}
-                                    </form>
+                                        </form>
                                 </CardContent>
                             </motion.div>
                         )}
@@ -456,7 +455,7 @@ function AuthenticatedApp() {
                 {/* Background div */}
                 <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade pointer-events-none"></div>
                 {/* Content div */}
-                <div className="relative z-10 flex h-full items-center justify-between px-6 md:px-8">
+                <div className="relative z-10 flex h-full justify-between items-center px-6 md:px-8 pt-6">
                     <div className="font-handwritten text-4xl font-bold text-foreground select-none">
                         <span className="hidden md:inline">Adagio</span>
                         <span className="md:hidden">A</span>
