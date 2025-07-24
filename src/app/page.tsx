@@ -452,11 +452,11 @@ function AuthenticatedApp() {
 
     return (
         <div className="relative flex flex-col h-screen w-full">
-             <header className="sticky top-0 z-30 h-28">
+            <header className="sticky top-0 z-30 h-28">
                 {/* Background div */}
                 <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade pointer-events-none"></div>
                 {/* Content div */}
-                <div className="relative z-10 flex h-full justify-between items-center px-6 md:px-8 pt-6">
+                <div className="relative z-10 flex h-full justify-between items-start px-6 md:px-8 pb-6">
                     <div className="font-handwritten text-4xl font-bold text-foreground select-none">
                         <span className="hidden md:inline">Adagio</span>
                         <span className="md:hidden">A</span>
