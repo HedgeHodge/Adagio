@@ -1,6 +1,8 @@
-
 "use client";
 
+// Add these imports at the top of the file
+import { signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebase'; // Assuming 'auth' is exported from your firebase.ts file
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -123,11 +125,47 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     setError(null);
     setIsSubmitting(true);
     try {
+        // Attempt to sign in with popup first
         await signInWithGoogle();
         onOpenChange(false);
     } catch (err: any) {
-        // The AuthContext now handles errors and toasts, so we just log here.
-        console.error("Google Sign-In failed in modal:", err);
+        console.error("Google Sign-In failed with popup:", err);
+
+        // Check if the error is specifically a popup blocked error
+        if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
+            console.log("Popup blocked or cancelled, falling back to redirect.");
+            try {
+                // If popup is blocked or cancelled, try signing in with redirect
+                await signInWithRedirect(auth, new GoogleAuthProvider());
+                // For redirect, the page will reload and you'll handle the result on page load
+            } catch (redirectErr: any) {
+                console.error("Google Sign-In failed with redirect:", redirectErr);
+                // Handle redirect errors here
+                let title = "Sign-in Error";
+                let description = "An error occurred during sign-in. Please try again.";
+                 if (redirectErr.code === 'auth/unauthorized-domain') {
+                     title = "Domain Not Authorized";
+                     const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'your app domain';
+                     description = `Sign-in from this domain (${currentHostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
+                 } else if (redirectErr.code === 'auth/account-exists-with-different-credential') {
+                     title = "Account Exists";
+                     description = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
+                 }
+                 setError(description); // Using the existing setError state for display
+            }
+        } else {
+            // Handle other types of errors from signInWithPopup
+            let message = "An unexpected error occurred during sign-in. Please try again.";
+             if (err.code === 'auth/unauthorized-domain') {
+                 message = `This app's domain (${hostname}) is not authorized for authentication. Please go to your Firebase project's Authentication settings, click the 'Settings' tab, and add the domain to the 'Authorized domains' list.`;
+             } else if (err.code === 'auth/account-exists-with-different-credential') {
+                 message = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
+             } else {
+                 message = `An error occurred (${err.code || 'unknown'}). Please check your Firebase project's authentication settings.`;
+                 console.error("Full sign-in error:", err);
+             }
+            setError(message); // Using the existing setError state for display
+        }
     } finally {
         setIsSubmitting(false);
     }
