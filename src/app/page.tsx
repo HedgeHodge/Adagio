@@ -676,5 +676,3 @@ function AuthenticatedApp() {
         </div>
     );
 }
-
-    
