@@ -452,81 +452,83 @@ function AuthenticatedApp() {
 
     return (
         <div className="relative flex flex-col h-screen w-full">
-            <div className="sticky top-0 left-0 right-0 z-20 h-24 pointer-events-none">
-                <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade"></div>
-            </div>
-            <header className="relative z-30 -mt-24 flex justify-between items-center w-full p-6 md:p-8">
-                <div className="font-handwritten text-4xl font-bold text-foreground select-none">
-                    <span className="hidden md:inline">Adagio</span>
-                    <span className="md:hidden">A</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <ThemeToggleButton />
-                    {currentUser ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
-                                    <Avatar className="h-full w-full">
-                                        {currentUser.photoURL ? (
-                                            <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
-                                        ) : null}
-                                        <AvatarFallback className="bg-white/30 text-foreground text-xl">
-                                            {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
-                                            currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
-                                            <CircleUserRound className="h-6 w-6" />}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                 <DropdownMenuLabel className="font-normal">
-                                    <div className="flex flex-col space-y-1">
-                                        <p className="text-sm font-medium leading-none text-foreground">
-                                            {currentUser.displayName || "User"}
-                                        </p>
-                                        {currentUser.email && (
-                                            <p className="text-xs leading-none text-muted-foreground">
-                                                {currentUser.email}
+             <header className="sticky top-0 z-30 h-24">
+                {/* Background div */}
+                <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade pointer-events-none"></div>
+                {/* Content div */}
+                <div className="relative z-10 flex h-full items-center justify-between px-6 md:px-8">
+                    <div className="font-handwritten text-4xl font-bold text-foreground select-none">
+                        <span className="hidden md:inline">Adagio</span>
+                        <span className="md:hidden">A</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <ThemeToggleButton />
+                        {currentUser ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden bg-transparent">
+                                        <Avatar className="h-full w-full">
+                                            {currentUser.photoURL ? (
+                                                <AvatarImage src={currentUser.photoURL} alt={currentUser.displayName || 'User avatar'} />
+                                            ) : null}
+                                            <AvatarFallback className="bg-white/30 text-foreground text-xl">
+                                                {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() :
+                                                currentUser.email ? currentUser.email.charAt(0).toUpperCase() :
+                                                <CircleUserRound className="h-6 w-6" />}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel className="font-normal">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-medium leading-none text-foreground">
+                                                {currentUser.displayName || "User"}
                                             </p>
-                                        )}
-                                    </div>
-                                 </DropdownMenuLabel>
-                                 <DropdownMenuSeparator />
-                                 {!isPremium ? (
-                                    <DropdownMenuItem onClick={upgradeUserToPremium} className="cursor-pointer text-primary focus:text-primary focus:bg-primary/10">
-                                        <Sparkles className="mr-2 h-4 w-4" />
-                                        <span>Upgrade to Premium</span>
+                                            {currentUser.email && (
+                                                <p className="text-xs leading-none text-muted-foreground">
+                                                    {currentUser.email}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {!isPremium ? (
+                                        <DropdownMenuItem onClick={upgradeUserToPremium} className="cursor-pointer text-primary focus:text-primary focus:bg-primary/10">
+                                            <Sparkles className="mr-2 h-4 w-4" />
+                                            <span>Upgrade to Premium</span>
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem disabled className="opacity-100 cursor-default focus:bg-transparent focus:text-primary">
+                                            <CheckCircle className="mr-2 h-4 w-4 text-primary" />
+                                            <span className="text-sm font-medium text-primary">Premium Member</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem onClick={pomodoro.openSettingsModal} className="cursor-pointer">
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        <span>Timer Settings</span>
                                     </DropdownMenuItem>
-                                 ) : (
-                                    <DropdownMenuItem disabled className="opacity-100 cursor-default focus:bg-transparent focus:text-primary">
-                                        <CheckCircle className="mr-2 h-4 w-4 text-primary" />
-                                        <span className="text-sm font-medium text-primary">Premium Member</span>
+                                    <DropdownMenuItem onClick={() => setIsDevToolsModalOpen(true)} className="cursor-pointer">
+                                        <Beaker className="mr-2 h-4 w-4" />
+                                        <span>Dev Tools</span>
                                     </DropdownMenuItem>
-                                 )}
-                                 <DropdownMenuItem onClick={pomodoro.openSettingsModal} className="cursor-pointer">
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Timer Settings</span>
-                                 </DropdownMenuItem>
-                                 <DropdownMenuItem onClick={() => setIsDevToolsModalOpen(true)} className="cursor-pointer">
-                                    <Beaker className="mr-2 h-4 w-4" />
-                                    <span>Dev Tools</span>
-                                 </DropdownMenuItem>
-                                 <DropdownMenuSeparator />
-                                 <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Sign Out</span>
-                                 </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    ) : (
-                        <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAccountModalOpen(true)}>
-                             <Avatar className="h-full w-full">
-                               <AvatarFallback className="bg-white/30 text-foreground">
-                                    <CircleUserRound className="h-6 w-6" />
-                               </AvatarFallback>
-                             </Avatar>
-                        </Button>
-                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Sign Out</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <Button variant="ghost" className="rounded-full h-11 w-11 p-0 overflow-hidden" onClick={() => setIsAccountModalOpen(true)}>
+                                <Avatar className="h-full w-full">
+                                <AvatarFallback className="bg-white/30 text-foreground">
+                                        <CircleUserRound className="h-6 w-6" />
+                                </AvatarFallback>
+                                </Avatar>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </header>
 
