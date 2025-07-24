@@ -7,13 +7,12 @@ import { auth, db } from '@/lib/firebase';
 import { 
   GoogleAuthProvider, 
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut, 
   onAuthStateChanged,
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; 
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const showPremiumSplash = () => setIsPremiumSplashVisible(true);
   const hidePremiumSplash = () => setIsPremiumSplashVisible(false);
 
-  // This is a helper for development/testing to easily toggle premium state
   const togglePremiumStatus = async () => {
     if (!currentUser) return;
     const newPremiumStatus = !isPremium;
@@ -62,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (docSnap.exists() && docSnap.data()) {
         setIsPremium(docSnap.data().isPremium === true);
       } else {
-        // Create user document if it doesn't exist
         await setDoc(userDocRef, { 
           isPremium: false, 
           email: user.email, 
@@ -80,9 +77,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
+  // Handle redirect result on component mount
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User successfully signed in. `onAuthStateChanged` will handle the user object.
+        }
+      })
+      .catch((error) => {
+        console.error("Error during Google redirect sign-in:", error);
+        toast({
+          title: "Sign-In Error",
+          description: "An error occurred during sign-in. Please try again.",
+          variant: "destructive"
+        });
+      }).finally(() => {
+        // This ensures loading is false after checking redirect result
+        setLoading(false);
+      });
+  }, [toast]);
+
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, handleUser);
-    // Unsubscribe to the listener when the component unmounts
     return () => unsubscribe();
   }, [handleUser]);
 
@@ -90,35 +108,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle user creation/update.
+      // onAuthStateChanged will handle the user state.
     } catch (error: any) {
-        console.error("Error during Google sign-in:", error);
-        let title = "Google Sign-In Error";
-        let description = "An unknown error occurred during sign-in. Please try again.";
-
-        if (error.code === 'auth/unauthorized-domain') {
-          title = "Domain Not Authorized";
-          const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'your app domain';
-          description = `Sign-in from this domain (${currentHostname}) is not authorized. Please add it to the "Authorized domains" list in your Firebase project's Authentication settings.`;
-        } else if (error.code === 'auth/account-exists-with-different-credential') {
-          title = "Account Exists";
-          description = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
-        } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            title = "Sign-in Cancelled";
-            description = "You closed the sign-in window before completing the process.";
+        // Handle popup-related errors by falling back to redirect
+        if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+            console.log("Popup failed, falling back to redirect.");
+            await signInWithRedirect(auth, provider);
         } else {
-            description = error.message || description;
-        }
+            console.error("Error during Google sign-in:", error);
+            let title = "Google Sign-In Error";
+            let description = "An unknown error occurred. Please try again.";
 
-        toast({ title, description, variant: "destructive" });
-        throw error; // re-throw error for the modal to handle its state
+             if (error.code === 'auth/unauthorized-domain') {
+              title = "Domain Not Authorized";
+              const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'your app domain';
+              description = `Sign-in from this domain (${currentHostname}) is not authorized. Please add it to your Firebase project's "Authorized domains" list.`;
+            } else if (error.code === 'auth/account-exists-with-different-credential') {
+              title = "Account Exists";
+              description = "An account already exists with this email, but with a different sign-in method (e.g., password). Please sign in using your original method.";
+            } else {
+                description = error.message || description;
+            }
+
+            toast({ title, description, variant: "destructive" });
+            throw new Error(description);
+        }
     }
   };
 
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // Manually set user to null immediately to trigger state changes in consumers
       setCurrentUser(null);
       setIsPremium(false);
     } catch (error) {
@@ -150,7 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUpWithEmailPassword = async (email: string, password: string) => {
     try {
         await createUserWithEmailAndPassword(auth, email, password);
-        // onAuthStateChanged will handle the rest
     } catch (error) {
         console.error("Error signing up:", error);
         throw error;
