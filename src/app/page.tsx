@@ -452,7 +452,7 @@ function AuthenticatedApp() {
 
     return (
         <div className="relative flex flex-col h-screen w-full">
-             <header className="sticky top-0 z-30 h-24">
+             <header className="sticky top-0 z-30 h-28">
                 {/* Background div */}
                 <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade pointer-events-none"></div>
                 {/* Content div */}
