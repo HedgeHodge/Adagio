@@ -153,7 +153,7 @@ export function usePomodoro() {
     const seconds = timeInSeconds % 60;
   
     if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
@@ -527,12 +527,22 @@ export function usePomodoro() {
 
     const undoDeleteLogEntry = useCallback(() => {
         if (!entryPendingDeletion) return;
+
+        // Clear the permanent deletion timer
         clearTimeout(entryPendingDeletion.timeoutId);
+        
+        // Add the item back to the local state so the UI updates
+        setPomodoroLog(prevLog => [...prevLog, entryPendingDeletion.entry]);
+
+        // Add the item back to Firestore
         updateFirestore({ pomodoroLog: arrayUnion(entryPendingDeletion.entry) });
+        
+        // Clear the pending deletion state
         setEntryPendingDeletion(null);
     }, [entryPendingDeletion, updateFirestore]);
 
   const deleteLogEntry = useCallback((id: string) => {
+    // If another delete is initiated, finalize the previous one immediately
     if (entryPendingDeletion) {
         clearTimeout(entryPendingDeletion.timeoutId);
         updateFirestore({ pomodoroLog: arrayRemove(entryPendingDeletion.entry) });
@@ -541,16 +551,20 @@ export function usePomodoro() {
     const entryToDelete = pomodoroLog.find(entry => entry.id === id);
     if (!entryToDelete) return;
 
+    // Remove from local state immediately for instant UI feedback
     setPomodoroLog(prev => prev.filter(entry => entry.id !== id));
     
+    // Set a timer to permanently delete from Firestore
     const timeoutId = setTimeout(() => {
         updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
-        setEntryPendingDeletion(null);
+        setEntryPendingDeletion(null); // Clear pending state
         toast({ title: "Entry permanently deleted", variant: "default" }); 
     }, UNDO_TIMEOUT);
 
+    // Store the entry and its deletion timer
     setEntryPendingDeletion({ entry: entryToDelete, timeoutId });
 
+    // Show toast with Undo action
     toast({
         title: "Entry deleted",
         onUndo: undoDeleteLogEntry,
@@ -851,3 +865,5 @@ export function usePomodoro() {
     filteredLogForPeriod
   };
 }
+
+    
