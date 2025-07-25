@@ -216,7 +216,6 @@ function AuthenticatedApp() {
         pomodoro.logSessionFromSummary(session, summary);
         setIsSummarizing(false);
     };
-
     const TimerView = (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
             <motion.div
@@ -456,7 +455,7 @@ function AuthenticatedApp() {
                 {/* Background div */}
                 <div className="absolute inset-0 bg-background/40 backdrop-blur-lg vertical-fade pointer-events-none"></div>
                 {/* Content div */}
-                <div className="relative z-10 flex h-full justify-between items-start px-6 md:px-8 pb-3">
+                <div className="relative z-10 flex h-full justify-between items-start px-6 md:px-8 pt-6 pb-2">
                     <div className="font-handwritten text-4xl font-bold text-foreground select-none">
                         <span className="hidden md:inline">Adagio</span>
                         <span className="md:hidden">A</span>

@@ -26,6 +26,7 @@ const LOCAL_RECENT_PROJECTS_KEY = 'recentProjects_v2';
 
 const MAX_RECENT_PROJECTS = 5;
 const FREE_USER_LOG_HISTORY_DAYS = 3;
+const UNDO_TIMEOUT = 5000; // 5 seconds
 
 function parseJSONWithDefault<T>(jsonString: string | null, defaultValue: T): T {
   if (jsonString === null) return defaultValue;
@@ -86,6 +87,11 @@ interface SessionToConfirm {
     summary?: string;
 }
 
+interface EntryPendingDeletion {
+    entry: PomodoroLogEntry;
+    timeoutId: NodeJS.Timeout;
+}
+
 export interface InsightsStatsData {
   totalMinutes: number;
   totalSessions: number;
@@ -121,6 +127,7 @@ export function usePomodoro() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [periodSummary, setPeriodSummary] = useState<string | null>(null);
   const [isPeriodSummaryModalOpen, setIsPeriodSummaryModalOpen] = useState(false);
+  const [entryPendingDeletion, setEntryPendingDeletion] = useState<EntryPendingDeletion | null>(null);
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -518,13 +525,38 @@ export function usePomodoro() {
     updateFirestore({ settings: updatedSettings });
   }, [settings, updateFirestore]);
 
-  const deleteLogEntry = useCallback((id: string) => { 
+    const undoDeleteLogEntry = useCallback(() => {
+        if (!entryPendingDeletion) return;
+        clearTimeout(entryPendingDeletion.timeoutId);
+        setPomodoroLog(prev => [...prev, entryPendingDeletion.entry]);
+        setEntryPendingDeletion(null);
+    }, [entryPendingDeletion]);
+
+  const deleteLogEntry = useCallback((id: string) => {
+    if (entryPendingDeletion) {
+        clearTimeout(entryPendingDeletion.timeoutId);
+        updateFirestore({ pomodoroLog: arrayRemove(entryPendingDeletion.entry) });
+    }
+
     const entryToDelete = pomodoroLog.find(entry => entry.id === id);
     if (!entryToDelete) return;
 
-    updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
-    toast({ title: "Entry deleted", variant: "destructive" }); 
-  }, [pomodoroLog, updateFirestore, toast]);
+    setPomodoroLog(prev => prev.filter(entry => entry.id !== id));
+    
+    const timeoutId = setTimeout(() => {
+        updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
+        setEntryPendingDeletion(null);
+        toast({ title: "Entry permanently deleted", variant: "default" }); 
+    }, UNDO_TIMEOUT);
+
+    setEntryPendingDeletion({ entry: entryToDelete, timeoutId });
+
+    toast({
+        title: "Entry deleted",
+        onUndo: undoDeleteLogEntry,
+        duration: UNDO_TIMEOUT,
+    });
+}, [pomodoroLog, updateFirestore, toast, entryPendingDeletion, undoDeleteLogEntry]);
   
   const openEditModal = useCallback((entry: PomodoroLogEntry) => { setEntryToEdit(cleanLogEntry(entry)); setIsEditModalOpen(true); }, []);
   const closeEditModal = useCallback(() => { setIsEditModalOpen(false); setEntryToEdit(null); }, []);
