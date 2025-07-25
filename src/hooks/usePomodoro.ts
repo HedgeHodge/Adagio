@@ -127,7 +127,9 @@ export function usePomodoro() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [periodSummary, setPeriodSummary] = useState<string | null>(null);
   const [isPeriodSummaryModalOpen, setIsPeriodSummaryModalOpen] = useState(false);
-  const [entryPendingDeletion, setEntryPendingDeletion] = useState<EntryPendingDeletion | null>(null);
+  
+  const [pendingDeletion, setPendingDeletion] = useState<{ id: string; timeoutId: NodeJS.Timeout } | null>(null);
+
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -153,7 +155,7 @@ export function usePomodoro() {
     const seconds = timeInSeconds % 60;
   
     if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
@@ -526,42 +528,40 @@ export function usePomodoro() {
   }, [settings, updateFirestore]);
 
   const undoDeleteLogEntry = useCallback(() => {
-      if (!entryPendingDeletion) return;
-
-      clearTimeout(entryPendingDeletion.timeoutId);
-      
-      // Add the item back to Firestore and local state
-      updateFirestore({ pomodoroLog: arrayUnion(entryPendingDeletion.entry) });
-      setPomodoroLog(prevLog => [...prevLog, entryPendingDeletion.entry]);
-      
-      setEntryPendingDeletion(null);
-  }, [entryPendingDeletion, updateFirestore]);
-
-  const deleteLogEntry = useCallback((id: string) => {
-    if (entryPendingDeletion) {
-        clearTimeout(entryPendingDeletion.timeoutId);
-        updateFirestore({ pomodoroLog: arrayRemove(entryPendingDeletion.entry) });
+    if (pendingDeletion) {
+      clearTimeout(pendingDeletion.timeoutId);
+      setPendingDeletion(null);
+      // The item was never actually removed from pomodoroLog state, so just clearing the pending state makes it visible again.
     }
-
+  }, [pendingDeletion]);
+  
+  const deleteLogEntry = useCallback((id: string) => {
     const entryToDelete = pomodoroLog.find(entry => entry.id === id);
     if (!entryToDelete) return;
-
-    setPomodoroLog(prev => prev.filter(entry => entry.id !== id));
-    
+  
+    // If there's already a pending deletion, finalize it before starting a new one.
+    if (pendingDeletion) {
+      clearTimeout(pendingDeletion.timeoutId);
+      const oldEntry = pomodoroLog.find(e => e.id === pendingDeletion.id);
+      if (oldEntry) {
+        updateFirestore({ pomodoroLog: arrayRemove(oldEntry) });
+      }
+    }
+  
     const timeoutId = setTimeout(() => {
-        updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
-        setEntryPendingDeletion(null);
-        toast({ title: "Entry permanently deleted", variant: "default" }); 
+      updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
+      setPendingDeletion(null);
+      toast({ title: "Entry permanently deleted" });
     }, UNDO_TIMEOUT);
-
-    setEntryPendingDeletion({ entry: entryToDelete, timeoutId });
-
+  
+    setPendingDeletion({ id, timeoutId });
+  
     toast({
-        title: "Entry deleted",
-        onUndo: undoDeleteLogEntry,
-        duration: UNDO_TIMEOUT,
+      title: "Entry deleted",
+      onUndo: undoDeleteLogEntry,
+      duration: UNDO_TIMEOUT,
     });
-  }, [pomodoroLog, updateFirestore, toast, entryPendingDeletion, undoDeleteLogEntry]);
+  }, [pomodoroLog, updateFirestore, toast, pendingDeletion, undoDeleteLogEntry]);
   
   const openEditModal = useCallback((entry: PomodoroLogEntry) => { setEntryToEdit(cleanLogEntry(entry)); setIsEditModalOpen(true); }, []);
   const closeEditModal = useCallback(() => { setIsEditModalOpen(false); setEntryToEdit(null); }, []);
@@ -834,9 +834,16 @@ export function usePomodoro() {
   const openSettingsModal = useCallback(() => setIsSettingsModalOpen(true), []);
   const closeSettingsModal = useCallback(() => setIsSettingsModalOpen(false), []);
 
+  const visiblePomodoroLog = useMemo(() => {
+    if (pendingDeletion) {
+      return pomodoroLog.filter(entry => entry.id !== pendingDeletion.id);
+    }
+    return pomodoroLog;
+  }, [pomodoroLog, pendingDeletion]);
+
 
   return {
-    settings, updateSettings, activeSessions, pomodoroLog, 
+    settings, updateSettings, activeSessions, pomodoroLog: visiblePomodoroLog, 
     addTaskToSession, toggleTaskInSession, deleteTaskFromSession,
     addSession, removeSession, startTimer, pauseTimer,
     deleteLogEntry, formatTime, isClient, recentProjects, motivationalQuote, isFetchingQuote,
@@ -853,7 +860,8 @@ export function usePomodoro() {
     isShortSessionConfirmOpen, closeShortSessionConfirm,
     endCurrentWorkSession,
     isGeneratingSummary, generatePeriodSummary, periodSummary, isPeriodSummaryModalOpen, closePeriodSummaryModal,
-    filteredLogForPeriod
+    filteredLogForPeriod,
+    pendingDeletionId: pendingDeletion?.id
   };
 }
 
