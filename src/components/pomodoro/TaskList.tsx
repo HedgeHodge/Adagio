@@ -70,17 +70,18 @@ export function TaskList({ session, onAddTask, onToggleTask, onDeleteTask }: Tas
                   exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
                   className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50 transition-colors group list-none"
                 >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
                     <Checkbox
                       id={`task-${task.id}`}
                       checked={task.completed}
                       onCheckedChange={() => onToggleTask(sessionId, task.id)}
                       aria-label={`Mark "${task.text}" as complete`}
+                      className="mt-1"
                     />
                     <label
                       htmlFor={`task-${task.id}`}
                       className={cn(
-                        "font-medium text-sm text-foreground truncate cursor-pointer",
+                        "font-medium text-sm text-foreground cursor-pointer whitespace-normal break-words",
                         task.completed && "line-through text-muted-foreground"
                       )}
                     >
@@ -112,15 +113,16 @@ export function TaskList({ session, onAddTask, onToggleTask, onDeleteTask }: Tas
                     exit={{ opacity: 0, transition: { duration: 0.2 } }}
                     className="flex items-center justify-between p-2 rounded-md group list-none"
                   >
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
                        <Checkbox
                           id={`task-${task.id}`}
                           checked={task.completed}
                           onCheckedChange={() => onToggleTask(sessionId, task.id)}
+                          className="mt-1"
                        />
                        <label
                          htmlFor={`task-${task.id}`}
-                         className="font-medium text-sm line-through text-muted-foreground truncate cursor-pointer"
+                         className="font-medium text-sm line-through text-muted-foreground cursor-pointer whitespace-normal break-words"
                        >
                          {task.text}
                        </label>
