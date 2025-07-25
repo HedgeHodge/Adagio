@@ -528,9 +528,9 @@ export function usePomodoro() {
     const undoDeleteLogEntry = useCallback(() => {
         if (!entryPendingDeletion) return;
         clearTimeout(entryPendingDeletion.timeoutId);
-        setPomodoroLog(prev => [...prev, entryPendingDeletion.entry]);
+        updateFirestore({ pomodoroLog: arrayUnion(entryPendingDeletion.entry) });
         setEntryPendingDeletion(null);
-    }, [entryPendingDeletion]);
+    }, [entryPendingDeletion, updateFirestore]);
 
   const deleteLogEntry = useCallback((id: string) => {
     if (entryPendingDeletion) {
