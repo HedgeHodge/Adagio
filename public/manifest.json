@@ -1,16 +1,19 @@
-
 {
   "name": "Adagio",
   "short_name": "Adagio",
-  "description": "A time-tracking application and beautiful Pomodoro timer designed to help you focus by taking things slowly.",
   "start_url": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#D4E9E2",
-  "theme_color": "#0D1B2A",
+  "theme_color": "#D4E9E2",
+  "description": "A simple and beautiful Pomodoro timer to help you focus.",
   "icons": [
     {
-      "src": "/icons/playstore.png",
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

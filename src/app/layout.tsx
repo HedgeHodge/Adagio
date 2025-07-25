@@ -54,6 +54,9 @@ export default function RootLayout({
   const id = useId();
   return (
     <html lang="en" className={`${domine.variable} ${pacifico.variable}`} suppressHydrationWarning>
+       <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="font-body antialiased">
         <Providers key={id}>
             {children}
