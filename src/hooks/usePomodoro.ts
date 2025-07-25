@@ -527,7 +527,6 @@ export function usePomodoro() {
     const entryToDelete = pomodoroLog.find(entry => entry.id === id);
     if (!entryToDelete) return;
   
-    // Immediately remove from Firestore. The onSnapshot listener will update the local state.
     updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
   
     toast({
@@ -807,6 +806,54 @@ export function usePomodoro() {
 
   const openSettingsModal = useCallback(() => setIsSettingsModalOpen(true), []);
   const closeSettingsModal = useCallback(() => setIsSettingsModalOpen(false), []);
+
+  // Media Session API for lock screen controls
+  useEffect(() => {
+    if (!isClient || !('mediaSession' in navigator)) {
+      return;
+    }
+
+    const firstRunningSession = activeSessions.find(s => s.isRunning);
+
+    if (firstRunningSession) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: firstRunningSession.project,
+        artist: `Adagio - ${formatTime(firstRunningSession.currentTime)}`,
+        album: 'Pomodoro Timer',
+        artwork: [
+          { src: '/icons/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      });
+
+      navigator.mediaSession.playbackState = 'playing';
+
+      try {
+        navigator.mediaSession.setActionHandler('play', () => startTimer(firstRunningSession.id));
+        navigator.mediaSession.setActionHandler('pause', () => pauseTimer(firstRunningSession.id));
+        if (firstRunningSession.currentInterval === 'work') {
+          navigator.mediaSession.setActionHandler('stop', () => endCurrentWorkSession(firstRunningSession.id));
+        } else {
+            navigator.mediaSession.setActionHandler('stop', null);
+        }
+      } catch (error) {
+        console.error("Error setting media session action handlers:", error);
+      }
+
+    } else {
+      // Clear media session when no timer is running
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.playbackState = 'none';
+      try {
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('stop', null);
+      } catch (error) {
+         console.error("Error clearing media session action handlers:", error);
+      }
+    }
+  }, [activeSessions, isClient, startTimer, pauseTimer, endCurrentWorkSession, formatTime]);
+
 
   return {
     settings, updateSettings, activeSessions, pomodoroLog, 
