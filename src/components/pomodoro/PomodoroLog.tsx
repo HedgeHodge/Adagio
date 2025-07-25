@@ -20,7 +20,6 @@ interface PomodoroLogProps {
   hasExceededFreeLogLimit?: boolean;
   isPremium?: boolean;
   onUpgrade?: () => void;
-  pendingDeletionId?: string | null;
 }
 
 const formatDuration = (minutes: number): string => {
@@ -43,8 +42,7 @@ export function PomodoroLog({
   isMobileLayout = false,
   hasExceededFreeLogLimit = false,
   isPremium = false,
-  onUpgrade,
-  pendingDeletionId
+  onUpgrade
 }: PomodoroLogProps) {
   const [isMounted, setIsMounted] = useState(false);
 
