@@ -525,24 +525,19 @@ export function usePomodoro() {
     updateFirestore({ settings: updatedSettings });
   }, [settings, updateFirestore]);
 
-    const undoDeleteLogEntry = useCallback(() => {
-        if (!entryPendingDeletion) return;
+  const undoDeleteLogEntry = useCallback(() => {
+      if (!entryPendingDeletion) return;
 
-        // Clear the permanent deletion timer
-        clearTimeout(entryPendingDeletion.timeoutId);
-        
-        // Add the item back to the local state so the UI updates
-        setPomodoroLog(prevLog => [...prevLog, entryPendingDeletion.entry]);
-
-        // Add the item back to Firestore
-        updateFirestore({ pomodoroLog: arrayUnion(entryPendingDeletion.entry) });
-        
-        // Clear the pending deletion state
-        setEntryPendingDeletion(null);
-    }, [entryPendingDeletion, updateFirestore]);
+      clearTimeout(entryPendingDeletion.timeoutId);
+      
+      // Add the item back to Firestore and local state
+      updateFirestore({ pomodoroLog: arrayUnion(entryPendingDeletion.entry) });
+      setPomodoroLog(prevLog => [...prevLog, entryPendingDeletion.entry]);
+      
+      setEntryPendingDeletion(null);
+  }, [entryPendingDeletion, updateFirestore]);
 
   const deleteLogEntry = useCallback((id: string) => {
-    // If another delete is initiated, finalize the previous one immediately
     if (entryPendingDeletion) {
         clearTimeout(entryPendingDeletion.timeoutId);
         updateFirestore({ pomodoroLog: arrayRemove(entryPendingDeletion.entry) });
@@ -551,26 +546,22 @@ export function usePomodoro() {
     const entryToDelete = pomodoroLog.find(entry => entry.id === id);
     if (!entryToDelete) return;
 
-    // Remove from local state immediately for instant UI feedback
     setPomodoroLog(prev => prev.filter(entry => entry.id !== id));
     
-    // Set a timer to permanently delete from Firestore
     const timeoutId = setTimeout(() => {
         updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
-        setEntryPendingDeletion(null); // Clear pending state
+        setEntryPendingDeletion(null);
         toast({ title: "Entry permanently deleted", variant: "default" }); 
     }, UNDO_TIMEOUT);
 
-    // Store the entry and its deletion timer
     setEntryPendingDeletion({ entry: entryToDelete, timeoutId });
 
-    // Show toast with Undo action
     toast({
         title: "Entry deleted",
         onUndo: undoDeleteLogEntry,
         duration: UNDO_TIMEOUT,
     });
-}, [pomodoroLog, updateFirestore, toast, entryPendingDeletion, undoDeleteLogEntry]);
+  }, [pomodoroLog, updateFirestore, toast, entryPendingDeletion, undoDeleteLogEntry]);
   
   const openEditModal = useCallback((entry: PomodoroLogEntry) => { setEntryToEdit(cleanLogEntry(entry)); setIsEditModalOpen(true); }, []);
   const closeEditModal = useCallback(() => { setIsEditModalOpen(false); setEntryToEdit(null); }, []);
