@@ -53,7 +53,7 @@ const cleanLogEntry = (entry: any): PomodoroLogEntry => {
   }
   if (!cleanedEntry.endTime || !parseISO(cleanedEntry.endTime).getTime()) {
      console.warn('Invalid endTime in log entry, setting to startTime as fallback:', cleanedEntry);
-    cleanedEntry.endTime = cleanedEntry.startTime;
+     cleanedEntry.endTime = cleanedEntry.startTime;
   }
   if (typeof cleanedEntry.duration !== 'number' || isNaN(cleanedEntry.duration) || cleanedEntry.duration < 0) {
     cleanedEntry.duration = 0;
@@ -257,33 +257,6 @@ export function usePomodoro() {
     }
   }, [currentUser]);
 
-  // Sync timer with system time when tab becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const now = Date.now();
-        const updatedSessions = activeSessions.map(s => {
-          if (s.isRunning && s.lastWorkSessionStartTime) {
-            const elapsedSeconds = Math.round((now - s.lastWorkSessionStartTime) / 1000);
-            return { ...s, currentTime: elapsedSeconds };
-          }
-          return s;
-        });
-        // We only update firestore if there's a difference to avoid loops
-        if (JSON.stringify(updatedSessions) !== JSON.stringify(activeSessions)) {
-           setActiveSessions(updatedSessions.map(cleanActiveSession));
-           updateFirestore({ activeSessions: updatedSessions.map(cleanActiveSession) });
-        }
-      }
-    };
-  
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [activeSessions, updateFirestore]);
-
-
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
     setIsFetchingQuote(true);
@@ -312,8 +285,14 @@ export function usePomodoro() {
               setActiveSessions(prevSessions =>
                 prevSessions.map(s => {
                   if (s.id === session.id && s.isRunning) {
-                    const newTime = s.currentTime + 1;
-                    if (!notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
+                    if (s.lastWorkSessionStartTime === null) return s; // Should not happen if running
+
+                    const now = Date.now();
+                    const newTime = Math.round((now - s.lastWorkSessionStartTime) / 1000);
+
+                    if (!notificationSentRefs.current[s.id]) {
+                      notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
+                    }
 
                     if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
                       setTimeout(() => toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` }), 0);
@@ -876,7 +855,3 @@ export function usePomodoro() {
     filteredLogForPeriod,
   };
 }
-
-    
-
-    
