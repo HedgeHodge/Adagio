@@ -52,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${domine.variable} ${pacifico.variable}`} suppressHydrationWarning>
        <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
       </head>
       <body className="font-body antialiased">
         <Providers>
