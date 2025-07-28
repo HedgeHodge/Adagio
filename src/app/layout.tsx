@@ -2,9 +2,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Domine, Pacifico } from 'next/font/google';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/layout/Providers';
-import { useId } from 'react';
 
 const domine = Domine({
   subsets: ['latin'],
@@ -51,16 +49,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const id = useId();
   return (
     <html lang="en" className={`${domine.variable} ${pacifico.variable}`} suppressHydrationWarning>
        <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="font-body antialiased">
-        <Providers key={id}>
+        <Providers>
             {children}
-            <Toaster />
         </Providers>
       </body>
     </html>
