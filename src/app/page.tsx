@@ -224,7 +224,7 @@ function AuthenticatedApp() {
                 className="w-full shadow-lg rounded-3xl"
             >
                 <Card className={cn(
-                    "w-full bg-card/70 backdrop-blur-sm rounded-3xl max-w-md transition-opacity",
+                    "w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md transition-opacity",
                     !isAddCardExpanded && "opacity-90"
                 )}>
                     <CardHeader>
@@ -311,7 +311,7 @@ function AuthenticatedApp() {
                     className="w-full max-w-md relative rounded-3xl overflow-hidden shadow-lg"
                 >
                     <Card className={cn(
-                        "w-full bg-card/70 backdrop-blur-sm rounded-3xl max-w-md relative z-10 overflow-hidden",
+                        "w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md relative z-10 overflow-hidden",
                         "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
                         session.isRunning && "after:animate-ripple after:border-primary"
                     )}>
@@ -370,7 +370,7 @@ function AuthenticatedApp() {
     );
 
     const InsightsView = (
-        <Card className="w-full max-w-md shadow-lg bg-card/70 backdrop-blur-sm rounded-3xl mx-auto">
+        <Card className="w-full max-w-md shadow-lg bg-card/20 backdrop-blur-xl rounded-3xl mx-auto">
             <CardHeader>
                 <div>
                     <CardTitle className="flex items-center"><BarChart2 className="mr-2 h-5 w-5" />Productivity Insights</CardTitle>

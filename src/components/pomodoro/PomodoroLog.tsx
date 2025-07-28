@@ -76,7 +76,7 @@ export function PomodoroLog({
   const renderLoader = () => (
     <Card className={cn(
       "w-full shadow-lg rounded-3xl max-w-md",
-      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
+      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/20 backdrop-blur-xl"
     )}>
       <CardHeader>
         <div className="flex justify-between items-center">
@@ -106,7 +106,7 @@ export function PomodoroLog({
   return (
     <Card className={cn(
       "w-full shadow-lg rounded-3xl max-w-md",
-      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/70 backdrop-blur-sm"
+      isMobileLayout && "mt-0 flex-1 flex flex-col min-h-0 bg-card/20 backdrop-blur-xl"
     )}>
       <CardHeader>
         <div className="flex justify-between items-center">
