@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    apple: '/icons/appstore.png',
+    apple: '/appstore.png',
   },
 };
 
