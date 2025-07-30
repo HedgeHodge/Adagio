@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Domine, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/layout/Providers';
+import { Toaster } from '@/components/ui/toaster';
 
 const domine = Domine({
   subsets: ['latin'],
@@ -62,6 +63,7 @@ export default function RootLayout({
         <Providers>
             {children}
         </Providers>
+        <Toaster />
       </body>
     </html>
   );

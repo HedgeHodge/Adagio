@@ -11,7 +11,6 @@ export function Providers({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <AuthProvider>
         {children}
-        <Toaster />
       </AuthProvider>
     </ThemeProvider>
   );
