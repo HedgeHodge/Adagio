@@ -351,8 +351,8 @@ function AuthenticatedApp() {
                                 }
                             }}
                             animate={{
-                                x: (index - activeSessionIndex) * 50,
-                                scale: index === activeSessionIndex ? 1 : 0.85,
+                                x: (index - activeSessionIndex) * 300,
+                                scale: index === activeSessionIndex ? 1 : 0.8,
                                 opacity: index === activeSessionIndex ? 1 : 0.6,
                                 zIndex: pomodoro.activeSessions.length - Math.abs(index - activeSessionIndex),
                             }}
