@@ -92,13 +92,24 @@ export default {
           '50%': { transform: 'scale(1.03)' },
           '100%': { transform: 'scale(1)' },
         },
+        'ripple': {
+            '0%, 100%': {
+              'box-shadow': '0 0 0 0 hsl(var(--primary) / 0.7), 0 0 0 0 hsl(var(--primary) / 0.7)',
+            },
+            '50%': {
+              'box-shadow': '0 0 0 10px hsl(var(--primary) / 0), 0 0 0 20px hsl(var(--primary) / 0)',
+            },
+          },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'subtle-pop': 'subtle-pop 0.3s ease-out',
+        'ripple': 'ripple 2s infinite',
       },
     },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
+
+    
