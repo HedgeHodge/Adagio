@@ -157,7 +157,7 @@ export function PomodoroLog({
                                     layout
                                     initial={{ opacity: 1, height: 'auto' }}
                                     animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0, transition: { duration: 0.3 } }}
+                                    exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
                                     className="flex items-center justify-between p-3 rounded-md border border-border bg-background/50 hover:bg-accent/10 transition-colors group"
                                 >
                                 <div className="flex-1 min-w-0">
@@ -220,5 +220,7 @@ export function PomodoroLog({
     </Card>
   );
 }
+
+    
 
     
