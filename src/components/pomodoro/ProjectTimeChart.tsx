@@ -27,6 +27,8 @@ const chartConfig = {
 
 
 export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onBarClick }: ProjectTimeChartProps) {
+  const [mouseDownPos, setMouseDownPos] = React.useState<{ x: number, y: number } | null>(null);
+
   if (data.length === 0) {
     return (
       <CardDescription className="text-center py-8 text-muted-foreground">
@@ -63,14 +65,25 @@ export const ProjectTimeChart = React.memo(function ProjectTimeChart({ data, onB
           data={data}
           margin={{ top: 5, right: 5, left: -10, bottom: 20 }}
           className="cursor-pointer"
-          onMouseDown={(state) => {
-            if (state && state.activePayload && state.activePayload.length > 0) {
-              const payload = state.activePayload[0].payload;
-              if (payload && payload.name) {
-                onBarClick(payload.name);
+          onMouseDown={(state, event) => {
+            setMouseDownPos({ x: event.clientX, y: event.clientY });
+          }}
+          onMouseUp={(state, event) => {
+            if (mouseDownPos) {
+              const deltaX = Math.abs(event.clientX - mouseDownPos.x);
+              const deltaY = Math.abs(event.clientY - mouseDownPos.y);
+              if (deltaX < 5 && deltaY < 5) { // It's a click, not a swipe
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  const payload = state.activePayload[0].payload;
+                  if (payload && payload.name) {
+                    onBarClick(payload.name);
+                  }
+                }
               }
             }
+            setMouseDownPos(null);
           }}
+           onMouseLeave={() => setMouseDownPos(null)}
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
           <XAxis
