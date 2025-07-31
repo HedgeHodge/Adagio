@@ -246,9 +246,7 @@ function AuthenticatedApp() {
 
     const TimerView = (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-            <motion.div
-                layout
-                transition={{ duration: 0.4, ease: "easeInOut" }}
+            <div
                 className="w-full shadow-lg rounded-3xl"
             >
                 <Card className={cn(
@@ -330,7 +328,7 @@ function AuthenticatedApp() {
                         )}
                     </AnimatePresence>
                 </Card>
-            </motion.div>
+            </div>
 
 
             <div className="relative w-full">
