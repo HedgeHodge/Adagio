@@ -2,8 +2,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Domine, Pacifico } from 'next/font/google';
 import './globals.css';
-import { Providers } from '@/components/layout/Providers';
 import { Toaster } from '@/components/ui/toaster';
+import { ClientLayout } from './client-layout';
 
 const domine = Domine({
   subsets: ['latin'],
@@ -60,10 +60,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
       </head>
       <body className="font-body antialiased">
-        <Providers>
-            {children}
-        </Providers>
-        <Toaster />
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
