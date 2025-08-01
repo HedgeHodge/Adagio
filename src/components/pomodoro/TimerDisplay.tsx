@@ -6,10 +6,20 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion'; 
 
 interface TimerDisplayProps {
-  formattedTime: string;
-  intervalType: IntervalType;
-  isRunning: boolean;
+  remainingTime: number;
+  mode: IntervalType;
 }
+
+const formatTime = (timeInSeconds: number): string => {
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
+    const seconds = timeInSeconds % 60;
+  
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
 const getIntervalLabelText = (intervalType: IntervalType): string => {
   switch (intervalType) {
@@ -24,9 +34,9 @@ const getIntervalLabelText = (intervalType: IntervalType): string => {
   }
 };
 
-export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDisplayProps) {
-  const animationKey = `${intervalType}-${isRunning}`;
-  const isBreak = intervalType === 'shortBreak' || intervalType === 'longBreak';
+export function TimerDisplay({ remainingTime, mode }: TimerDisplayProps) {
+  const animationKey = `${mode}`;
+  const isBreak = mode === 'shortBreak' || mode === 'longBreak';
 
   return (
     <motion.div
@@ -44,19 +54,18 @@ export function TimerDisplay({ formattedTime, intervalType, isRunning }: TimerDi
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        {getIntervalLabelText(intervalType)}
+        {getIntervalLabelText(mode)}
       </motion.h2>
       <motion.div 
         className={cn(
         "text-6xl md:text-7xl font-bold transition-opacity duration-300",
-        !isRunning && intervalType === 'work' ? "opacity-70" : "opacity-100",
         isBreak ? 'text-muted-foreground' : 'text-primary'
        )}
        initial={{ opacity: 0, scale: 0.95 }}
        animate={{ opacity: 1, scale: 1 }}
        transition={{ delay: 0.05, duration: 0.3, type: "spring", stiffness: 200, damping: 20 }}
       >
-        {formattedTime}
+        {formatTime(remainingTime)}
       </motion.div>
     </motion.div>
   );

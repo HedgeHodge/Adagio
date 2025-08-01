@@ -13,6 +13,7 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
+  signInAnonymously
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'; 
 import { useToast } from '@/hooks/use-toast';
@@ -60,21 +61,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (docSnap.exists() && docSnap.data()) {
         setIsPremium(docSnap.data().isPremium === true);
       } else {
+        const isAnonymousUser = user.isAnonymous;
         await setDoc(userDocRef, { 
-          isPremium: false, 
+          isPremium: isAnonymousUser, 
           email: user.email, 
           displayName: user.displayName,
           photoURL: user.photoURL,
           createdAt: Timestamp.now() 
         }, { merge: true });
-        setIsPremium(false);
+        setIsPremium(isAnonymousUser);
       }
       setCurrentUser(user);
+      setLoading(false);
     } else {
-      setCurrentUser(null);
-      setIsPremium(false);
+        setCurrentUser(null);
+        setIsPremium(false);
+        setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Handle redirect result on component mount
@@ -100,7 +103,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, handleUser);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        handleUser(user);
+      } else {
+        if (process.env.NODE_ENV === 'development') {
+          signInAnonymously(auth).catch((error) => {
+            console.error("Error signing in anonymously:", error);
+          });
+        } else {
+          handleUser(null);
+        }
+      }
+    });
     return () => unsubscribe();
   }, [handleUser]);
 

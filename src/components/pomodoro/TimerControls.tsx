@@ -3,19 +3,19 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, StopCircle, Pencil } from "lucide-react";
+import { Play, Pause, StopCircle, Pencil, Settings, ListChecks } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface TimerControlsProps {
-  sessionId: string; // Each control set is for a specific session
-  isRunning: boolean;
-  currentInterval: IntervalType;
-  onStart: () => void; // Specific to this session
-  onPause: () => void; // Specific to this session
-  onEndCurrentWorkSession?: () => void; // Specific to this session
-  onOpenEditActiveSessionModal: () => void; // Specific to this session
-  lastWorkSessionStartTime: number | null; // To determine if edit is allowed
+  session: any;
+  onStartPause: () => void;
+  onReset: () => void;
+  onSkip: () => void;
+  isTimerRunning: boolean;
+  mode: IntervalType;
+  onOpenEditActiveSessionModal: () => void;
+  className?: string;
 }
 
 const buttonVariants = {
@@ -24,25 +24,16 @@ const buttonVariants = {
   exit: { opacity: 0, scale: 0.8, y: -5, transition: { duration: 0.15 } },
 };
 
-export function TimerControls({
-  sessionId, // unused in render but good for keying if needed
-  isRunning,
-  currentInterval,
-  onStart,
-  onPause,
-  onEndCurrentWorkSession,
-  onOpenEditActiveSessionModal,
-  lastWorkSessionStartTime
-}: TimerControlsProps) {
-  const isBreakInterval = currentInterval === 'shortBreak' || currentInterval === 'longBreak';
+export function TimerControls({ session, onStartPause, onReset, onSkip, isTimerRunning, mode, onOpenEditActiveSessionModal, className }: TimerControlsProps) {
+  const isBreakInterval = mode === 'shortBreak' || mode === 'longBreak';
 
   return (
-    <div className="flex flex-wrap gap-1 justify-center items-center mt-2">
+    <div className={cn("flex flex-wrap justify-center items-center mt-2 gap-2", className)}>
       <AnimatePresence mode="wait">
-        {!isRunning ? (
-          <motion.div key={`start-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
+        {!isTimerRunning ? (
+          <motion.div key={`start-${session.id}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
             <Button
-              onClick={onStart}
+              onClick={onStartPause}
               size="lg"
               className="px-8 py-4 text-base shadow-md hover:shadow-lg transition-shadow rounded-lg"
               variant={isBreakInterval ? 'secondary' : 'default'}
@@ -51,9 +42,9 @@ export function TimerControls({
             </Button>
           </motion.div>
         ) : (
-          <motion.div key={`pause-${sessionId}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
+          <motion.div key={`pause-${session.id}`} variants={buttonVariants} initial="initial" animate="animate" exit="exit">
             <Button
-              onClick={onPause}
+              onClick={onStartPause}
               variant="outline"
               size="lg"
               className={cn(
@@ -70,35 +61,56 @@ export function TimerControls({
       </AnimatePresence>
 
       <div className="flex items-center gap-1">
-        {isRunning && currentInterval === 'work' && onEndCurrentWorkSession && (
-          <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
-            <Button 
-              onClick={onEndCurrentWorkSession} 
-              variant="destructive" 
-              size="icon" 
-              className="h-10 w-10 rounded-lg"
-              aria-label="End Current Tracking"
-              title="End Current Tracking"
-            >
-              <StopCircle className="h-5 w-5" />
-            </Button>
-          </motion.div>
-        )}
-
-        {currentInterval === 'work' && lastWorkSessionStartTime && (
-           <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
-              <Button 
-                  onClick={onOpenEditActiveSessionModal} 
-                  variant="ghost" 
+        {isTimerRunning && (
+            <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
+                <Button 
+                  onClick={onSkip} 
+                  variant="destructive" 
                   size="icon" 
-                  className="h-10 w-10 rounded-lg hover:bg-muted"
-                  aria-label="Edit start time"
-                  title="Edit start time"
-              >
-                <Pencil className="h-5 w-5" />
-              </Button>
-          </motion.div>
+                  className="h-10 w-10 rounded-lg"
+                  aria-label="End Current Tracking"
+                  title="End Current Tracking"
+                >
+                  <StopCircle className="h-5 w-5" />
+                </Button>
+              </motion.div>
         )}
+        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
+          <Button 
+            onClick={onOpenEditActiveSessionModal} 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 rounded-lg"
+            aria-label="Edit Session"
+            title="Edit Session"
+          >
+            <Pencil className="h-5 w-5" />
+          </Button>
+        </motion.div>
+        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
+          <Button 
+            onClick={() => onToggleCardFlip(session.id)} 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 rounded-lg"
+            aria-label="Settings"
+            title="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </motion.div>
+        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
+          <Button 
+            onClick={() => onToggleCardFlip(session.id)} 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 rounded-lg"
+            aria-label="Tasks"
+            title="Tasks"
+          >
+            <ListChecks className="h-5 w-5" />
+          </Button>
+        </motion.div>
       </div>
     </div>
   );

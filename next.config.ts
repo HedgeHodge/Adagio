@@ -1,9 +1,9 @@
 
-import type {NextConfig} from 'next';
-import withPWAInit from 'next-pwa';
+import type { NextConfig } from 'next';
 
 const isDev = process.env.NODE_ENV === 'development';
 
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   /* config options here */
 
@@ -29,24 +29,13 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.externals.push('handlebars');
-    }
-    return config;
-  },
 };
 
-const withPWA = withPWAInit({
+const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
   disable: isDev,
 });
 
-// Conditionally apply the PWA wrapper.
-// In development, we export the plain nextConfig.
-// In production, we export the PWA-wrapped config.
-const finalConfig = isDev ? nextConfig : withPWA(nextConfig);
-
-export default finalConfig;
+module.exports = isDev ? nextConfig : withPWA(nextConfig);
