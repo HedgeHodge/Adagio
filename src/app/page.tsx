@@ -589,8 +589,8 @@ function AuthenticatedApp() {
                                                 <CardHeader className="flex flex-row items-center justify-between">
                                                     <CardTitle>{session.project}</CardTitle>
                                                 </CardHeader>
-                                                <CardContent className="flex flex-col items-center justify-center flex-grow">
-                                                    <div className="flex flex-col items-center justify-center gap-4">
+                                                <CardContent className="flex-grow flex justify-center items-center">
+                                                    <div className="flex flex-col items-center gap-4">
                                                         <TimerDisplay
                                                             remainingTime={session.currentTime}
                                                             mode={session.currentInterval}
