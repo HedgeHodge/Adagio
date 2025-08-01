@@ -329,6 +329,15 @@ function AuthenticatedApp() {
                                     "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
                                     session.isRunning && "after:animate-ripple after:border-primary"
                                 )}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute top-3 right-3 h-7 w-7 text-muted-foreground/50 hover:text-foreground z-20 rounded-full hover:bg-muted/50"
+                                        onClick={() => pomodoro.removeSession(session.id)}
+                                    >
+                                        <X className="h-4 w-4" />
+                                        <span className="sr-only">Close session</span>
+                                    </Button>
                                     <CardHeader>
                                         <CardTitle className="truncate pr-8">{session.project}</CardTitle>
                                         {pomodoro.motivationalQuote && (session.currentInterval === 'shortBreak' || session.currentInterval === 'longBreak') && (
@@ -721,5 +730,7 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
 
     
