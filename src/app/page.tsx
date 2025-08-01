@@ -490,7 +490,7 @@ function AuthenticatedApp() {
                             {pomodoro.activeSessions.map((session, index) => (
                                 <motion.div
                                     key={session.id}
-                                    className="w-full max-w-md absolute"
+                                    className="w-full max-w-md"
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
                                     dragElastic={0.2}
@@ -509,6 +509,7 @@ function AuthenticatedApp() {
                                         zIndex: pomodoro.activeSessions.length - Math.abs(index - activeSessionIndex),
                                     }}
                                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                    style={{ position: index === activeSessionIndex ? 'relative' : 'absolute' }}
                                 >
                                     <Card className={cn(
                                         "w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md relative z-10 overflow-hidden",
