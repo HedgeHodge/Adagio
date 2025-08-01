@@ -484,9 +484,9 @@ function AuthenticatedApp() {
             </header>
 
             <main className="flex-grow p-4 pb-40 md:pb-8">
-                <div className="relative w-full px-4 mb-4">
-                    {pomodoro.activeSessions.length > 0 && (
-                        <div className="relative w-full max-w-md flex items-center justify-center mx-auto" style={{ height: 'auto' }}>
+                {pomodoro.activeSessions.length > 0 && (
+                    <div className="w-full max-w-md mx-auto flex flex-col" style={{ minHeight: '420px' }}>
+                        <div className="relative flex-grow flex items-center justify-center">
                             {pomodoro.activeSessions.map((session, index) => (
                                 <motion.div
                                     key={session.id}
@@ -561,24 +561,24 @@ function AuthenticatedApp() {
                                 </motion.div>
                             ))}
                         </div>
-                    )}
-                    
-                    {pomodoro.activeSessions.length > 1 && (
-                        <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-2">
-                            {pomodoro.activeSessions.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setActiveSessionIndex(i)}
-                                    className={cn(
-                                        "h-2 rounded-full transition-all duration-300",
-                                        i === activeSessionIndex ? "w-4 bg-primary" : "w-2 bg-muted hover:bg-muted-foreground"
-                                    )}
-                                    aria-label={`Go to session ${i + 1}`}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                        
+                        {pomodoro.activeSessions.length > 1 && (
+                            <div className="flex justify-center items-center gap-2 pt-4">
+                                {pomodoro.activeSessions.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setActiveSessionIndex(i)}
+                                        className={cn(
+                                            "h-2 rounded-full transition-all duration-300",
+                                            i === activeSessionIndex ? "w-4 bg-primary" : "w-2 bg-muted hover:bg-muted-foreground"
+                                        )}
+                                        aria-label={`Go to session ${i + 1}`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 items-start max-w-7xl mx-auto">
                     <div className={cn(
