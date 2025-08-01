@@ -300,7 +300,7 @@ function AuthenticatedApp() {
 
             <div className="relative w-full">
                 {pomodoro.activeSessions.length > 0 && (
-                    <div className="relative w-full max-w-md h-[520px] flex items-center justify-center">
+                    <div className="relative w-full max-w-md mt-[-2rem] flex items-center justify-center">
                         {pomodoro.activeSessions.map((session, index) => (
                             <motion.div
                                 key={session.id}
@@ -579,7 +579,7 @@ function AuthenticatedApp() {
                 </div>
             </header>
 
-            <main className="flex-grow pt-2 p-4 pb-40 md:pb-8">
+            <main className="flex-grow p-4 pb-40 md:pb-8 pt-0">
                  <div className="grid grid-cols-1 md:grid-cols-2 wide:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
                     <div className={cn(
                         "md:col-span-1 flex flex-col items-center",
@@ -730,6 +730,8 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
 
     
 
