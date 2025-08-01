@@ -72,6 +72,7 @@ import { SplashScreen } from '@/components/layout/SplashScreen';
 import { DevToolsModal } from '@/components/dev/DevToolsModal';
 import { InsightsStats } from '@/components/pomodoro/InsightsStats';
 import { PeriodSummaryModal } from '@/components/pomodoro/PeriodSummaryModal';
+import { AddSessionModal } from '@/components/pomodoro/AddSessionModal';
 
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
@@ -143,6 +144,7 @@ function AuthenticatedApp() {
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
+    const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
     
     const [activeSessionIndex, setActiveSessionIndex] = useState(0);
 
@@ -237,7 +239,7 @@ function AuthenticatedApp() {
     const TimerView = (
         <div className="flex flex-col items-center gap-4 w-full max-w-md">
             <div
-                className="w-full shadow-lg rounded-3xl"
+                className="w-full shadow-lg rounded-3xl hidden md:flex"
             >
                 <Card className="w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md">
                     <CardHeader>
@@ -327,9 +329,6 @@ function AuthenticatedApp() {
                                     "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
                                     session.isRunning && "after:animate-ripple after:border-primary"
                                 )}>
-                                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-20" onClick={() => pomodoro.removeSession(session.id)}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
                                     <CardHeader>
                                         <CardTitle className="truncate pr-8">{session.project}</CardTitle>
                                         {pomodoro.motivationalQuote && (session.currentInterval === 'shortBreak' || session.currentInterval === 'longBreak') && (
@@ -367,6 +366,19 @@ function AuthenticatedApp() {
                         ))}
                     </div>
                 )}
+                
+                {/* Mobile Add Button */}
+                <div className="md:hidden absolute bottom-4 right-4 z-20">
+                     <Button 
+                        size="icon" 
+                        className="rounded-full h-14 w-14 shadow-lg"
+                        onClick={() => setIsAddSessionModalOpen(true)}
+                    >
+                        <Plus className="h-6 w-6" />
+                    </Button>
+                </div>
+
+
                 {pomodoro.activeSessions.length > 1 && (
                     <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-2">
                         {pomodoro.activeSessions.map((_, i) => (
@@ -632,6 +644,12 @@ function AuthenticatedApp() {
 
             <OnboardingModal isOpen={isFirstTime} onComplete={setOnboardingCompleted} />
 
+            <AddSessionModal 
+                isOpen={isAddSessionModalOpen}
+                onOpenChange={setIsAddSessionModalOpen}
+                onAddSession={pomodoro.addSession}
+                recentProjects={pomodoro.recentProjects}
+            />
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
@@ -706,11 +724,3 @@ function AuthenticatedApp() {
         </div>
     );
 }
-
-    
-
-    
-
-    
-
-    
