@@ -483,102 +483,102 @@ function AuthenticatedApp() {
                 </div>
             </header>
 
-            <div className="relative w-full px-4">
-                {pomodoro.activeSessions.length > 0 && (
-                    <div className="relative w-full max-w-md flex items-center justify-center mx-auto" style={{ height: 'auto' }}>
-                        {pomodoro.activeSessions.map((session, index) => (
-                            <motion.div
-                                key={session.id}
-                                className="w-full max-w-md absolute"
-                                drag="x"
-                                dragConstraints={{ left: 0, right: 0 }}
-                                dragElastic={0.2}
-                                onDragEnd={(e, { offset, velocity }) => {
-                                    const swipe = swipePower(offset.x, velocity.x);
-                                    if (swipe < -swipeConfidenceThreshold) {
-                                        paginate(1);
-                                    } else if (swipe > swipeConfidenceThreshold) {
-                                        paginate(-1);
-                                    }
-                                }}
-                                animate={{
-                                    x: (index - activeSessionIndex) * 480,
-                                    scale: index === activeSessionIndex ? 1 : 0.8,
-                                    opacity: index === activeSessionIndex ? 1 : 0.6,
-                                    zIndex: pomodoro.activeSessions.length - Math.abs(index - activeSessionIndex),
-                                }}
-                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            >
-                                <Card className={cn(
-                                    "w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md relative z-10 overflow-hidden",
-                                    "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
-                                    session.isRunning && "after:animate-ripple after:border-primary"
-                                )}>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute top-3 right-3 h-7 w-7 text-muted-foreground/50 hover:text-foreground z-20 rounded-full hover:bg-muted/50"
-                                        onClick={() => pomodoro.removeSession(session.id)}
-                                    >
-                                        <X className="h-4 w-4" />
-                                        <span className="sr-only">Close session</span>
-                                    </Button>
-                                    <CardHeader>
-                                        <CardTitle className="truncate pr-8">{session.project}</CardTitle>
-                                        {pomodoro.motivationalQuote && (session.currentInterval === 'shortBreak' || session.currentInterval === 'longBreak') && (
-                                            <CardDescription className="pt-2 italic flex items-center gap-2">
-                                                {pomodoro.isFetchingQuote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-yellow-500" />}
-                                                "{pomodoro.motivationalQuote.quote}" - {pomodoro.motivationalQuote.source}
-                                            </CardDescription>
-                                        )}
-                                    </CardHeader>
-                                    <CardContent className="flex flex-col items-center">
-                                        <TimerDisplay
-                                            formattedTime={pomodoro.formatTime(session.currentTime)}
-                                            intervalType={session.currentInterval}
-                                            isRunning={session.isRunning}
-                                        />
-                                        <TimerControls
-                                            sessionId={session.id}
-                                            isRunning={session.isRunning}
-                                            currentInterval={session.currentInterval}
-                                            onStart={() => pomodoro.startTimer(session.id)}
-                                            onPause={() => pomodoro.pauseTimer(session.id)}
-                                            onEndCurrentWorkSession={() => pomodoro.endCurrentWorkSession(session.id)}
-                                            onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
-                                            lastWorkSessionStartTime={session.lastWorkSessionStartTime}
-                                        />
-                                        <TaskList
-                                            session={session}
-                                            onAddTask={pomodoro.addTaskToSession}
-                                            onToggleTask={pomodoro.toggleTaskInSession}
-                                            onDeleteTask={pomodoro.deleteTaskFromSession}
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-                )}
-                
-                {pomodoro.activeSessions.length > 1 && (
-                    <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-2">
-                        {pomodoro.activeSessions.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setActiveSessionIndex(i)}
-                                className={cn(
-                                    "h-2 rounded-full transition-all duration-300",
-                                    i === activeSessionIndex ? "w-4 bg-primary" : "w-2 bg-muted hover:bg-muted-foreground"
-                                )}
-                                aria-label={`Go to session ${i + 1}`}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-
             <main className="flex-grow p-4 pb-40 md:pb-8 pt-2">
+                <div className="relative w-full px-4 mb-4">
+                    {pomodoro.activeSessions.length > 0 && (
+                        <div className="relative w-full max-w-md flex items-center justify-center mx-auto" style={{ height: 'auto' }}>
+                            {pomodoro.activeSessions.map((session, index) => (
+                                <motion.div
+                                    key={session.id}
+                                    className="w-full max-w-md absolute"
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    dragElastic={0.2}
+                                    onDragEnd={(e, { offset, velocity }) => {
+                                        const swipe = swipePower(offset.x, velocity.x);
+                                        if (swipe < -swipeConfidenceThreshold) {
+                                            paginate(1);
+                                        } else if (swipe > swipeConfidenceThreshold) {
+                                            paginate(-1);
+                                        }
+                                    }}
+                                    animate={{
+                                        x: (index - activeSessionIndex) * 480,
+                                        scale: index === activeSessionIndex ? 1 : 0.8,
+                                        opacity: index === activeSessionIndex ? 1 : 0.6,
+                                        zIndex: pomodoro.activeSessions.length - Math.abs(index - activeSessionIndex),
+                                    }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                >
+                                    <Card className={cn(
+                                        "w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md relative z-10 overflow-hidden",
+                                        "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl after:content-['']",
+                                        session.isRunning && "after:animate-ripple after:border-primary"
+                                    )}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="absolute top-3 right-3 h-7 w-7 text-muted-foreground/50 hover:text-foreground z-20 rounded-full hover:bg-muted/50"
+                                            onClick={() => pomodoro.removeSession(session.id)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                            <span className="sr-only">Close session</span>
+                                        </Button>
+                                        <CardHeader>
+                                            <CardTitle className="truncate pr-8">{session.project}</CardTitle>
+                                            {pomodoro.motivationalQuote && (session.currentInterval === 'shortBreak' || session.currentInterval === 'longBreak') && (
+                                                <CardDescription className="pt-2 italic flex items-center gap-2">
+                                                    {pomodoro.isFetchingQuote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-yellow-500" />}
+                                                    "{pomodoro.motivationalQuote.quote}" - {pomodoro.motivationalQuote.source}
+                                                </CardDescription>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent className="flex flex-col items-center">
+                                            <TimerDisplay
+                                                formattedTime={pomodoro.formatTime(session.currentTime)}
+                                                intervalType={session.currentInterval}
+                                                isRunning={session.isRunning}
+                                            />
+                                            <TimerControls
+                                                sessionId={session.id}
+                                                isRunning={session.isRunning}
+                                                currentInterval={session.currentInterval}
+                                                onStart={() => pomodoro.startTimer(session.id)}
+                                                onPause={() => pomodoro.pauseTimer(session.id)}
+                                                onEndCurrentWorkSession={() => pomodoro.endCurrentWorkSession(session.id)}
+                                                onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
+                                                lastWorkSessionStartTime={session.lastWorkSessionStartTime}
+                                            />
+                                            <TaskList
+                                                session={session}
+                                                onAddTask={pomodoro.addTaskToSession}
+                                                onToggleTask={pomodoro.toggleTaskInSession}
+                                                onDeleteTask={pomodoro.deleteTaskFromSession}
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {pomodoro.activeSessions.length > 1 && (
+                        <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-2">
+                            {pomodoro.activeSessions.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setActiveSessionIndex(i)}
+                                    className={cn(
+                                        "h-2 rounded-full transition-all duration-300",
+                                        i === activeSessionIndex ? "w-4 bg-primary" : "w-2 bg-muted hover:bg-muted-foreground"
+                                    )}
+                                    aria-label={`Go to session ${i + 1}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                  <div className="grid grid-cols-1 md:grid-cols-2 wide:grid-cols-3 gap-y-8 items-start max-w-7xl mx-auto">
                     <div className={cn(
                         "md:col-span-1 flex flex-col items-center",
@@ -729,11 +729,3 @@ function AuthenticatedApp() {
         </div>
     );
 }
-
-    
-
-    
-
-    
-
-    
