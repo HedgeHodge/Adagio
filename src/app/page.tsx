@@ -367,18 +367,6 @@ function AuthenticatedApp() {
                     </div>
                 )}
                 
-                {/* Mobile Add Button */}
-                <div className="md:hidden absolute bottom-4 right-4 z-20">
-                     <Button 
-                        size="icon" 
-                        className="rounded-full h-14 w-14 shadow-lg"
-                        onClick={() => setIsAddSessionModalOpen(true)}
-                    >
-                        <Plus className="h-6 w-6" />
-                    </Button>
-                </div>
-
-
                 {pomodoro.activeSessions.length > 1 && (
                     <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-2">
                         {pomodoro.activeSessions.map((_, i) => (
@@ -503,6 +491,15 @@ function AuthenticatedApp() {
                         <span className="md:hidden">A</span>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 md:hidden"
+                            onClick={() => setIsAddSessionModalOpen(true)}
+                        >
+                            <Plus className="h-5 w-5" />
+                            <span className="sr-only">Add Session</span>
+                        </Button>
                         <ThemeToggleButton />
                         {currentUser ? (
                             <DropdownMenu>
@@ -724,3 +721,5 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
