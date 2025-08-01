@@ -300,7 +300,7 @@ function AuthenticatedApp() {
 
             <div className="relative w-full">
                 {pomodoro.activeSessions.length > 0 && (
-                    <div className="relative w-full max-w-md mt-[-2rem] flex items-center justify-center">
+                    <div className="relative w-full max-w-md mt-4 flex items-center justify-center">
                         {pomodoro.activeSessions.map((session, index) => (
                             <motion.div
                                 key={session.id}
@@ -730,6 +730,8 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
 
     
 
