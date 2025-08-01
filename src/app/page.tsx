@@ -483,7 +483,7 @@ function AuthenticatedApp() {
                 </div>
             </header>
 
-            <main className="flex-grow p-4 pb-40 md:pb-8 pt-2">
+            <main className="flex-grow p-4 pb-40 md:pb-8">
                 <div className="relative w-full px-4 mb-4">
                     {pomodoro.activeSessions.length > 0 && (
                         <div className="relative w-full max-w-md flex items-center justify-center mx-auto" style={{ height: 'auto' }}>
@@ -579,7 +579,7 @@ function AuthenticatedApp() {
                     )}
                 </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 wide:grid-cols-3 gap-y-8 items-start max-w-7xl mx-auto">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 items-start max-w-7xl mx-auto">
                     <div className={cn(
                         "md:col-span-1 flex flex-col items-center",
                         activeTab !== 'timer' && 'hidden md:flex'
@@ -588,23 +588,15 @@ function AuthenticatedApp() {
                     </div>
 
                     <div className={cn(
-                        "md:col-span-1 wide:col-span-1 flex flex-col items-center gap-8 w-full",
+                        "md:col-span-1 flex flex-col items-center gap-8 w-full",
                         activeTab === 'timer' && 'hidden md:flex',
                     )}>
-                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden md:block wide:block')}>
+                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden md:block')}>
                             {LogView}
                         </div>
-                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden md:block wide:hidden')}>
+                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden md:block')}>
                            {InsightsView}
                         </div>
-                    </div>
-
-                    <div className={cn(
-                        "wide:col-span-1 flex flex-col items-center",
-                        "hidden wide:flex",
-                         activeTab !== 'insights' && 'hidden wide:flex'
-                    )}>
-                       <div className="max-w-md w-full">{InsightsView}</div>
                     </div>
                 </div>
             </main>
@@ -729,3 +721,5 @@ function AuthenticatedApp() {
         </div>
     );
 }
+
+    
