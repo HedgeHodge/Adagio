@@ -585,28 +585,26 @@ function AuthenticatedApp() {
                                     >
                                         {/* Front */}
                                         <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }} className="h-full">
-                                            <Card className="w-full h-full bg-card/20 backdrop-blur-xl rounded-3xl shadow-lg flex flex-col">
-                                                <CardHeader className="flex flex-row items-center justify-between">
+                                            <Card className="relative w-full h-full bg-card/20 backdrop-blur-xl rounded-3xl shadow-lg">
+                                                <CardHeader className="absolute top-0 left-0 right-0 z-10 flex flex-row items-center justify-between">
                                                     <CardTitle>{session.project}</CardTitle>
                                                 </CardHeader>
-                                                <CardContent className="flex-grow flex justify-center items-center">
-                                                    <div className="flex flex-col items-center gap-4">
-                                                        <TimerDisplay
-                                                            remainingTime={session.currentTime}
-                                                            mode={session.currentInterval}
-                                                        />
-                                                        <TimerControls
-                                                            session={session}
-                                                            onStartPause={() => session.isRunning ? pomodoro.pauseTimer(session.id) : pomodoro.startTimer(session.id)}
-                                                            onReset={() => pomodoro.resetTimer(session.id)}
-                                                            onSkip={() => pomodoro.skipInterval(session.id)}
-                                                            isTimerRunning={session.isRunning}
-                                                            mode={session.currentInterval}
-                                                            onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
-                                                            onToggleCardFlip={toggleCardFlip}
-                                                            className="flex items-center justify-center gap-4"
-                                                        />
-                                                    </div>
+                                                <CardContent className="w-full h-full flex flex-col justify-center items-center gap-4">
+                                                    <TimerDisplay
+                                                        remainingTime={session.currentTime}
+                                                        mode={session.currentInterval}
+                                                    />
+                                                    <TimerControls
+                                                        session={session}
+                                                        onStartPause={() => session.isRunning ? pomodoro.pauseTimer(session.id) : pomodoro.startTimer(session.id)}
+                                                        onReset={() => pomodoro.resetTimer(session.id)}
+                                                        onSkip={() => pomodoro.skipInterval(session.id)}
+                                                        isTimerRunning={session.isRunning}
+                                                        mode={session.currentInterval}
+                                                        onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
+                                                        onToggleCardFlip={toggleCardFlip}
+                                                        onOpenSettingsModal={pomodoro.openSettingsModal}
+                                                    />
                                                 </CardContent>
                                             </Card>
                                         </div>
