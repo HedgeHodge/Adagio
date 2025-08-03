@@ -545,7 +545,70 @@ export function usePomodoro() {
   const openEditActiveSessionModal = useCallback((session: ActivePomodoroSession) => { setActiveSessionToEdit(cleanActiveSession(session)); setIsEditActiveSessionModalOpen(true); }, []);
   const closeEditActiveSessionModal = useCallback(() => { setIsEditActiveSessionModalOpen(false); setActiveSessionToEdit(null); }, []);
   
-  const updateActiveSessionStartTime = useCallback((sessionId: string, newStartTime: number) => {
+  const resetTimer = useCallback((sessionId: string) => {
+    const newSessions = activeSessions.map(s => {
+      if (s.id === sessionId) {
+        if (timerRefs.current[s.id]) {
+          clearInterval(timerRefs.current[s.id]!);
+          timerRefs.current[s.id] = null;
+        }
+        // We also need to reset the notification flags for this session
+        if (notificationSentRefs.current[s.id]) {
+            notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
+        }
+        return { ...s, isRunning: false, currentTime: 0, lastWorkSessionStartTime: null };
+      }
+      return s;
+    });
+    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+  }, [activeSessions, updateFirestore]);
+
+  const skipInterval = useCallback((sessionId: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Log the current work session if it's being skipped
+    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime) {
+      logWorkEntry(session);
+    }
+
+    const newSessions = activeSessions.map(s => {
+      if (s.id === sessionId) {
+        const newPomodorosCompleted = s.currentInterval === 'work' ? s.pomodorosCompletedThisSet + 1 : s.pomodorosCompletedThisSet;
+        const isLongBreak = newPomodorosCompleted > 0 && newPomodorosCompleted % settings.pomodorosPerSet === 0;
+        
+        let nextInterval: IntervalType;
+        if (s.currentInterval === 'work') {
+          nextInterval = isLongBreak ? 'longBreak' : 'shortBreak';
+        } else {
+          nextInterval = 'work';
+        }
+
+        if (timerRefs.current[s.id]) {
+          clearInterval(timerRefs.current[s.id]!);
+          timerRefs.current[s.id] = null;
+        }
+        
+        // Reset notification flags for the new interval
+        if (notificationSentRefs.current[s.id]) {
+            notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
+        }
+
+        return {
+          ...s,
+          currentInterval: nextInterval,
+          pomodorosCompletedThisSet: nextInterval === 'work' ? s.pomodorosCompletedThisSet : newPomodorosCompleted,
+          currentTime: 0,
+          isRunning: false,
+          lastWorkSessionStartTime: null,
+        };
+      }
+      return s;
+    });
+    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+  }, [activeSessions, settings.pomodorosPerSet, updateFirestore, logWorkEntry]);
+
+  const updateActiveSessionStartTime = useCallback((sessionId: string, newStartTime: number) => {""
     const newSessions = activeSessions.map(s => {
       if (s.id === sessionId && s.lastWorkSessionStartTime !== null) {
         const newCurrentTime = Math.max(0, Math.round((Date.now() - newStartTime) / 1000));
@@ -842,6 +905,7 @@ export function usePomodoro() {
     activeFilter, setActiveFilter, processedChartData, insightsStats, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
+    resetTimer, skipInterval,
     sessionToSummarize, logSessionFromSummary, removeRecentProject, closeSummaryModal,
     inputProjectName, setInputProjectName,
     customDateRange, setCustomDateRange,

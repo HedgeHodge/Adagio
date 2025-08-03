@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton';
@@ -143,21 +143,46 @@ function AuthenticatedApp() {
 
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
+    const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
     
-    const [activeSessionIndex, setActiveSessionIndex] = useState(0);
+    const [[activeSessionIndex, direction], setPage] = useState([0, 0]);
 
     const [projectToManage, setProjectToManage] = useState<string | null>(null);
     const [isManageProjectModalOpen, setIsManageProjectModalOpen] = useState(false);
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [dragDirection, setDragDirection] = useState<string | null>(null);
+
+    const y = useMotionValue(0);
+    const rotateY = useTransform(y, [0, 100], [0, 180]);
     
     const pomodoro = usePomodoro();
+
+    const toggleCardFlip = () => {
+        const currentY = y.get();
+        animate(y, currentY < 50 ? 100 : 0, { duration: 0.4 });
+    };
+
+    const getDuration = (session: any) => {
+        if (!session) return 0;
+        const sessionSettings = pomodoro.settings;
+        switch (session.currentInterval) {
+            case 'work':
+                return sessionSettings.workDuration * 60;
+            case 'shortBreak':
+                return sessionSettings.shortBreakDuration * 60;
+            case 'longBreak':
+                return sessionSettings.longBreakDuration * 60;
+            default:
+                return sessionSettings.workDuration * 60;
+        }
+    };
     const { showOnboarding, isFirstTime, setOnboardingCompleted } = useOnboarding(currentUser);
     
     useEffect(() => {
         if (activeSessionIndex >= pomodoro.activeSessions.length && pomodoro.activeSessions.length > 0) {
-            setActiveSessionIndex(pomodoro.activeSessions.length - 1);
+            setPage([pomodoro.activeSessions.length - 1, 0]);
         } else if (pomodoro.activeSessions.length === 0) {
-            setActiveSessionIndex(0);
+            setPage([0, 0]);
         }
     }, [pomodoro.activeSessions.length, activeSessionIndex]);
 
@@ -193,6 +218,8 @@ function AuthenticatedApp() {
         setProjectToManage(null);
     };
 
+    
+
 
     const handleAddSession = (e: React.FormEvent) => {
         e.preventDefault();
@@ -217,21 +244,44 @@ function AuthenticatedApp() {
         setIsSummarizing(false);
     };
 
+    const variants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? 1000 : -1000,
+            opacity: 0
+        }),
+        center: {
+            zIndex: 1,
+            x: 0,
+            opacity: 1,
+            rotateY: 0
+        },
+        flipped: {
+            zIndex: 1,
+            x: 0,
+            opacity: 1,
+            rotateY: 180
+        },
+        exit: (direction: number) => ({
+            zIndex: 0,
+            x: direction < 0 ? 1000 : -1000,
+            opacity: 0
+        }),
+        exit_up: {
+            y: -1000,
+            opacity: 0
+        }
+    };
+
     const swipeConfidenceThreshold = 10000;
     const swipePower = (offset: number, velocity: number) => {
         return Math.abs(offset) * velocity;
     };
 
     const paginate = (newDirection: number) => {
-        setActiveSessionIndex(prevIndex => {
-            let newIndex = prevIndex + newDirection;
-            if (newIndex < 0) {
-              newIndex = 0; // Don't loop
-            } else if (newIndex >= pomodoro.activeSessions.length) {
-              newIndex = pomodoro.activeSessions.length - 1; // Don't loop
-            }
-            return newIndex;
-          });
+        const newIndex = activeSessionIndex + newDirection;
+        if (newIndex >= 0 && newIndex < pomodoro.activeSessions.length) {
+            setPage([newIndex, newDirection]);
+        }
     };
 
     const TimerView = (
@@ -508,33 +558,130 @@ function AuthenticatedApp() {
                 </div>
             </header>
 
-            <main className="flex-grow pt-2 p-4 pb-40 md:pb-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 wide:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+            <main className="flex-grow p-4 pb-40 md:pb-8">
+                {pomodoro.activeSessions.length > 0 && (
+                    <div className="w-full max-w-md mx-auto flex flex-col" style={{ height: '420px' }}>
+                        <div className="relative flex-grow flex items-center justify-center" style={{ perspective: 1000 }}>
+                            <AnimatePresence initial={false} custom={direction} >
+                                {pomodoro.activeSessions.map((session, index) => (
+                                    index === activeSessionIndex && (
+                                    <motion.div
+                                        key={session.id}
+                                        className="w-full max-w-md h-full absolute"
+                                        style={{ transformStyle: 'preserve-3d', rotateY: rotateY }}
+                                        drag
+                                        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+                                        dragDirectionLock
+                                        onDirectionLock={axis => setDragDirection(axis)}
+                                        onDrag={(e, { offset }) => {
+                                            if (dragDirection === 'y') {
+                                                if (offset.y < 0) return;
+                                                const newY = (offset.y / 200) * 100;
+                                                y.set(Math.min(newY, 100));
+                                            }
+                                        }}
+                                        onDragEnd={(e, { offset, velocity }) => {
+                                            if (dragDirection === 'x') {
+                                                const swipe = swipePower(offset.x, velocity.x);
+                                                if (pomodoro.activeSessions.length === 1 && Math.abs(swipe) > swipeConfidenceThreshold) {
+                                                    setIsAddSessionModalOpen(true);
+                                                } else {
+                                                    if (swipe < -swipeConfidenceThreshold) {
+                                                        paginate(1);
+                                                    } else if (swipe > swipeConfidenceThreshold) {
+                                                        paginate(-1);
+                                                    }
+                                                }
+                                            } else if (dragDirection === 'y') {
+                                                const swipeY = swipePower(offset.y, velocity.y);
+                                                if (swipeY < -swipeConfidenceThreshold) {
+                                                    pomodoro.removeSession(session.id);
+                                                    return;
+                                                }
+                                                
+                                                const currentY = y.get();
+                                                if (currentY > 50 || velocity.y > 300) {
+                                                    animate(y, 100, { type: "spring", stiffness: 400, damping: 30, velocity: velocity.y });
+                                                } else {
+                                                    animate(y, 0, { type: "spring", stiffness: 400, damping: 30, velocity: velocity.y });
+                                                }
+                                            }
+                                            setDragDirection(null);
+                                        }}
+                                    >
+                                        {/* Front */}
+                                        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }} className="h-full">
+                                            <Card className="relative w-full h-full bg-card/20 backdrop-blur-xl rounded-3xl shadow-lg">
+                                                <CardHeader className="absolute top-0 left-0 right-0 z-10 flex flex-row items-center justify-between">
+                                                    <CardTitle>{session.project}</CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="w-full h-full flex flex-col justify-center items-center gap-4">
+                                                    <TimerDisplay
+                                                        remainingTime={session.currentTime}
+                                                        mode={session.currentInterval}
+                                                    />
+                                                    <TimerControls
+                                                        session={session}
+                                                        onStartPause={() => session.isRunning ? pomodoro.pauseTimer(session.id) : pomodoro.startTimer(session.id)}
+                                                        onReset={() => pomodoro.resetTimer(session.id)}
+                                                        onSkip={() => pomodoro.skipInterval(session.id)}
+                                                        isTimerRunning={session.isRunning}
+                                                        mode={session.currentInterval}
+                                                        onOpenEditActiveSessionModal={() => pomodoro.openEditActiveSessionModal(session)}
+                                                        onToggleCardFlip={toggleCardFlip}
+                                                        onOpenSettingsModal={pomodoro.openSettingsModal}
+                                                    />
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+
+                                        {/* Back */}
+                                        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }} className="absolute top-0 left-0 w-full h-full">
+                                            <Card className="w-full h-full bg-card/20 backdrop-blur-xl rounded-3xl shadow-lg flex flex-col">
+                                                <CardHeader className="flex flex-row items-center justify-between">
+                                                    <CardTitle>Tasks</CardTitle>
+                                                    <Button variant="ghost" size="icon" onClick={toggleCardFlip}>
+                                                        <X className="h-5 w-5" />
+                                                    </Button>
+                                                </CardHeader>
+                                                <CardContent className="flex-grow overflow-y-auto">
+                                                    <TaskList
+                                                        session={session}
+                                                        onAddTask={pomodoro.addTaskToSession}
+                                                        onToggleTask={pomodoro.toggleTaskInSession}
+                                                        onDeleteTask={pomodoro.deleteTaskFromSession}
+                                                    />
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    </motion.div>
+                                    )
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                        
+                        
+                    </div>
+                )}
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 items-start max-w-7xl mx-auto">
                     <div className={cn(
                         "md:col-span-1 flex flex-col items-center",
                         activeTab !== 'timer' && 'hidden md:flex'
                     )}>
-                        {TimerView}
+                        {pomodoro.activeSessions.length === 0 && TimerView}
                     </div>
 
                     <div className={cn(
-                        "md:col-span-1 wide:col-span-1 flex flex-col items-center gap-8 w-full",
+                        "md:col-span-1 flex flex-col items-center gap-8 w-full",
                         activeTab === 'timer' && 'hidden md:flex',
                     )}>
-                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden md:block wide:block')}>
+                        <div className={cn("w-full max-w-md", activeTab !== 'log' && 'hidden md:block')}>
                             {LogView}
                         </div>
-                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden md:block wide:hidden')}>
+                        <div className={cn("w-full max-w-md", activeTab !== 'insights' && 'hidden md:block')}>
                            {InsightsView}
                         </div>
-                    </div>
-
-                    <div className={cn(
-                        "wide:col-span-1 flex flex-col items-center",
-                        "hidden wide:flex",
-                         activeTab !== 'insights' && 'hidden wide:flex'
-                    )}>
-                       <div className="max-w-md w-full">{InsightsView}</div>
                     </div>
                 </div>
             </main>
@@ -585,6 +732,12 @@ function AuthenticatedApp() {
 
             <OnboardingModal isOpen={isFirstTime} onComplete={setOnboardingCompleted} />
 
+            <AddSessionModal 
+                isOpen={isAddSessionModalOpen}
+                onOpenChange={setIsAddSessionModalOpen}
+                onAddSession={pomodoro.addSession}
+                recentProjects={pomodoro.recentProjects}
+            />
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
             <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />

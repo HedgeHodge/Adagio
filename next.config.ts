@@ -1,6 +1,9 @@
 
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
+const isDev = process.env.NODE_ENV === 'development';
+
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
@@ -21,4 +24,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: isDev,
+});
+
+module.exports = isDev ? nextConfig : withPWA(nextConfig);

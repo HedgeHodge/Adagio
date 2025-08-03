@@ -35,30 +35,32 @@ export function TaskList({ session, onAddTask, onToggleTask, onDeleteTask }: Tas
   const completedTasks = tasks.filter(task => task.completed);
 
   return (
-    <div className="pt-4 mt-4 border-t border-border/50">
-      <h4 className="text-sm font-semibold mb-3 text-foreground/80 flex items-center">
-        <ListTodo className="mr-2 h-4 w-4" />
-        Tasks
-      </h4>
-      <form onSubmit={handleAddTask} className="flex items-center space-x-2 mb-4">
-        <Input
-          type="text"
-          placeholder="Add a new task..."
-          value={newTaskText}
-          onChange={(e) => setNewTaskText(e.target.value)}
-          className="flex-grow bg-background h-9"
-        />
-        <Button type="submit" className="h-9 w-9 rounded-lg" aria-label="Add task">
-          <PlusCircle className="h-5 w-5" />
-        </Button>
-      </form>
+    <div className="flex flex-col h-full">
+      <div className="pt-4 border-t border-border/50">
+        <h4 className="text-sm font-semibold mb-3 text-foreground/80 flex items-center">
+          <ListTodo className="mr-2 h-4 w-4" />
+          Tasks
+        </h4>
+        <form onSubmit={handleAddTask} className="flex items-center space-x-2 mb-4">
+          <Input
+            type="text"
+            placeholder="Add a new task..."
+            value={newTaskText}
+            onChange={(e) => setNewTaskText(e.target.value)}
+            className="flex-grow bg-background h-9"
+          />
+          <Button type="submit" className="h-9 w-9 rounded-lg" aria-label="Add task">
+            <PlusCircle className="h-5 w-5" />
+          </Button>
+        </form>
+      </div>
 
       {!hasTasks ? (
-        <div className="text-center py-4">
+        <div className="text-center py-4 flex-grow flex items-center justify-center">
           <p className="text-xs text-muted-foreground">No tasks for this session yet.</p>
         </div>
       ) : (
-        <ScrollArea className="h-[150px] pr-2 -mr-2">
+        <ScrollArea className="flex-grow pr-2 -mr-2">
           <ul className="space-y-0.5">
             <AnimatePresence>
               {incompleteTasks.map(task => (

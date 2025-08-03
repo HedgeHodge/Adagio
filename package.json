@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbo",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
+    "dev:watch": "nodemon --watch src --exec \"npm run dev\"",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
     "start": "next start",
@@ -59,6 +60,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "genkit-cli": "^1.8.0",
+    "nodemon": "^3.1.10",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
