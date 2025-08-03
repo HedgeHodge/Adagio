@@ -70,6 +70,7 @@ import { InsightsStats } from '@/components/pomodoro/InsightsStats';
 import { PeriodSummaryModal } from '@/components/pomodoro/PeriodSummaryModal';
 import { SessionCard } from '@/components/pomodoro/SessionCard';
 import { AddSessionModal } from '@/components/pomodoro/AddSessionModal';
+import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
 
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
