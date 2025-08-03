@@ -41,6 +41,6 @@ const withPWA = withPWAInit({
 // Conditionally apply the PWA wrapper.
 // In development, we export the plain nextConfig.
 // In production, we export the PWA-wrapped config.
-const finalConfig = isDev ? nextConfig : withPWA(nextConfig);
+const finalConfig = process.env.NODE_ENV === 'production' ? withPWA(nextConfig) : nextConfig;
 
 export default finalConfig;
