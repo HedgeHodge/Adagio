@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
 import { TimerControls } from '@/components/pomodoro/TimerControls';
 import { TaskList } from '@/components/pomodoro/TaskList';
@@ -177,6 +178,3 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
         </AnimatePresence>
     );
 }
-
-
-    
