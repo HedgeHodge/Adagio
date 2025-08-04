@@ -61,7 +61,7 @@ export function DevToolsModal({
                 Premium Status
               </Label>
               <p className="text-xs text-muted-foreground">
-                Toggle user's premium subscription status.
+                Toggle user&apos;s premium subscription status.
               </p>
             </div>
             <Switch

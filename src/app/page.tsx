@@ -57,7 +57,8 @@ import {
     Pencil,
     Settings,
     BookText,
-    PlusCircle
+    PlusCircle,
+    X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AccountModal } from '@/components/auth/AccountModal';
@@ -71,21 +72,29 @@ import { PeriodSummaryModal } from '@/components/pomodoro/PeriodSummaryModal';
 import { SessionCard } from '@/components/pomodoro/SessionCard';
 import { AddSessionModal } from '@/components/pomodoro/AddSessionModal';
 import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
+import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
+import { TimerControls } from '@/components/pomodoro/TimerControls';
+import { TaskList } from '@/components/pomodoro/TaskList';
 
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
-        <Button
-            variant="secondary"
-            className={cn(
-                "w-20 h-20 bg-background/60 dark:bg-background/30 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-200",
-                isActive ? 'bg-white dark:bg-secondary scale-110 -translate-y-2' : 'hover:bg-background/80 dark:hover:bg-background/50',
-                className
-            )}
-            {...props}
+        <motion.div
+            whileTap={{ scale: 0.85 }}
+            transition={{ type: 'spring', stiffness: 700, damping: 15 }}
         >
-            {icon}
-        </Button>
+            <Button
+                variant="secondary"
+                className={cn(
+                    "w-20 h-20 bg-background/60 dark:bg-background/30 rounded-3xl shadow-lg flex items-center justify-center transition-all duration-200",
+                    isActive ? 'bg-white dark:bg-secondary scale-110 -translate-y-2' : 'hover:bg-background/80 dark:hover:bg-background/50',
+                    className
+                )}
+                {...props}
+            >
+                {icon}
+            </Button>
+        </motion.div>
         <span className={cn(
             "font-semibold text-sm transition-opacity",
             isActive ? 'text-primary' : 'text-muted-foreground'
@@ -142,10 +151,9 @@ function AuthenticatedApp() {
     const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
 
     const [isSummarizing, setIsSummarizing] = useState(false);
-    const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
-    const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
-    
+    const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);    
     const [[activeSessionIndex, direction], setPage] = useState([0, 0]);
+    const [isFlippedOnDragStart, setIsFlippedOnDragStart] = useState(false);
 
     const [projectToManage, setProjectToManage] = useState<string | null>(null);
     const [isManageProjectModalOpen, setIsManageProjectModalOpen] = useState(false);
@@ -366,7 +374,7 @@ function AuthenticatedApp() {
                         {pomodoro.activeSessions.map((_, i) => (
                             <button
                                 key={i}
-                                onClick={() => setActiveSessionIndex(i)}
+                                onClick={() => setPage([i, i > activeSessionIndex ? 1 : -1])}
                                 className={cn(
                                     "h-2 rounded-full transition-all duration-300",
                                     i === activeSessionIndex ? "w-4 bg-primary" : "w-2 bg-muted hover:bg-muted-foreground"
@@ -572,12 +580,22 @@ function AuthenticatedApp() {
                                         drag
                                         dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                                         dragDirectionLock
+                                        onDragStart={() => {
+                                            const isFlipped = y.get() > 50;
+                                            setIsFlippedOnDragStart(isFlipped);
+                                        }}
                                         onDirectionLock={axis => setDragDirection(axis)}
                                         onDrag={(e, { offset }) => {
                                             if (dragDirection === 'y') {
-                                                if (offset.y < 0) return;
-                                                const newY = (offset.y / 200) * 100;
-                                                y.set(Math.min(newY, 100));
+                                                if (isFlippedOnDragStart) {
+                                                    if (offset.y < 0) return;
+                                                    const newY = 100 - (offset.y / 200) * 100;
+                                                    y.set(Math.max(newY, 0));
+                                                } else {
+                                                    if (offset.y < 0) return;
+                                                    const newY = (offset.y / 200) * 100;
+                                                    y.set(Math.min(newY, 100));
+                                                }
                                             }
                                         }}
                                         onDragEnd={(e, { offset, velocity }) => {
@@ -735,8 +753,7 @@ function AuthenticatedApp() {
             <AddSessionModal 
                 isOpen={isAddSessionModalOpen}
                 onOpenChange={setIsAddSessionModalOpen}
-                onAddSession={pomodoro.addSession}
-                recentProjects={pomodoro.recentProjects}
+                pomodoro={pomodoro}
             />
             <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
             {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
@@ -778,7 +795,7 @@ function AuthenticatedApp() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Manage Project</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Edit or delete "<strong>{projectToManage}</strong>" from your recent projects.
+                            Edit or delete <strong>{projectToManage}</strong> from your recent projects.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

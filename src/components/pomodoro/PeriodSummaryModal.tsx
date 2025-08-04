@@ -32,12 +32,12 @@ export function PeriodSummaryModal({ isOpen, onClose, summary, entries, isPremiu
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-xl bg-card sm:rounded-3xl">
         <DialogHeader>
-          <DialogTitle className="text-foreground flex items-center">
+                    <DialogTitle className="text-foreground flex items-center">
             <Sparkles className="h-5 w-5 mr-2 text-primary" />
             Your Work Summary
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Here's an AI-generated summary of your work for the selected period.
+            Here&apos;s an AI-generated summary of your work for the selected period.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -50,7 +50,7 @@ export function PeriodSummaryModal({ isOpen, onClose, summary, entries, isPremiu
               <Sparkles className="h-4 w-4" />
               <AlertTitle>Upgrade for Better Summaries!</AlertTitle>
               <AlertDescription>
-                You're using a sample summary. Upgrade to Premium for personalized summaries based on your actual work.
+                You&apos;re using a sample summary. Upgrade to Premium for personalized summaries based on your actual work.
                 <Button variant="link" size="sm" className="p-0 h-auto ml-1 text-primary" onClick={onUpgrade}>Upgrade Now</Button>
               </AlertDescription>
             </Alert>

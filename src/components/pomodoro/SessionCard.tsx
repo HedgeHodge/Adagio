@@ -128,19 +128,19 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                                 <CardContent className="flex flex-col items-center justify-center p-6 text-center flex-grow">
                                     <h3 className="text-xl font-bold tracking-tight text-foreground truncate max-w-full px-4">{session.project}</h3>
                                     <TimerDisplay
-                                        formattedTime={formatTime(session.currentTime)}
-                                        intervalType={session.currentInterval}
-                                        isRunning={session.isRunning}
+                                        remainingTime={session.currentTime}
+                                        mode={session.currentInterval}
                                     />
                                     <TimerControls
-                                        sessionId={session.id}
-                                        isRunning={session.isRunning}
-                                        currentInterval={session.currentInterval}
-                                        onStart={() => startTimer(session.id)}
-                                        onPause={() => pauseTimer(session.id)}
-                                        onEndCurrentWorkSession={() => endCurrentWorkSession(session.id)}
+                                        session={session}
+                                        onStartPause={() => session.isRunning ? pauseTimer(session.id) : startTimer(session.id)}
+                                        onReset={() => pomodoroHooks.resetTimer(session.id)}
+                                        onSkip={() => pomodoroHooks.skipInterval(session.id)}
+                                        isTimerRunning={session.isRunning}
+                                        mode={session.currentInterval}
                                         onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
-                                        lastWorkSessionStartTime={session.lastWorkSessionStartTime}
+                                        onToggleCardFlip={toggleCardFlip}
+                                        onOpenSettingsModal={pomodoroHooks.openSettingsModal}
                                     />
                                     <TaskList 
                                         session={session}

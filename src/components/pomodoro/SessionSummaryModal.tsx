@@ -37,10 +37,10 @@ export function SessionSummaryModal({ isOpen, session, onClose, onSave, isSummar
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl">
-         <DialogHeader>
+                  <DialogHeader>
           <DialogTitle className="text-foreground">Session Complete!</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Log your work for "<strong>{session.project}</strong>".
+            Log your work for &quot;<strong>{session.project}</strong>&quot;.
           </DialogDescription>
         </DialogHeader>
         

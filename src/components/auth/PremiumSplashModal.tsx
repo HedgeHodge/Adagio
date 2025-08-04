@@ -88,7 +88,7 @@ export function PremiumSplashModal({ isOpen, onOpenChange }: PremiumSplashModalP
                 Welcome to Premium!
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-lg mt-2">
-                You've unlocked all features. Thanks for your support!
+                You&apos;ve unlocked all features. Thanks for your support!
             </DialogDescription>
             </DialogHeader>
             

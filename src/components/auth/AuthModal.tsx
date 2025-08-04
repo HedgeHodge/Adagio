@@ -167,7 +167,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Firebase Configuration Error</AlertTitle>
               <AlertDescription>
-                Your app is missing essential Firebase environment variables. This is likely the cause of the 'unauthorized domain' error.
+                Your app is missing essential Firebase environment variables. This is likely the cause of the &apos;unauthorized domain&apos; error.
                 <br /><br />
                 Please go to your project settings on your deployment provider (e.g., Vercel) and ensure that all `NEXT_PUBLIC_FIREBASE_*` variables from your `.env` file are set correctly.
               </AlertDescription>
@@ -296,7 +296,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
             </Button>
 
             <DialogFooter className="mt-2 pt-4 text-center text-xs text-muted-foreground">
-              By continuing, you agree to Adagio's Terms of Service and Privacy Policy.
+              By continuing, you agree to Adagio&apos;s Terms of Service and Privacy Policy.
             </DialogFooter>
           </>
         )}

@@ -400,7 +400,7 @@ export function usePomodoro() {
       sessionId: session.id,
     });
     
-    updateFirestore({ pomodoroLog: arrayUnion(newLogEntry) });
+    updateFirestore({ pomodoroLog: arrayUnion(newLogEntry) as any });
     updateRecentProjects(newLogEntry.project);
     
     toast({
@@ -499,14 +499,14 @@ export function usePomodoro() {
   }, [settings, updateFirestore]);
 
   const undoDeleteLogEntry = useCallback(async (entry: PomodoroLogEntry) => {
-    await updateFirestore({ pomodoroLog: arrayUnion(entry) });
+    await updateFirestore({ pomodoroLog: arrayUnion(entry) as any });
   }, [updateFirestore]);
 
   const deleteLogEntry = useCallback((id: string) => {
     const entryToDelete = pomodoroLog.find(entry => entry.id === id);
     if (!entryToDelete) return;
   
-    updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) });
+    updateFirestore({ pomodoroLog: arrayRemove(entryToDelete) as any });
   
     toast({
       title: "Entry deleted",
@@ -524,7 +524,7 @@ export function usePomodoro() {
     const entryToUpdate = pomodoroLog.find(e => e.id === cleanedUpdatedEntry.id);
     if (entryToUpdate) {
         const newLog = pomodoroLog.map(entry => entry.id === cleanedUpdatedEntry.id ? cleanedUpdatedEntry : entry);
-        updateFirestore({ pomodoroLog: newLog.map(cleanLogEntry) });
+        updateFirestore({ pomodoroLog: newLog.map(cleanLogEntry) as any });
     }
 
     if (cleanedUpdatedEntry.project) updateRecentProjects(cleanedUpdatedEntry.project);
@@ -536,7 +536,7 @@ export function usePomodoro() {
     const newEntry: PomodoroLogEntry = { ...newEntryData, id: `${Date.now()}-manual`, type: 'work' };
     const cleanedNewEntry = cleanLogEntry(newEntry);
     
-    updateFirestore({ pomodoroLog: arrayUnion(cleanedNewEntry) });
+    updateFirestore({ pomodoroLog: arrayUnion(cleanedNewEntry) as any });
 
     if (cleanedNewEntry.project) updateRecentProjects(cleanedNewEntry.project);
     toast({ title: "Manual entry added!" });
@@ -624,12 +624,12 @@ export function usePomodoro() {
     toast({ title: "Start time updated!" });
   }, [closeEditActiveSessionModal, toast, activeSessions, updateFirestore]);
 
-  const updateSessionTasks = (sessionId: string, newTasks: Task[]) => {
+  const updateSessionTasks = useCallback((sessionId: string, newTasks: Task[]) => {
       const newSessions = activeSessions.map(session =>
         session.id === sessionId ? { ...session, tasks: newTasks } : session
       );
       updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  };
+  }, [activeSessions, updateFirestore]);
 
   const addTaskToSession = useCallback((sessionId: string, text: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
@@ -637,7 +637,7 @@ export function usePomodoro() {
     const newTask = cleanTask({ id: Date.now().toString(), text, completed: false });
     const newTasks = [newTask, ...session.tasks];
     updateSessionTasks(sessionId, newTasks);
-  }, [activeSessions]);
+  }, [activeSessions, updateSessionTasks]);
   
   const toggleTaskInSession = useCallback((sessionId: string, taskId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
@@ -646,14 +646,14 @@ export function usePomodoro() {
         task.id === taskId ? { ...task, completed: !task.completed } : task
     );
     updateSessionTasks(sessionId, newTasks);
-  }, [activeSessions]);
+  }, [activeSessions, updateSessionTasks]);
   
   const deleteTaskFromSession = useCallback((sessionId: string, taskId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
     const newTasks = session.tasks.filter(task => task.id !== taskId);
     updateSessionTasks(sessionId, newTasks);
-  }, [activeSessions]);
+  }, [activeSessions, updateSessionTasks]);
 
   const getLogEntriesForPeriod = useCallback((log: PomodoroLogEntry[], filter: TimeFilter, range?: DateRange): PomodoroLogEntry[] => {
     const now = new Date();

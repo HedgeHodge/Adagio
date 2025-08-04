@@ -3,7 +3,7 @@
     "rules": "firestore.rules"
   },
   "hosting": {
-    "public": "public",
+    "source": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -12,9 +12,12 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "function": "nextServer"
       }
     ]
+  },
+  "functions": {
+    "source": ".",
+    "runtime": "nodejs18"
   }
 }
-  

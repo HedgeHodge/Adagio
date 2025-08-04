@@ -30,7 +30,7 @@ export function ProjectEntriesModal({ isOpen, onClose, projectName, entries }: P
       <DialogContent className="sm:max-w-xl bg-card sm:rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">
-            Entries for "{projectName}"
+            Entries for &quot;{projectName}&quot;
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Showing all logged entries for this project in the selected time range.
