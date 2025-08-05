@@ -290,6 +290,8 @@ function AuthenticatedApp() {
         const newIndex = activeSessionIndex + newDirection;
         if (newIndex >= 0 && newIndex < timer.activeSessions.length) {
             setPage([newIndex, newDirection]);
+        } else if (timer.activeSessions.length === 1) {
+            setIsAddSessionModalOpen(true);
         }
     };
 

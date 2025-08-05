@@ -46,52 +46,73 @@ const variants = {
     }),
   };
 
+  const cardShakeVariants = {
+    shaking: {
+        x: [0, -10, 10, -10, 10, -5, 5, 0],
+        transition: { 
+            duration: 0.5, 
+            repeat: Infinity,
+        },
+    },
+    normal: {
+        x: 0,
+    }
+  }
+
 export function SessionCard({ session, index, activeSessionIndex, paginate, swipeConfidenceThreshold, swipePower, pomodoroHooks }: SessionCardProps) {
     const { 
         startTimer, 
         pauseTimer, 
-        endCurrentWorkSession, 
         removeSession,
         openEditActiveSessionModal, 
-        formatTime,
         addTaskToSession,
         toggleTaskInSession,
         deleteTaskFromSession,
     } = pomodoroHooks;
     
     const [isFlipped, setIsFlipped] = useState(false);
+    const [deleteIntent, setDeleteIntent] = useState(false);
     
     const direction = index > activeSessionIndex ? 1 : -1;
 
-    const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
-        const swipe = swipePower(offset.x, velocity.x);
-
-        if (swipe < -swipeConfidenceThreshold) {
-            paginate(1);
-        } else if (swipe > swipeConfidenceThreshold) {
-            paginate(-1);
-        }
-    };
-    
     const toggleCardFlip = () => {
         setIsFlipped(!isFlipped);
     };
 
-    const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        // Vertical swipe detection
-        if (Math.abs(info.offset.y) > Math.abs(info.offset.x)) {
-             if (info.velocity.y > 800) { // Swipe down
+    const handleDrag = (e: MouseEvent | TouchEvent | PointerEvent, { offset }: PanInfo) => {
+        if (offset.y < -50) {
+            setDeleteIntent(true);
+        } else {
+            setDeleteIntent(false);
+        }
+    };
+
+    const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
+        const swipeX = swipePower(offset.x, velocity.x);
+
+        if (deleteIntent) {
+            removeSession(session.id);
+            setDeleteIntent(false);
+            return;
+        }
+
+        if (Math.abs(offset.y) > Math.abs(offset.x) * 1.5) {
+            if (offset.y > 25 && velocity.y > 150) { 
                 toggleCardFlip();
-            } else if (info.velocity.y < -800) { // Swipe up
-                removeSession(session.id);
+                return;
             }
         }
-    }
+
+        if (swipeX < -swipeConfidenceThreshold) {
+            paginate(1);
+        } else if (swipeX > swipeConfidenceThreshold) {
+            paginate(-1);
+        }
+    };
 
     if (index < activeSessionIndex -1 || index > activeSessionIndex + 1) {
         return null;
     }
-
 
     return (
         <AnimatePresence initial={false} custom={direction}>
@@ -108,11 +129,12 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                         x: { type: "spring", stiffness: 300, damping: 30 },
                         opacity: { duration: 0.2 }
                     }}
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
+                    drag
+                    dragDirectionLock
+                    dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                     dragElastic={0.2}
+                    onDrag={handleDrag}
                     onDragEnd={handleDragEnd}
-                    onPan={handlePan}
                     style={{ perspective: 1000 }}
                 >
                     <motion.div
@@ -122,36 +144,46 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                         transition={{ duration: 0.6 }}
                     >
                         {/* Front of Card */}
-                        {/* Front of Card */}
-                        <div className="absolute w-full h-full" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                            <Card className="relative w-full h-full flex flex-col justify-center items-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6">
-                                <CardHeader className="absolute top-0 left-0 w-full flex flex-row items-center justify-between p-6">
-                                    <h3 className="text-xl font-bold tracking-tight text-foreground truncate max-w-full">{session.project}</h3>
-                                </CardHeader>
-                                <CardContent className="flex flex-col items-center justify-center text-center">
-                                    <TimerDisplay
-                                        remainingTime={session.currentTime}
-                                        mode={session.currentInterval}
-                                    />
-                                    <TimerControls
-                                        session={session}
-                                        onStartPause={() => session.isRunning ? pauseTimer(session.id) : startTimer(session.id)}
-                                        onReset={() => pomodoroHooks.resetTimer(session.id)}
-                                        onSkip={() => pomodoroHooks.skipInterval(session.id)}
-                                        isTimerRunning={session.isRunning}
-                                        mode={session.currentInterval}
-                                        onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
-                                        onToggleCardFlip={toggleCardFlip}
-                                        onOpenSettingsModal={pomodoroHooks.openSettingsModal}
-                                    />
-                                </CardContent>
-                                <div className="absolute bottom-2 right-2">
-                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={toggleCardFlip}>
-                                        ...
-                                    </Button>
-                                </div>
+                        <motion.div 
+                            className="absolute w-full h-full" 
+                            style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                            variants={cardShakeVariants}
+                            animate={deleteIntent ? "shaking" : "normal"}
+                        >
+                            <Card className={cn("relative w-full h-full flex flex-col justify-center items-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6 transition-colors duration-300", { "bg-red-500/30": deleteIntent })}>
+                                {deleteIntent && (
+                                    <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
+                                        <Trash2 className="w-16 h-16 text-red-500/80" />
+                                    </motion.div>
+                                )}
+                                <motion.div 
+                                    className="w-full h-full flex flex-col"
+                                    animate={{ opacity: deleteIntent ? 0 : 1 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <CardHeader className="absolute top-0 left-0 w-full flex flex-row items-center justify-between p-6">
+                                        <h3 className="text-xl font-bold tracking-tight text-foreground truncate max-w-full">{session.project}</h3>
+                                    </CardHeader>
+                                    <CardContent className="flex flex-col items-center justify-center text-center h-full">
+                                        <TimerDisplay
+                                            remainingTime={session.currentTime}
+                                            mode={session.currentInterval}
+                                        />
+                                        <TimerControls
+                                            session={session}
+                                            onStartPause={() => session.isRunning ? pauseTimer(session.id) : startTimer(session.id)}
+                                            onReset={() => pomodoroHooks.resetTimer(session.id)}
+                                            onSkip={() => pomodoroHooks.skipInterval(session.id)}
+                                            isTimerRunning={session.isRunning}
+                                            mode={session.currentInterval}
+                                            onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
+                                            onToggleCardFlip={toggleCardFlip}
+                                            onOpenSettingsModal={pomodoroHooks.openSettingsModal}
+                                        />
+                                    </CardContent>
+                                </motion.div>
                             </Card>
-                        </div>
+                        </motion.div>
 
                         {/* Back of Card */}
                         <div className="absolute w-full h-full" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>

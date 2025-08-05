@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, X } from 'lucide-react';
 import { useTimer } from '@/hooks/useTimer';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AddSessionModalProps {
     isOpen: boolean;
@@ -59,60 +60,62 @@ export function AddSessionModal({ isOpen, onOpenChange, pomodoro }: AddSessionMo
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md bg-card rounded-3xl">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-md bg-card rounded-3xl max-h-[90vh] flex flex-col data-[state=open]:top-1/4 data-[state=open]:sm:top-1/2">
+                <DialogHeader className="p-6 pb-0">
                     <DialogTitle className="text-foreground text-center">New Session</DialogTitle>
                     <DialogDescription className="text-muted-foreground text-center">
                         What are you working on?
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-4 space-y-4">
-                    <form onSubmit={handleAddSession} className="space-y-4">
-                        <div className="flex gap-2">
-                            <Input
-                                id="modal-project-name"
-                                placeholder="e.g., Q3 Report"
-                                value={pomodoro.inputProjectName}
-                                onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
-                                className="h-11 text-base bg-background/70 flex-grow"
-                                disabled={pomodoro.isDataLoading}
-                                autoFocus
-                            />
-                            <Button type="submit" className="h-11 w-11 rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
-                                <Plus className="h-5 w-5" />
-                                <span className="sr-only">Add</span>
-                            </Button>
-                        </div>
-                    </form>
-
-                    {pomodoro.recentProjects.length > 0 && (
-                        <div>
-                             <h4 className="text-sm font-medium text-muted-foreground mb-2">Or pick a recent project:</h4>
-                            <div className="flex flex-wrap items-center gap-2">
-                                {pomodoro.recentProjects.map((proj: string, i: number) => (
-                                    <motion.div
-                                        key={proj}
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.05 }}
-                                    >
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="h-8 px-3 shadow-sm rounded-lg"
-                                            onClick={() => handleRecentProjectClick(proj)}
-                                        >
-                                            {proj}
-                                        </Button>
-                                    </motion.div>
-                                ))}
+                <ScrollArea className="flex-grow">
+                    <div className="p-6 space-y-4">
+                        <form onSubmit={handleAddSession} className="space-y-4">
+                            <div className="flex gap-2">
+                                <Input
+                                    id="modal-project-name"
+                                    placeholder="e.g., Q3 Report"
+                                    value={pomodoro.inputProjectName}
+                                    onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
+                                    className="h-11 text-base bg-background/70 flex-grow"
+                                    disabled={pomodoro.isDataLoading}
+                                    autoFocus
+                                />
+                                <Button type="submit" className="h-11 w-11 rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
+                                    <Plus className="h-5 w-5" />
+                                    <span className="sr-only">Add</span>
+                                </Button>
                             </div>
-                        </div>
-                    )}
-                </div>
-                 <DialogFooter>
+                        </form>
+
+                        {pomodoro.recentProjects.length > 0 && (
+                            <div className="!mt-6">
+                                <h4 className="text-sm font-medium text-muted-foreground mb-2">Or pick a recent project:</h4>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {pomodoro.recentProjects.map((proj: string, i: number) => (
+                                        <motion.div
+                                            key={proj}
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.05 }}
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="h-8 px-3 shadow-sm rounded-lg"
+                                                onClick={() => handleRecentProjectClick(proj)}
+                                            >
+                                                {proj}
+                                            </Button>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+                 <DialogFooter className="mt-auto p-6 pt-0">
                     <DialogClose asChild>
                         <Button type="button" variant="ghost" className="w-full">Cancel</Button>
                     </DialogClose>
