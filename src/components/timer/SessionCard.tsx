@@ -10,7 +10,7 @@ import { TimerControls } from '@/components/timer/TimerControls';
 import { TaskList } from '@/components/timer/TaskList';
 import { ActivePomodoroSession } from '@/types/pomodoro';
 import { cn } from '@/lib/utils';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RotateCw, Plus } from 'lucide-react';
 
 interface SessionCardProps {
     session: ActivePomodoroSession;
@@ -68,10 +68,13 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
         addTaskToSession,
         toggleTaskInSession,
         deleteTaskFromSession,
+        addSession,
     } = pomodoroHooks;
     
     const [isFlipped, setIsFlipped] = useState(false);
     const [deleteIntent, setDeleteIntent] = useState(false);
+    const [flipIntent, setFlipIntent] = useState(false);
+    const [newSessionIntent, setNewSessionIntent] = useState(false);
     
     const direction = index > activeSessionIndex ? 1 : -1;
 
@@ -80,10 +83,22 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
     };
 
     const handleDrag = (e: MouseEvent | TouchEvent | PointerEvent, { offset }: PanInfo) => {
-        if (offset.y < -50) {
+        if (offset.y < -100) {
             setDeleteIntent(true);
         } else {
             setDeleteIntent(false);
+        }
+
+        if (Math.abs(offset.y) > Math.abs(offset.x) * 1.5 && offset.y > 50) {
+            setFlipIntent(true);
+        } else {
+            setFlipIntent(false);
+        }
+
+        if (pomodoroHooks.activeSessions.length === 1 && Math.abs(offset.x) > 100 && Math.abs(offset.x) > Math.abs(offset.y) * 1.5) {
+            setNewSessionIntent(true);
+        } else {
+            setNewSessionIntent(false);
         }
     };
 
@@ -96,11 +111,16 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
             return;
         }
 
-        if (Math.abs(offset.y) > Math.abs(offset.x) * 1.5) {
-            if (offset.y > 25 && velocity.y > 150) { 
-                toggleCardFlip();
-                return;
-            }
+        if (flipIntent) {
+            toggleCardFlip();
+            setFlipIntent(false);
+            return;
+        }
+
+        if (newSessionIntent) {
+            addSession("New Session");
+            setNewSessionIntent(false);
+            return;
         }
 
         if (swipeX < -swipeConfidenceThreshold) {
@@ -113,6 +133,8 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
     if (index < activeSessionIndex -1 || index > activeSessionIndex + 1) {
         return null;
     }
+
+    const isShaking = deleteIntent || flipIntent || newSessionIntent;
 
     return (
         <AnimatePresence initial={false} custom={direction}>
@@ -148,17 +170,27 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                             className="absolute w-full h-full" 
                             style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
                             variants={cardShakeVariants}
-                            animate={deleteIntent ? "shaking" : "normal"}
+                            animate={isShaking ? "shaking" : "normal"}
                         >
-                            <Card className={cn("relative w-full h-full flex flex-col justify-center items-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6 transition-colors duration-300", { "bg-red-500/30": deleteIntent })}>
+                            <Card className={cn("relative w-full h-full flex flex-col justify-center items-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6 transition-colors duration-300", { "bg-red-500/30": deleteIntent, "bg-blue-500/30": flipIntent, "bg-green-500/30": newSessionIntent })}>
                                 {deleteIntent && (
                                     <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
                                         <Trash2 className="w-16 h-16 text-red-500/80" />
                                     </motion.div>
                                 )}
+                                {flipIntent && (
+                                    <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
+                                        <RotateCw className="w-16 h-16 text-blue-500/80" />
+                                    </motion.div>
+                                )}
+                                {newSessionIntent && (
+                                    <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
+                                        <Plus className="w-16 h-16 text-green-500/80" />
+                                    </motion.div>
+                                )}
                                 <motion.div 
                                     className="w-full h-full flex flex-col"
-                                    animate={{ opacity: deleteIntent ? 0 : 1 }}
+                                    animate={{ opacity: deleteIntent || flipIntent || newSessionIntent ? 0 : 1 }}
                                     transition={{ duration: 0.2 }}
                                 >
                                     <CardHeader className="absolute top-0 left-0 w-full flex flex-row items-center justify-between p-6">
@@ -187,20 +219,47 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
 
                         {/* Back of Card */}
                         <div className="absolute w-full h-full" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                             <Card className="w-full h-full flex flex-col items-center justify-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6">
-                                <h3 className="text-xl font-bold text-foreground mb-4">Tasks</h3>
-                               <TaskList 
-                                    session={session}
-                                    onAddTask={addTaskToSession}
-                                    onToggleTask={toggleTaskInSession}
-                                    onDeleteTask={deleteTaskFromSession}
-                                />
-                                <div className="absolute bottom-2 right-2">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={toggleCardFlip}>
-                                        &times;
-                                    </Button>
-                                </div>
-                             </Card>
+                            <motion.div
+                                className="w-full h-full"
+                                variants={cardShakeVariants}
+                                animate={isShaking ? "shaking" : "normal"}
+                            >
+                                 <Card className={cn("relative w-full h-full flex flex-col justify-center items-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6 transition-colors duration-300", { "bg-red-500/30": deleteIntent, "bg-blue-500/30": flipIntent, "bg-green-500/30": newSessionIntent })}>
+                                    {deleteIntent && (
+                                        <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
+                                            <Trash2 className="w-16 h-16 text-red-500/80" />
+                                        </motion.div>
+                                    )}
+                                    {flipIntent && (
+                                        <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
+                                            <RotateCw className="w-16 h-16 text-blue-500/80" />
+                                        </motion.div>
+                                    )}
+                                    {newSessionIntent && (
+                                        <motion.div className="absolute inset-0 flex items-center justify-center" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}>
+                                            <Plus className="w-16 h-16 text-green-500/80" />
+                                        </motion.div>
+                                    )}
+                                    <motion.div 
+                                        className="w-full h-full flex flex-col items-center justify-center"
+                                        animate={{ opacity: deleteIntent || flipIntent || newSessionIntent ? 0 : 1 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <h3 className="text-xl font-bold text-foreground mb-4">Tasks</h3>
+                                       <TaskList 
+                                            session={session}
+                                            onAddTask={addTaskToSession}
+                                            onToggleTask={toggleTaskInSession}
+                                            onDeleteTask={deleteTaskFromSession}
+                                        />
+                                        <div className="absolute bottom-2 right-2">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={toggleCardFlip}>
+                                                &times;
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                 </Card>
+                            </motion.div>
                         </div>
                     </motion.div>
                 </motion.div>

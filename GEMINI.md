@@ -8,6 +8,7 @@ This is a Next.js application called "Adagio", a Pomodoro timer designed to help
 ## Building and Running
 
 -   **Development:** `npm run dev`
+-   **Development (watch):** `npm run dev:watch` (running in a separate terminal)
 -   **Genkit Development:** `npm run genkit:dev`
 -   **Build:** `npm run build`
 -   **Start:** `npm run start`
