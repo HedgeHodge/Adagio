@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { PomodoroLogEntry } from '@/types/pomodoro';
+import type { LogEntry as PomodoroLogEntry } from '@/types/pomodoro';
 
 
 const PeriodSummaryInputSchema = z.object({

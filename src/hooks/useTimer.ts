@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { TimerSettings, LogEntry, IntervalType, TimeFilter, ChartDataPoint, ActiveSession, UserData, Task } from '@/types/pomodoro';
+import type { PomodoroSettings as TimerSettings, LogEntry, IntervalType, TimeFilter, ChartDataPoint, ActivePomodoroSession as ActiveSession, UserPomodoroData as UserData, Task } from '@/types/pomodoro';
 import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/motivational-quote-flow';
@@ -130,7 +130,7 @@ export function useTimer() {
 
   const filterLogForFreeTier = useCallback((log: LogEntry[]): LogEntry[] => {
     const cutoffDateStart = startOfDay(subDays(new Date(), FREE_USER_LOG_HISTORY_DAYS -1));
-    return log.filter(entry => {
+    return log.filter((entry: LogEntry) => {
       try {
         const entryEndTime = parseISO(entry.endTime);
         return isAfter(entryEndTime, cutoffDateStart) || isToday(entryEndTime);
@@ -642,7 +642,7 @@ export function useTimer() {
   const toggleTaskInSession = useCallback((sessionId: string, taskId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
-    const newTasks = session.tasks.map(task =>
+    const newTasks = session.tasks.map((task: Task) =>
         task.id === taskId ? { ...task, completed: !task.completed } : task
     );
     updateSessionTasks(sessionId, newTasks);
@@ -651,7 +651,7 @@ export function useTimer() {
   const deleteTaskFromSession = useCallback((sessionId: string, taskId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
-    const newTasks = session.tasks.filter(task => task.id !== taskId);
+    const newTasks = session.tasks.filter((task: Task) => task.id !== taskId);
     updateSessionTasks(sessionId, newTasks);
   }, [activeSessions, updateSessionTasks]);
 

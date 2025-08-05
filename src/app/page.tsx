@@ -541,7 +541,7 @@ function AuthenticatedApp() {
                                             <span className="text-sm font-medium text-primary">Premium Member</span>
                                         </DropdownMenuItem>
                                     )}
-                                    <DropdownMenuItem onClick={pomodoro.openSettingsModal} className="cursor-pointer">
+                                    <DropdownMenuItem onClick={timer.openSettingsModal} className="cursor-pointer">
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Timer Settings</span>
                                     </DropdownMenuItem>
@@ -626,7 +626,7 @@ function AuthenticatedApp() {
             <AddSessionModal 
                 isOpen={isAddSessionModalOpen}
                 onOpenChange={setIsAddSessionModalOpen}
-                pomodoro={pomodoro}
+                pomodoro={timer}
             />
 
             {currentUser && <AccountModal isOpen={isAccountModalOpen} onOpenChange={setIsAccountModalOpen} />}
@@ -634,10 +634,10 @@ function AuthenticatedApp() {
             {currentUser && <DevToolsModal
                 isOpen={isDevToolsModalOpen}
                 onOpenChange={setIsDevToolsModalOpen}
-                onPopulateData={pomodoro.populateTestData}
+                onPopulateData={timer.populateTestData}
                 onTogglePremium={togglePremiumStatus}
                 onShowOnboarding={showOnboarding}
-                onWipeAllData={() => pomodoro.setIsWipeConfirmOpen(true)}
+                onWipeAllData={() => timer.setIsWipeConfirmOpen(true)}
                 isPremium={isPremium}
              />}
 
@@ -646,27 +646,27 @@ function AuthenticatedApp() {
             <AddSessionModal 
                 isOpen={isAddSessionModalOpen}
                 onOpenChange={setIsAddSessionModalOpen}
-                pomodoro={pomodoro}
+                pomodoro={timer}
             />
-            <SettingsModal isOpen={pomodoro.isSettingsModalOpen} onClose={pomodoro.closeSettingsModal} settings={pomodoro.settings} onSave={pomodoro.updateSettings} />
-            {pomodoro.entryToEdit && <EditEntryModal isOpen={pomodoro.isEditModalOpen} onClose={pomodoro.closeEditModal} entry={pomodoro.entryToEdit} onSave={pomodoro.updateLogEntry} />}
-            <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={pomodoro.addManualLogEntry} />
-            {pomodoro.sessionToSummarize && <SessionSummaryModal isOpen={!!pomodoro.sessionToSummarize} session={pomodoro.sessionToSummarize} onClose={pomodoro.closeSummaryModal} onSave={handleSummarizeAndSave} isSummarizing={isSummarizing} isPremium={isPremium} />}
-            {pomodoro.activeSessionToEdit && <EditActiveSessionModal isOpen={pomodoro.isEditActiveSessionModalOpen} onClose={pomodoro.closeEditActiveSessionModal} session={pomodoro.activeSessionToEdit} onSave={pomodoro.updateActiveSessionStartTime} />}
-            {pomodoro.selectedChartProject && <ProjectEntriesModal isOpen={pomodoro.isEntriesModalOpen} onClose={pomodoro.closeEntriesModal} projectName={pomodoro.selectedChartProject} entries={pomodoro.entriesForModal} />}
+            <SettingsModal isOpen={timer.isSettingsModalOpen} onClose={timer.closeSettingsModal} settings={timer.settings} onSave={timer.updateSettings} />
+            {timer.entryToEdit && <EditEntryModal isOpen={timer.isEditModalOpen} onClose={timer.closeEditModal} entry={timer.entryToEdit} onSave={timer.updateLogEntry} />}
+            <AddEntryModal isOpen={isAddEntryModalOpen} onClose={() => setIsAddEntryModalOpen(false)} onSave={timer.addManualLogEntry} />
+            {timer.sessionToSummarize && <SessionSummaryModal isOpen={!!timer.sessionToSummarize} session={timer.sessionToSummarize} onClose={timer.closeSummaryModal} onSave={handleSummarizeAndSave} isSummarizing={isSummarizing} isPremium={isPremium} />}
+            {timer.activeSessionToEdit && <EditActiveSessionModal isOpen={timer.isEditActiveSessionModalOpen} onClose={timer.closeEditActiveSessionModal} session={timer.activeSessionToEdit} onSave={timer.updateActiveSessionStartTime} />}
+            {timer.selectedChartProject && <ProjectEntriesModal isOpen={timer.isEntriesModalOpen} onClose={timer.closeEntriesModal} projectName={timer.selectedChartProject} entries={timer.entriesForModal} />}
             
-             {pomodoro.periodSummary && (
+             {timer.periodSummary && (
                 <PeriodSummaryModal 
-                    isOpen={pomodoro.isPeriodSummaryModalOpen} 
-                    onClose={pomodoro.closePeriodSummaryModal}
-                    summary={pomodoro.periodSummary}
-                    entries={pomodoro.filteredLogForPeriod}
+                    isOpen={timer.isPeriodSummaryModalOpen} 
+                    onClose={timer.closePeriodSummaryModal}
+                    summary={timer.periodSummary}
+                    entries={timer.filteredLogForPeriod}
                     isPremium={isPremium}
                     onUpgrade={upgradeUserToPremium}
                 />
             )}
 
-            <AlertDialog open={pomodoro.isWipeConfirmOpen} onOpenChange={pomodoro.setIsWipeConfirmOpen}>
+            <AlertDialog open={timer.isWipeConfirmOpen} onOpenChange={timer.setIsWipeConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -676,7 +676,7 @@ function AuthenticatedApp() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={pomodoro.wipeAllData} className={buttonVariants({ variant: "destructive" })}>
+                    <AlertDialogAction onClick={timer.wipeAllData} className={buttonVariants({ variant: "destructive" })}>
                         Yes, wipe everything
                     </AlertDialogAction>
                     </AlertDialogFooter>
@@ -703,7 +703,7 @@ function AuthenticatedApp() {
                 </AlertDialogContent>
             </AlertDialog>
             
-            <AlertDialog open={pomodoro.isShortSessionConfirmOpen} onOpenChange={pomodoro.closeShortSessionConfirm}>
+            <AlertDialog open={timer.isShortSessionConfirmOpen} onOpenChange={timer.closeShortSessionConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                     <AlertDialogTitle>Log Short Session?</AlertDialogTitle>
@@ -712,8 +712,8 @@ function AuthenticatedApp() {
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => pomodoro.closeShortSessionConfirm(false)}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => pomodoro.closeShortSessionConfirm(true)}>
+                    <AlertDialogCancel onClick={() => timer.closeShortSessionConfirm(false)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => timer.closeShortSessionConfirm(true)}>
                         Yes, log it
                     </AlertDialogAction>
                     </AlertDialogFooter>

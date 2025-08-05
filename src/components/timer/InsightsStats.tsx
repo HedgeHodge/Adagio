@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timer, Repeat, Hourglass } from "lucide-react";
-import type { InsightsStatsData } from "@/hooks/usePomodoro";
+import type { InsightsStatsData } from "@/hooks/useTimer";
 
 interface InsightsStatsProps {
   stats: InsightsStatsData;

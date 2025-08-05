@@ -15,12 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, X } from 'lucide-react';
-import { usePomodoro } from '@/hooks/usePomodoro';
+import { useTimer } from '@/hooks/useTimer';
 
 interface AddSessionModalProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    pomodoro: ReturnType<typeof usePomodoro>;
+    pomodoro: ReturnType<typeof useTimer>;
 }
 
 export function AddSessionModal({ isOpen, onOpenChange, pomodoro }: AddSessionModalProps) {
@@ -90,7 +90,7 @@ export function AddSessionModal({ isOpen, onOpenChange, pomodoro }: AddSessionMo
                         <div>
                              <h4 className="text-sm font-medium text-muted-foreground mb-2">Or pick a recent project:</h4>
                             <div className="flex flex-wrap items-center gap-2">
-                                {pomodoro.recentProjects.map((proj, i) => (
+                                {pomodoro.recentProjects.map((proj: string, i: number) => (
                                     <motion.div
                                         key={proj}
                                         initial={{ opacity: 0, y: -10 }}

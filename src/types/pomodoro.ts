@@ -9,7 +9,7 @@ export interface PomodoroSettings {
   workDuration: number; // minutes
   shortBreakDuration: number; // minutes
   longBreakDuration: number; // minutes
-  pomodorosPerSet: number;
+  timersPerSet: number;
 }
 
 export interface LogEntry {
@@ -38,7 +38,7 @@ export interface ActivePomodoroSession {
   currentTime: number; // seconds in current interval
   isRunning: boolean;
   currentInterval: IntervalType;
-  pomodorosCompletedThisSet: number;
+  timersCompletedThisSet: number;
   lastWorkSessionStartTime: number | null; // timestamp for the current work interval of this session
   tasks: Task[];
 }

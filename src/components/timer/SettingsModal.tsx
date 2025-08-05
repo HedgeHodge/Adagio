@@ -30,7 +30,7 @@ const settingsSchema = z.object({
   workDuration: z.coerce.number().min(1, "Must be at least 1 min").max(120),
   shortBreakDuration: z.coerce.number().min(1, "Must be at least 1 min").max(60),
   longBreakDuration: z.coerce.number().min(1, "Must be at least 1 min").max(120),
-  pomodorosPerSet: z.coerce.number().min(1, "Must be at least 1").max(12),
+  timersPerSet: z.coerce.number().min(1, "Must be at least 1").max(12),
 });
 
 export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsModalProps) {
@@ -93,15 +93,15 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
             {errors.longBreakDuration && <p className="col-span-4 text-sm text-destructive text-center">{errors.longBreakDuration.message}</p>}
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="pomodorosPerSet" className="text-right text-foreground/80">
+            <Label htmlFor="timersPerSet" className="text-right text-foreground/80">
               Work Sessions / Set
             </Label>
             <Controller
-              name="pomodorosPerSet"
+              name="timersPerSet"
               control={control}
-              render={({ field }) => <Input id="pomodorosPerSet" type="number" {...field} className="col-span-3 bg-background" />}
+              render={({ field }) => <Input id="timersPerSet" type="number" {...field} className="col-span-3 bg-background" />}
             />
-            {errors.pomodorosPerSet && <p className="col-span-4 text-sm text-destructive text-center">{errors.pomodorosPerSet.message}</p>}
+            {errors.timersPerSet && <p className="col-span-4 text-sm text-destructive text-center">{errors.timersPerSet.message}</p>}
           </div>
           <DialogFooter>
             <DialogClose asChild>

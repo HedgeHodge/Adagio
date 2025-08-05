@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { usePomodoro } from '@/hooks/usePomodoro';
+import { useTimer } from '@/hooks/useTimer';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TimerDisplay } from '@/components/timer/TimerDisplay';
@@ -19,7 +19,7 @@ interface SessionCardProps {
     paginate: (newDirection: number) => void;
     swipeConfidenceThreshold: number;
     swipePower: (offset: number, velocity: number) => number;
-    pomodoroHooks: ReturnType<typeof usePomodoro>;
+    pomodoroHooks: ReturnType<typeof useTimer>;
 }
 
 const variants = {
