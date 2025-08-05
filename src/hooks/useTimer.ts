@@ -383,7 +383,7 @@ export function useTimer() {
     updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
   }, [activeSessions, updateFirestore]);
 
-  const _actuallyLogWorkEntry = useCallback((session: ActiveSession, summary?: string) => {
+  const _actuallyLogWorkEntry = useCallback((session: ActiveSession, summary?: string, options: { resetToDefault?: boolean } = {}) => {
     if (!session.lastWorkSessionStartTime) return null;
     
     const now = Date.now();
@@ -409,12 +409,28 @@ export function useTimer() {
     });
     
     // Reset the session state after logging
-    const newSessions = activeSessions.map(s => s.id === session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false} : s);
+    const newSessions = activeSessions.map(s => {
+        if (s.id === session.id) {
+            if (options.resetToDefault) {
+                return {
+                    ...s, 
+                    lastWorkSessionStartTime: null, 
+                    currentTime: 0, 
+                    tasks: [], 
+                    isRunning: false,
+                    currentInterval: 'work',
+                    timersCompletedThisSet: 0, 
+                };
+            }
+            return {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false};
+        }
+        return s;
+    });
     updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
   }, [activeSessions, updateFirestore, updateRecentProjects, toast, formatTime]);
 
 
- const logWorkEntry = useCallback((session: ActiveSession, summary?: string) => {
+ const logWorkEntry = useCallback((session: ActiveSession, summary?: string, options?: { resetToDefault?: boolean }) => {
     if (!session.lastWorkSessionStartTime) return null;
 
     const now = Date.now();
@@ -426,7 +442,7 @@ export function useTimer() {
         return;
     }
     
-    _actuallyLogWorkEntry(session, summary);
+    _actuallyLogWorkEntry(session, summary, options);
   }, [_actuallyLogWorkEntry]);
   
   const closeShortSessionConfirm = useCallback((shouldLog: boolean) => {
@@ -475,7 +491,7 @@ export function useTimer() {
   }, [activeSessions, toast, updateFirestore]);
 
   const logSessionFromSummary = useCallback((session: ActiveSession, summary?: string) => {
-      logWorkEntry(session, summary);
+      logWorkEntry(session, summary, { resetToDefault: true });
       setSessionToSummarize(null);
   }, [logWorkEntry]);
 

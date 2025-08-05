@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useTimer } from '@/hooks/useTimer';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -75,6 +75,7 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
     const [deleteIntent, setDeleteIntent] = useState(false);
     const [flipIntent, setFlipIntent] = useState(false);
     const [newSessionIntent, setNewSessionIntent] = useState(false);
+    const lockedIntentRef = useRef<string | null>(null);
     
     const direction = index > activeSessionIndex ? 1 : -1;
 
@@ -82,44 +83,67 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
         setIsFlipped(!isFlipped);
     };
 
+    const handleDragStart = () => {
+        setDeleteIntent(false);
+        setFlipIntent(false);
+        setNewSessionIntent(false);
+        lockedIntentRef.current = null;
+    }
+
     const handleDrag = (e: MouseEvent | TouchEvent | PointerEvent, { offset }: PanInfo) => {
-        if (offset.y < -100) {
-            setDeleteIntent(true);
-        } else {
-            setDeleteIntent(false);
-        }
+        const currentLockedIntent = lockedIntentRef.current;
 
-        if (Math.abs(offset.y) > Math.abs(offset.x) * 1.5 && offset.y > 50) {
-            setFlipIntent(true);
-        } else {
-            setFlipIntent(false);
-        }
+        const isDeleteGesture = offset.y < -100;
+        const isFlipGesture = Math.abs(offset.y) > Math.abs(offset.x) * 1.5 && offset.y > 50;
+        const isNewSessionGesture = pomodoroHooks.activeSessions.length === 1 && Math.abs(offset.x) > 100 && Math.abs(offset.x) > Math.abs(offset.y) * 1.5;
 
-        if (pomodoroHooks.activeSessions.length === 1 && Math.abs(offset.x) > 100 && Math.abs(offset.x) > Math.abs(offset.y) * 1.5) {
-            setNewSessionIntent(true);
+        if (!currentLockedIntent) {
+            if (isDeleteGesture) {
+                lockedIntentRef.current = 'delete';
+                setDeleteIntent(true);
+            } else if (isFlipGesture) {
+                lockedIntentRef.current = 'flip';
+                setFlipIntent(true);
+            } else if (isNewSessionGesture) {
+                lockedIntentRef.current = 'newSession';
+                setNewSessionIntent(true);
+            }
         } else {
-            setNewSessionIntent(false);
+            if (currentLockedIntent === 'delete') {
+                setDeleteIntent(isDeleteGesture);
+            } else if (currentLockedIntent === 'flip') {
+                setFlipIntent(isFlipGesture);
+            } else if (currentLockedIntent === 'newSession') {
+                setNewSessionIntent(isNewSessionGesture);
+            }
         }
     };
 
     const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
         const swipeX = swipePower(offset.x, velocity.x);
+        let intentHandled = false;
 
         if (deleteIntent) {
             removeSession(session.id);
-            setDeleteIntent(false);
-            return;
-        }
-
-        if (flipIntent) {
+            intentHandled = true;
+        } else if (flipIntent) {
             toggleCardFlip();
-            setFlipIntent(false);
-            return;
+            intentHandled = true;
+        } else if (newSessionIntent) {
+            if (offset.x < 0) { // Swiped left
+                paginate(1);
+            } else { // Swiped right
+                paginate(-1);
+            }
+            intentHandled = true;
         }
 
-        if (newSessionIntent) {
-            addSession("New Session");
-            setNewSessionIntent(false);
+        setDeleteIntent(false);
+        setFlipIntent(false);
+        setNewSessionIntent(false);
+        lockedIntentRef.current = null;
+
+        if (intentHandled) {
             return;
         }
 
@@ -155,6 +179,7 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                     dragDirectionLock
                     dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                     dragElastic={0.2}
+                    onDragStart={handleDragStart}
                     onDrag={handleDrag}
                     onDragEnd={handleDragEnd}
                     style={{ perspective: 1000 }}
