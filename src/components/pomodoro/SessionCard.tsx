@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { usePomodoro } from '@/hooks/usePomodoro';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
 import { TimerControls } from '@/components/pomodoro/TimerControls';
@@ -123,10 +122,13 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                         transition={{ duration: 0.6 }}
                     >
                         {/* Front of Card */}
+                        {/* Front of Card */}
                         <div className="absolute w-full h-full" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                            <Card className="w-full h-full flex flex-col bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl">
-                                <CardContent className="flex flex-col items-center justify-center p-6 text-center flex-grow">
-                                    <h3 className="text-xl font-bold tracking-tight text-foreground truncate max-w-full px-4">{session.project}</h3>
+                            <Card className="relative w-full h-full flex flex-col justify-center items-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6">
+                                <CardHeader className="absolute top-0 left-0 w-full flex flex-row items-center justify-between p-6">
+                                    <h3 className="text-xl font-bold tracking-tight text-foreground truncate max-w-full">{session.project}</h3>
+                                </CardHeader>
+                                <CardContent className="flex flex-col items-center justify-center text-center">
                                     <TimerDisplay
                                         remainingTime={session.currentTime}
                                         mode={session.currentInterval}
@@ -142,12 +144,6 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                                         onToggleCardFlip={toggleCardFlip}
                                         onOpenSettingsModal={pomodoroHooks.openSettingsModal}
                                     />
-                                    <TaskList 
-                                        session={session}
-                                        onAddTask={addTaskToSession}
-                                        onToggleTask={toggleTaskInSession}
-                                        onDeleteTask={deleteTaskFromSession}
-                                    />
                                 </CardContent>
                                 <div className="absolute bottom-2 right-2">
                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={toggleCardFlip}>
@@ -160,11 +156,13 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                         {/* Back of Card */}
                         <div className="absolute w-full h-full" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
                              <Card className="w-full h-full flex flex-col items-center justify-center bg-card/20 backdrop-blur-xl rounded-3xl shadow-2xl p-6">
-                                <h3 className="text-xl font-bold text-foreground mb-4">Session Options</h3>
-                               <Button variant="destructive" onClick={() => removeSession(session.id)} className="w-full">
-                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                    Delete Session
-                                </Button>
+                                <h3 className="text-xl font-bold text-foreground mb-4">Tasks</h3>
+                               <TaskList 
+                                    session={session}
+                                    onAddTask={addTaskToSession}
+                                    onToggleTask={toggleTaskInSession}
+                                    onDeleteTask={deleteTaskFromSession}
+                                />
                                 <div className="absolute bottom-2 right-2">
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={toggleCardFlip}>
                                         &times;

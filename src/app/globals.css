@@ -68,3 +68,13 @@
     -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
   }
 }
+
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
