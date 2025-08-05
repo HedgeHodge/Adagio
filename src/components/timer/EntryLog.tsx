@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { PomodoroLogEntry } from '@/types/pomodoro';
+import type { LogEntry } from '@/types/pomodoro';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,10 @@ import { format, parseISO, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface PomodoroLogProps {
-  log: PomodoroLogEntry[];
+interface EntryLogProps {
+  log: LogEntry[];
   onDeleteEntry: (id: string) => void;
-  onEditEntry: (entry: PomodoroLogEntry) => void;
+  onEditEntry: (entry: LogEntry) => void;
   onAddEntry?: () => void;
   isMobileLayout?: boolean;
   hasExceededFreeLogLimit?: boolean;
@@ -34,7 +34,7 @@ const formatDuration = (minutes: number): string => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
-export function PomodoroLog({ 
+export function EntryLog({ 
   log, 
   onDeleteEntry, 
   onEditEntry, 
@@ -43,7 +43,7 @@ export function PomodoroLog({
   hasExceededFreeLogLimit = false,
   isPremium = false,
   onUpgrade
-}: PomodoroLogProps) {
+}: EntryLogProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function PomodoroLog({
 
   const groupedLog = useMemo(() => {
     if (!isMounted) return {};
-    return sortedLog.reduce<Record<string, PomodoroLogEntry[]>>((acc, entry) => {
+    return sortedLog.reduce<Record<string, LogEntry[]>>((acc, entry) => {
       try {
         const entryDateStr = format(parseISO(entry.startTime), 'yyyy-MM-dd');
         if (!acc[entryDateStr]) {

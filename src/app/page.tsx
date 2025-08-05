@@ -2,15 +2,15 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { usePomodoro } from '@/hooks/usePomodoro';
+import { useTimer } from '@/hooks/useTimer';
 import { useAuth } from '@/context/AuthContext';
-import { PomodoroLog } from '@/components/pomodoro/PomodoroLog';
-import { SettingsModal } from '@/components/pomodoro/SettingsModal';
-import { SessionSummaryModal } from '@/components/pomodoro/SessionSummaryModal';
-import { EditEntryModal } from '@/components/pomodoro/EditSessionModal';
-import { AddEntryModal } from '@/components/pomodoro/AddEntryModal';
-import { EditActiveSessionModal } from '@/components/pomodoro/EditActiveSessionModal';
-import { ProjectEntriesModal } from '@/components/pomodoro/ProjectEntriesModal';
+import { EntryLog } from '@/components/timer/EntryLog';
+import { SettingsModal } from '@/components/timer/SettingsModal';
+import { SessionSummaryModal } from '@/components/timer/SessionSummaryModal';
+import { EditEntryModal } from '@/components/timer/EditSessionModal';
+import { AddEntryModal } from '@/components/timer/AddEntryModal';
+import { EditActiveSessionModal } from '@/components/timer/EditActiveSessionModal';
+import { ProjectEntriesModal } from '@/components/timer/ProjectEntriesModal';
 import { summarizeSession } from '@/ai/flows/summarize-session-flow';
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
@@ -67,15 +67,15 @@ import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { SplashScreen } from '@/components/layout/SplashScreen';
 import { DevToolsModal } from '@/components/dev/DevToolsModal';
-import { InsightsStats } from '@/components/pomodoro/InsightsStats';
-import { PeriodSummaryModal } from '@/components/pomodoro/PeriodSummaryModal';
-import { SessionCard } from '@/components/pomodoro/SessionCard';
-import { AddSessionModal } from '@/components/pomodoro/AddSessionModal';
-import { ProjectTimeChart } from '@/components/pomodoro/ProjectTimeChart';
-import { TimerDisplay } from '@/components/pomodoro/TimerDisplay';
-import { TimerControls } from '@/components/pomodoro/TimerControls';
+import { InsightsStats } from '@/components/timer/InsightsStats';
+import { PeriodSummaryModal } from '@/components/timer/PeriodSummaryModal';
+import { SessionCard } from '@/components/timer/SessionCard';
+import { AddSessionModal } from '@/components/timer/AddSessionModal';
+import { ProjectTimeChart } from '@/components/timer/ProjectTimeChart';
+import { TimerDisplay } from '@/components/timer/TimerDisplay';
+import { TimerControls } from '@/components/timer/TimerControls';
 import { PageTransition } from '@/components/layout/PageTransition';
-import { TaskList } from '@/components/pomodoro/TaskList';
+import { TaskList } from '@/components/timer/TaskList';
 
 
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
@@ -164,7 +164,7 @@ function AuthenticatedApp() {
     const y = useMotionValue(0);
     const rotateY = useTransform(y, [0, 100], [0, 180]);
     
-    const pomodoro = usePomodoro();
+    const timer = useTimer();
 
     const toggleCardFlip = () => {
         const currentY = y.get();
@@ -173,7 +173,7 @@ function AuthenticatedApp() {
 
     const getDuration = (session: any) => {
         if (!session) return 0;
-        const sessionSettings = pomodoro.settings;
+        const sessionSettings = timer.settings;
         switch (session.currentInterval) {
             case 'work':
                 return sessionSettings.workDuration * 60;
@@ -188,12 +188,12 @@ function AuthenticatedApp() {
     const { showOnboarding, isFirstTime, setOnboardingCompleted } = useOnboarding(currentUser);
     
     useEffect(() => {
-        if (activeSessionIndex >= pomodoro.activeSessions.length && pomodoro.activeSessions.length > 0) {
-            setPage([pomodoro.activeSessions.length - 1, 0]);
-        } else if (pomodoro.activeSessions.length === 0) {
+        if (activeSessionIndex >= timer.activeSessions.length && timer.activeSessions.length > 0) {
+            setPage([timer.activeSessions.length - 1, 0]);
+        } else if (timer.activeSessions.length === 0) {
             setPage([0, 0]);
         }
-    }, [pomodoro.activeSessions.length, activeSessionIndex]);
+    }, [timer.activeSessions.length, activeSessionIndex]);
 
     const handleLongPress = useCallback((projectName: string) => {
         setProjectToManage(projectName);
@@ -213,7 +213,7 @@ function AuthenticatedApp() {
     
     const handleDeleteProject = () => {
         if (projectToManage) {
-            pomodoro.removeRecentProject(projectToManage);
+            timer.removeRecentProject(projectToManage);
         }
         setIsManageProjectModalOpen(false);
         setProjectToManage(null);
@@ -221,7 +221,7 @@ function AuthenticatedApp() {
     
     const handleEditProject = () => {
         if (projectToManage) {
-            pomodoro.setInputProjectName(projectToManage);
+            timer.setInputProjectName(projectToManage);
         }
         setIsManageProjectModalOpen(false);
         setProjectToManage(null);
@@ -232,7 +232,7 @@ function AuthenticatedApp() {
 
     const handleAddSession = (e: React.FormEvent) => {
         e.preventDefault();
-        pomodoro.addSession(pomodoro.inputProjectName);
+        timer.addSession(timer.inputProjectName);
     };
 
     const handleSummarizeAndSave = async (session: any) => {
@@ -249,7 +249,7 @@ function AuthenticatedApp() {
             }
         }
         
-        pomodoro.logSessionFromSummary(session, summary);
+        timer.logSessionFromSummary(session, summary);
         setIsSummarizing(false);
     };
 
@@ -288,14 +288,14 @@ function AuthenticatedApp() {
 
     const paginate = (newDirection: number) => {
         const newIndex = activeSessionIndex + newDirection;
-        if (newIndex >= 0 && newIndex < pomodoro.activeSessions.length) {
+        if (newIndex >= 0 && newIndex < timer.activeSessions.length) {
             setPage([newIndex, newDirection]);
         }
     };
 
     const TimerView = (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-            {pomodoro.activeSessions.length === 0 ? (
+            {timer.activeSessions.length === 0 ? (
                 <div className="w-full shadow-lg rounded-3xl">
                     <Card className="w-full bg-card/20 backdrop-blur-xl rounded-3xl max-w-md">
                         <CardHeader>
@@ -309,20 +309,20 @@ function AuthenticatedApp() {
                                     <Input
                                         id="project-name"
                                         placeholder="What are you working on?"
-                                        value={pomodoro.inputProjectName}
-                                        onChange={(e) => pomodoro.setInputProjectName(e.target.value)}
+                                        value={timer.inputProjectName}
+                                        onChange={(e) => timer.setInputProjectName(e.target.value)}
                                         className="h-11 text-base bg-background/70 flex-grow"
-                                        disabled={pomodoro.isDataLoading}
+                                        disabled={timer.isDataLoading}
                                     />
-                                    <Button type="submit" className="h-11 w-11 rounded-lg" disabled={pomodoro.isDataLoading || !pomodoro.inputProjectName.trim()}>
+                                    <Button type="submit" className="h-11 w-11 rounded-lg" disabled={timer.isDataLoading || !timer.inputProjectName.trim()}>
                                         <Plus className="h-5 w-5" />
                                         <span className="sr-only">Add</span>
                                     </Button>
                                 </div>
-                                {pomodoro.recentProjects.length > 0 && (
+                                {timer.recentProjects.length > 0 && (
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-sm text-muted-foreground mr-1">Recent:</span>
-                                        {pomodoro.recentProjects.map((proj, i) => (
+                                        {timer.recentProjects.map((proj, i) => (
                                             <motion.div
                                                 key={proj}
                                                 initial={{ opacity: 0, y: -10 }}
@@ -340,7 +340,7 @@ function AuthenticatedApp() {
                                                     variant="secondary"
                                                     size="sm"
                                                     className="h-8 px-3 shadow-sm rounded-lg"
-                                                    onClick={() => pomodoro.addSession(proj)}
+                                                    onClick={() => timer.addSession(proj)}
                                                 >
                                                     {proj}
                                                 </Button>
@@ -356,9 +356,9 @@ function AuthenticatedApp() {
                 <div className="relative w-full flex flex-col items-center justify-center">
                     <div className={cn(
                         "relative w-full max-w-md flex items-center justify-center",
-                        pomodoro.activeSessions.length > 1 ? "h-[480px]" : "h-[520px]"
+                        timer.activeSessions.length > 1 ? "h-[480px]" : "h-[520px]"
                     )}>
-                        {pomodoro.activeSessions.map((session, index) => (
+                        {timer.activeSessions.map((session, index) => (
                            <SessionCard
                                 key={session.id}
                                 session={session}
@@ -367,13 +367,13 @@ function AuthenticatedApp() {
                                 paginate={paginate}
                                 swipeConfidenceThreshold={swipeConfidenceThreshold}
                                 swipePower={swipePower}
-                                pomodoroHooks={pomodoro}
+                                pomodoroHooks={timer}
                            />
                         ))}
                     </div>
-                    {pomodoro.activeSessions.length > 1 && (
+                    {timer.activeSessions.length > 1 && (
                         <div className="flex justify-center items-center gap-2 mt-4">
-                            {pomodoro.activeSessions.map((_, i) => (
+                            {timer.activeSessions.map((_, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setPage([i, i > activeSessionIndex ? 1 : -1])}
@@ -392,13 +392,13 @@ function AuthenticatedApp() {
     );
 
     const LogView = (
-        <PomodoroLog
-            log={pomodoro.pomodoroLog}
-            onDeleteEntry={pomodoro.deleteLogEntry}
-            onEditEntry={pomodoro.openEditModal}
+        <EntryLog
+            log={timer.log}
+            onDeleteEntry={timer.deleteLogEntry}
+            onEditEntry={timer.openEditModal}
             onAddEntry={() => setIsAddEntryModalOpen(true)}
             isMobileLayout={true}
-            hasExceededFreeLogLimit={pomodoro.hasExceededFreeLogLimit}
+            hasExceededFreeLogLimit={timer.hasExceededFreeLogLimit}
             isPremium={isPremium}
             onUpgrade={upgradeUserToPremium}
         />
@@ -419,14 +419,14 @@ function AuthenticatedApp() {
                                 className="w-full md:w-auto justify-start text-left font-normal"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {pomodoro.customDateRange?.from ? (
-                                    pomodoro.customDateRange.to ? (
+                                {timer.customDateRange?.from ? (
+                                    timer.customDateRange.to ? (
                                         <>
-                                            {format(pomodoro.customDateRange.from, "LLL dd, y")} -{" "}
-                                            {format(pomodoro.customDateRange.to, "LLL dd, y")}
+                                            {format(timer.customDateRange.from, "LLL dd, y")} -{" "}
+                                            {format(timer.customDateRange.to, "LLL dd, y")}
                                         </>
                                     ) : (
-                                        format(pomodoro.customDateRange.from, "LLL dd, y")
+                                        format(timer.customDateRange.from, "LLL dd, y")
                                     )
                                 ) : (
                                     <span>Pick a date</span>
@@ -436,17 +436,17 @@ function AuthenticatedApp() {
                         <PopoverContent className="w-auto p-0" align="end">
                             <Calendar
                                 mode="range"
-                                defaultMonth={pomodoro.customDateRange?.from}
-                                selected={pomodoro.customDateRange}
+                                defaultMonth={timer.customDateRange?.from}
+                                selected={timer.customDateRange}
                                 onSelect={(range) => {
-                                    pomodoro.setCustomDateRange(range);
-                                    pomodoro.setActiveFilter('custom');
+                                    timer.setCustomDateRange(range);
+                                    timer.setActiveFilter('custom');
                                 }}
                                 numberOfMonths={2}
                             />
                         </PopoverContent>
                     </Popover>
-                    <Select value={pomodoro.activeFilter} onValueChange={(value) => pomodoro.setActiveFilter(value as any)}>
+                    <Select value={timer.activeFilter} onValueChange={(value) => timer.setActiveFilter(value as any)}>
                         <SelectTrigger className="w-full md:w-[140px]">
                             <SelectValue placeholder="Select filter" />
                         </SelectTrigger>
@@ -460,17 +460,17 @@ function AuthenticatedApp() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                <InsightsStats stats={pomodoro.insightsStats} />
+                <InsightsStats stats={timer.insightsStats} />
                 <div>
                     <CardDescription className="mb-2">Time spent per project</CardDescription>
-                    <ProjectTimeChart data={pomodoro.processedChartData} onBarClick={(projectName) => pomodoro.openEntriesModal(projectName)} />
+                    <ProjectTimeChart data={timer.processedChartData} onBarClick={(projectName) => timer.openEntriesModal(projectName)} />
                 </div>
                  <Button 
-                    onClick={pomodoro.generatePeriodSummary} 
+                    onClick={timer.generatePeriodSummary} 
                     className="w-full"
-                    disabled={pomodoro.isGeneratingSummary || pomodoro.filteredLogForPeriod.length === 0}
+                    disabled={timer.isGeneratingSummary || timer.filteredLogForPeriod.length === 0}
                 >
-                    {pomodoro.isGeneratingSummary ? (
+                    {timer.isGeneratingSummary ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</>
                     ) : (
                        isPremium ? (

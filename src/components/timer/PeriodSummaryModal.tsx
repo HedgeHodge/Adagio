@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { PomodoroLogEntry } from '@/types/pomodoro';
+import type { LogEntry } from '@/types/pomodoro';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ interface PeriodSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   summary: string;
-  entries: PomodoroLogEntry[];
+  entries: LogEntry[];
   isPremium: boolean;
   onUpgrade?: () => void;
 }

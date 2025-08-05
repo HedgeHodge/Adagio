@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { PomodoroLogEntry } from '@/types/pomodoro';
+import type { LogEntry } from '@/types/pomodoro';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ interface ProjectEntriesModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectName: string;
-  entries: PomodoroLogEntry[];
+  entries: LogEntry[];
 }
 
 export function ProjectEntriesModal({ isOpen, onClose, projectName, entries }: ProjectEntriesModalProps) {

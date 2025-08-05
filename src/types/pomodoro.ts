@@ -12,7 +12,7 @@ export interface PomodoroSettings {
   pomodorosPerSet: number;
 }
 
-export interface PomodoroLogEntry {
+export interface LogEntry {
   id: string;
   startTime: string; // ISO string
   endTime: string; // ISO string
@@ -45,7 +45,7 @@ export interface ActivePomodoroSession {
 
 export interface UserPomodoroData {
   settings?: PomodoroSettings;
-  pomodoroLog?: PomodoroLogEntry[];
+  log?: LogEntry[];
   activeSessions?: ActivePomodoroSession[];
   recentProjects?: string[];
   isPremium?: boolean; // Added for premium features

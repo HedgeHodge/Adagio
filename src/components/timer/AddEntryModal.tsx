@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import type { PomodoroLogEntry } from '@/types/pomodoro';
+import type { LogEntry } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,15 +20,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO, differenceInMinutes, isValid } from 'date-fns';
 
-interface EditEntryModalProps {
+interface AddEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  entry: PomodoroLogEntry | null;
-  onSave: (updatedEntry: PomodoroLogEntry) => void;
+  onSave: (newEntry: Omit<LogEntry, 'id' | 'type' | 'sessionId'>) => void;
 }
 
-const editEntrySchema = z.object({
-  project: z.string().optional(), // Project can be an empty string from input
+const addEntrySchema = z.object({
+  project: z.string().optional(),
   startTime: z.string().refine(val => isValid(parseISO(val)), {
     message: "Invalid start date",
   }),
@@ -40,60 +39,50 @@ const editEntrySchema = z.object({
   path: ["endTime"],
 });
 
-type EditEntryFormData = z.infer<typeof editEntrySchema>;
+type AddEntryFormData = z.infer<typeof addEntrySchema>;
 
-const formatToDateTimeLocal = (isoString: string): string => {
-  if (!isoString || !isValid(parseISO(isoString))) return '';
-  return format(parseISO(isoString), "yyyy-MM-dd'T'HH:mm");
+const formatToDateTimeLocal = (date: Date): string => {
+  if (!date || !isValid(date)) return '';
+  return format(date, "yyyy-MM-dd'T'HH:mm");
 };
 
-export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModalProps) {
-  const { control, handleSubmit, formState: { errors }, reset, watch } = useForm<EditEntryFormData>({
-    resolver: zodResolver(editEntrySchema),
+export function AddEntryModal({ isOpen, onClose, onSave }: AddEntryModalProps) {
+  const { control, handleSubmit, formState: { errors }, reset, watch } = useForm<AddEntryFormData>({
+    resolver: zodResolver(addEntrySchema),
     defaultValues: {
-      project: entry?.project || '',
-      startTime: entry?.startTime ? formatToDateTimeLocal(entry.startTime) : '',
-      endTime: entry?.endTime ? formatToDateTimeLocal(entry.endTime) : '',
+      project: '',
+      startTime: formatToDateTimeLocal(new Date()),
+      endTime: formatToDateTimeLocal(new Date()),
     },
   });
 
   React.useEffect(() => {
-    if (entry) {
+    if (isOpen) {
+      const now = new Date();
       reset({
-        project: entry.project || '',
-        startTime: formatToDateTimeLocal(entry.startTime),
-        endTime: formatToDateTimeLocal(entry.endTime),
+        project: '',
+        startTime: formatToDateTimeLocal(now),
+        endTime: formatToDateTimeLocal(now),
       });
-    } else {
-      reset({ project: '', startTime: '', endTime: ''});
     }
-  }, [entry, reset, isOpen]);
+  }, [isOpen, reset]);
 
-  const onSubmit = (data: EditEntryFormData) => {
-    if (!entry) return;
-
+  const onSubmit = (data: AddEntryFormData) => {
     const parsedStartTime = parseISO(data.startTime);
     const parsedEndTime = parseISO(data.endTime);
     const newDuration = differenceInMinutes(parsedEndTime, parsedStartTime);
 
-    const updatedEntryData: PomodoroLogEntry = {
-      ...entry,
+    const newEntryData: Omit<LogEntry, 'id' | 'type' | 'sessionId'> = {
       startTime: parsedStartTime.toISOString(),
       endTime: parsedEndTime.toISOString(),
       duration: newDuration,
+      project: data.project ? data.project.trim() : undefined,
     };
 
-    const projectValue = data.project ? data.project.trim() : "";
-    if (projectValue !== "") {
-      updatedEntryData.project = projectValue;
-    } else {
-      delete updatedEntryData.project; // Remove project field if it's empty
-    }
-
-    onSave(updatedEntryData);
+    onSave(newEntryData);
     onClose();
   };
-
+  
   const watchedStartTime = watch("startTime");
   const watchedEndTime = watch("endTime");
   const calculatedDuration = React.useMemo(() => {
@@ -104,19 +93,16 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
         return differenceInMinutes(end, start);
       }
     }
-    return entry?.duration ?? 0;
-  }, [watchedStartTime, watchedEndTime, entry?.duration]);
-
-
-  if (!entry) return null;
+    return 0;
+  }, [watchedStartTime, watchedEndTime]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[480px] bg-card sm:rounded-3xl">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Edit Entry</DialogTitle>
+          <DialogTitle className="text-foreground">Add Manual Entry</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Adjust the details for this logged entry.
+            Manually add a completed work session to your log.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
@@ -127,7 +113,7 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
             <Controller
               name="project"
               control={control}
-              render={({ field }) => <Input id="project" {...field} value={field.value ?? ''} className="col-span-3 bg-background" />}
+              render={({ field }) => <Input id="project" {...field} value={field.value ?? ''} placeholder="Optional" className="col-span-3 bg-background" />}
             />
           </div>
 
@@ -178,12 +164,11 @@ export function EditEntryModal({ isOpen, onClose, entry, onSave }: EditEntryModa
             </div>
           </div>
 
-
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             </DialogClose>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit">Add Entry</Button>
           </DialogFooter>
         </form>
       </DialogContent>
