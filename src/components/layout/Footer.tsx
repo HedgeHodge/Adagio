@@ -39,12 +39,19 @@ interface FooterProps {
 }
 
 export function Footer({ activeTab, setActiveTab }: FooterProps) {
+    const triggerHapticFeedback = () => {
+        if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(10); // Vibrate for 10ms
+        }
+    };
+
     return (
         <footer className="fixed bottom-0 left-0 right-0 flex justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-20 md:hidden">
             <div className="w-full max-w-sm h-28 pointer-events-auto bg-background/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
                 <ActionButton
                     icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Timer"
+                    onMouseDown={triggerHapticFeedback}
                     onClick={() => setActiveTab('timer')}
                     isActive={activeTab === 'timer'}
                     className="rounded-2xl"
@@ -52,6 +59,7 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                 <ActionButton
                     icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Log"
+                    onMouseDown={triggerHapticFeedback}
                     onClick={() => setActiveTab('log')}
                     isActive={activeTab === 'log'}
                     className="rounded-2xl"
@@ -59,6 +67,7 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                 <ActionButton
                     icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Insights"
+                    onMouseDown={triggerHapticFeedback}
                     onClick={() => setActiveTab('insights')}
                     isActive={activeTab === 'insights'}
                     className="rounded-2xl"
