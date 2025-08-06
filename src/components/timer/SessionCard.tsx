@@ -235,7 +235,6 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                                             mode={session.currentInterval}
                                             onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
                                             onToggleCardFlip={toggleCardFlip}
-                                            onOpenSettingsModal={pomodoroHooks.openSettingsModal}
                                         />
                                     </CardContent>
                                 </motion.div>

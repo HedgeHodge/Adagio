@@ -16,7 +16,6 @@ interface TimerControlsProps {
   mode: IntervalType;
   onOpenEditActiveSessionModal: () => void;
   onToggleCardFlip: () => void;
-  onOpenSettingsModal: () => void;
   className?: string;
 }
 
@@ -26,7 +25,7 @@ const buttonVariants = {
   exit: { opacity: 0, scale: 0.8, y: -5, transition: { duration: 0.15 } },
 };
 
-export function TimerControls({ session, onStartPause, onReset, onSkip, isTimerRunning, mode, onOpenEditActiveSessionModal, onToggleCardFlip, onOpenSettingsModal, className }: TimerControlsProps) {
+export function TimerControls({ session, onStartPause, onReset, onSkip, isTimerRunning, mode, onOpenEditActiveSessionModal, onToggleCardFlip, className }: TimerControlsProps) {
   const isBreakInterval = mode === 'shortBreak' || mode === 'longBreak';
 
   return (
@@ -90,18 +89,6 @@ export function TimerControls({ session, onStartPause, onReset, onSkip, isTimerR
           </Button>
         </motion.div>
         <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.15 }}>
-          <Button 
-            onClick={onOpenSettingsModal} 
-            variant="ghost" 
-            size="icon" 
-            className="h-10 w-10 rounded-lg"
-            aria-label="Settings"
-            title="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        </motion.div>
-        <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }}>
           <Button 
             onClick={onToggleCardFlip} 
             variant="ghost" 
