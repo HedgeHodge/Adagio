@@ -442,8 +442,8 @@ export function useTimer() {
         return;
     }
     
-    _actuallyLogWorkEntry(session, summary, options);
-  }, [_actuallyLogWorkEntry]);
+    setSessionToSummarize(session);
+  }, []);
   
   const closeShortSessionConfirm = useCallback((shouldLog: boolean) => {
       setIsShortSessionConfirmOpen(false);
@@ -457,15 +457,7 @@ export function useTimer() {
       setSessionToConfirm(null);
   }, [sessionToConfirm, _actuallyLogWorkEntry, activeSessions, updateFirestore]);
 
-  const endCurrentWorkSession = useCallback((sessionId: string) => {
-    const sessionToEnd = activeSessions.find(s => s.id === sessionId && s.currentInterval === 'work' && s.isRunning);
-    if (sessionToEnd) {
-        setSessionToSummarize(sessionToEnd);
-        // Just pause the session, don't reset time yet.
-        const newSessions = activeSessions.map(s => s.id === sessionId ? { ...s, isRunning: false } : s);
-        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-    }
-  }, [activeSessions, updateFirestore]);
+  
 
   const removeSession = useCallback((sessionId: string) => {
     let sessionToLog: ActiveSession | undefined;
@@ -890,7 +882,7 @@ export function useTimer() {
         navigator.mediaSession.setActionHandler('play', () => startTimer(firstRunningSession.id));
         navigator.mediaSession.setActionHandler('pause', () => pauseTimer(firstRunningSession.id));
         if (firstRunningSession.currentInterval === 'work') {
-          navigator.mediaSession.setActionHandler('stop', () => endCurrentWorkSession(firstRunningSession.id));
+          navigator.mediaSession.setActionHandler('stop', () => logWorkEntry(firstRunningSession));
         } else {
             navigator.mediaSession.setActionHandler('stop', null);
         }
@@ -910,7 +902,7 @@ export function useTimer() {
          console.error("Error clearing media session action handlers:", error);
       }
     }
-  }, [activeSessions, isClient, startTimer, pauseTimer, endCurrentWorkSession, formatTime]);
+  }, [activeSessions, isClient, startTimer, pauseTimer, formatTime]);
 
 
   return {
@@ -930,7 +922,7 @@ export function useTimer() {
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData,
     hasExceededFreeLogLimit,
     isShortSessionConfirmOpen, closeShortSessionConfirm,
-    endCurrentWorkSession,
+
     isGeneratingSummary, generatePeriodSummary, periodSummary, isPeriodSummaryModalOpen, closePeriodSummaryModal,
     filteredLogForPeriod,
   };
