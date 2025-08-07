@@ -4,6 +4,7 @@ import { Domine, Pacifico } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ClientLayout } from './client-layout';
+import { Analytics } from '@vercel/analytics/next';
 
 const domine = Domine({
   subsets: ['latin'],
@@ -61,6 +62,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ClientLayout>{children}</ClientLayout>
+        <Analytics />
       </body>
     </html>
   );

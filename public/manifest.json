@@ -2,6 +2,7 @@
   "name": "Adagio",
   "short_name": "Adagio",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#D4E9E2",
   "theme_color": "#D4E9E2",
@@ -37,6 +38,15 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Focus",
+      "short_name": "Focus",
+      "description": "Start a new focus session",
+      "url": "/?action=start-focus",
+      "icons": [{ "src": "/icons/android/mipmap-xhdpi/adagio_icon.png", "sizes": "96x96" }]
     }
   ]
 }
