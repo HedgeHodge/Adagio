@@ -3,7 +3,7 @@
   "short_name": "Adagio",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#D4E9E2",
   "theme_color": "#D4E9E2",
   "description": "A simple and beautiful Pomodoro timer to help you focus.",
