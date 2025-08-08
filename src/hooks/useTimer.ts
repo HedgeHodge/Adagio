@@ -186,8 +186,8 @@ export function useTimer() {
     const duration = Math.round((now.getTime() - startTime) / (1000 * 60));
 
     if (duration < 1 && !summary) {
-        // If it's a short session and there's no AI summary to add value, just skip logging.
-        toast({ title: "Session Too Short", description: "Work sessions under 1 minute are not logged.", variant: "default" });
+        setSessionToConfirm({session, summary});
+        setIsShortSessionConfirmOpen(true);
         return;
     }
     
@@ -259,7 +259,7 @@ export function useTimer() {
               currentInterval: nextInterval,
               timersCompletedThisSet: newPomodorosCompleted,
               currentTime: nextInterval === 'work' ? s.totalWorkTime : (nextInterval === 'longBreak' ? settings.longBreakDuration : settings.shortBreakDuration) * 60,
-              lastWorkSessionStartTime: nextInterval === 'work' ? Date.now() : null,
+              lastWorkSessionStartTime: nextInterval === 'work' ? (Date.now() - s.totalWorkTime * 1000) : null,
               totalWorkTime: s.currentInterval === 'work' ? s.currentTime : s.totalWorkTime
             };
           }
@@ -999,6 +999,44 @@ export function useTimer() {
   const openSettingsModal = useCallback(() => setIsSettingsModalOpen(true), []);
   const closeSettingsModal = useCallback(() => setIsSettingsModalOpen(false), []);
 
+  const closeShortSessionConfirm = useCallback((shouldLog: boolean) => {
+      if (shouldLog && sessionToConfirm) {
+          const { session, summary } = sessionToConfirm;
+          const now = new Date();
+          const startTime = session.lastWorkSessionStartTime || now.getTime();
+          
+          const newLogEntry: LogEntry = cleanLogEntry({
+              id: `${now.getTime()}-${session.id}`,
+              startTime: new Date(startTime).toISOString(),
+              endTime: now.toISOString(),
+              type: 'work',
+              duration: 0, // Explicitly log as 0 minutes
+              project: session.project,
+              summary: summary,
+              sessionId: session.id,
+          });
+      
+          const newLog = [...log, newLogEntry];
+          if (currentUser) {
+              updateFirestore({ log: arrayUnion(cleanLogEntry(newLogEntry)) });
+          } else {
+              localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
+          }
+          setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
+          
+          if (newLogEntry.project) {
+              updateRecentProjects(newLogEntry.project);
+          }
+      
+          toast({
+            title: "Short session logged!",
+            description: `${newLogEntry.project || 'Work'}: < 1 minute`,
+          });
+      }
+      setIsShortSessionConfirmOpen(false);
+      setSessionToConfirm(null);
+  }, [sessionToConfirm, log, currentUser, updateFirestore, toast, isPremium, filterLogForFreeTier, updateRecentProjects]);
+
   // Media Session API for lock screen controls
   useEffect(() => {
     if (!isClient || !('mediaSession' in navigator)) {
@@ -1060,6 +1098,7 @@ export function useTimer() {
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData,
     hasExceededFreeLogLimit,
     isShortSessionConfirmOpen,
+    closeShortSessionConfirm,
     isGeneratingSummary, generatePeriodSummary, periodSummary, isPeriodSummaryModalOpen, closePeriodSummaryModal,
     filteredLogForPeriod,
   };
