@@ -164,6 +164,21 @@ export function useTimer() {
     }
   }, [currentUser]);
 
+  const updateRecentProjects = useCallback((projectName?: string) => {
+    if (!projectName || projectName.trim() === "") return;
+    const trimmedProjectName = projectName.trim();
+    
+    setRecentProjects(prev => {
+        const updatedRecent = [trimmedProjectName, ...prev.filter(p => p !== trimmedProjectName)].slice(0, MAX_RECENT_PROJECTS);
+        if (currentUser) {
+            updateFirestore({ recentProjects: updatedRecent });
+        } else {
+            localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
+        }
+        return updatedRecent;
+    });
+  }, [currentUser, updateFirestore]);
+
   const logWorkEntry = useCallback(async (session: ActiveSession, summary?: string) => {
     const now = new Date();
     const startTime = session.lastWorkSessionStartTime || now.getTime();
@@ -195,24 +210,92 @@ export function useTimer() {
     setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
     
     if (newLogEntry.project) {
-        setRecentProjects(prev => {
-            const updatedRecent = [newLogEntry.project!, ...prev.filter(p => p !== newLogEntry.project)].slice(0, MAX_RECENT_PROJECTS);
-            if (currentUser) {
-                updateFirestore({ recentProjects: updatedRecent });
-            } else {
-                localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
-            }
-            return updatedRecent;
-        });
+        updateRecentProjects(newLogEntry.project);
     }
 
     toast({
       title: "Work session logged!",
       description: `${newLogEntry.project || 'Work'}: ${formatTime(newLogEntry.duration * 60)}`,
     });
-  }, [log, currentUser, isPremium, toast, updateFirestore, filterLogForFreeTier, formatTime]);
+  }, [log, currentUser, isPremium, toast, updateFirestore, filterLogForFreeTier, formatTime, updateRecentProjects]);
 
+  const advanceInterval = useCallback(async (session: ActiveSession) => {
+    // Stop the timer
+    if (timerRefs.current[session.id]) {
+      clearInterval(timerRefs.current[session.id]!);
+      timerRefs.current[session.id] = null;
+    }
+  
+    // Log the work session that just finished
+    if (session.currentInterval === 'work') {
+      const completedTasks = session.tasks.filter(task => task.completed).map(t => t.text);
+      let summary: string | undefined;
+      if (isPremium && completedTasks.length > 0) {
+          try {
+              const result = await summarizeSession({ tasks: completedTasks, projectName: session.project });
+              summary = result.summary;
+          } catch (error) {
+              console.error("AI summarization failed during skip, logging without summary.", error);
+          }
+      }
+      await logWorkEntry(session, summary);
+    }
 
+    // Transition to the next interval
+    const newPomodorosCompleted = session.timersCompletedThisSet + (session.currentInterval === 'work' ? 1 : 0);
+    const isLongBreak = newPomodorosCompleted % settings.timersPerSet === 0;
+    
+    let nextInterval: IntervalType;
+    let nextDuration: number;
+    let isRunning = false;
+
+    if (session.currentInterval === 'work') {
+      nextInterval = isLongBreak ? 'longBreak' : 'shortBreak';
+      nextDuration = (isLongBreak ? settings.longBreakDuration : settings.shortBreakDuration) * 60;
+      isRunning = true;
+    } else {
+      // After a break, go back to work
+      nextInterval = 'work';
+      nextDuration = 0; // Work timers count up
+      isRunning = false; // Let user start manually
+    }
+  
+    const newSessions = activeSessions.map(s => {
+      if (s.id === session.id) {
+        return {
+          ...s,
+          isRunning,
+          currentInterval: nextInterval,
+          timersCompletedThisSet: newPomodorosCompleted,
+          currentTime: nextDuration,
+          lastWorkSessionStartTime: nextInterval === 'work' ? null : s.lastWorkSessionStartTime,
+        };
+      }
+      return s;
+    });
+  
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
+
+    if (nextInterval.includes('Break')) {
+      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
+      toast({
+        title: "Time for a break!",
+        description: `Starting a ${isLongBreak ? 'long' : 'short'} break.`,
+      });
+    } else {
+      toast({
+        title: "Break's Over!",
+        description: "Time to get back to it.",
+      });
+    }
+
+  }, [settings, isPremium, toast, updateFirestore, activeSessions, currentUser, logWorkEntry]);
+  
   // Effect for setting up the component and loading initial data
   useEffect(() => {
     setIsClient(true);
@@ -326,16 +409,8 @@ export function useTimer() {
                 if (s.currentTime > 0) {
                   return { ...s, currentTime: s.currentTime - 1 };
                 } else {
-                  // Break finished, transition to work
-                  if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                  toast({ title: "Break's Over!", description: "Time to get back to it." });
-                  return {
-                    ...s,
-                    isRunning: false, // Pause the timer, let user start manually
-                    currentInterval: 'work',
-                    currentTime: 0,
-                    lastWorkSessionStartTime: null, // Reset for new work session
-                  };
+                  advanceInterval(s);
+                  return s;
                 }
               }
               return s;
@@ -353,7 +428,7 @@ export function useTimer() {
         timerRefs.current[activeRunningSession.id] = null;
       }
     };
-  }, [activeSessions, toast]);
+  }, [activeSessions, advanceInterval]);
 
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
@@ -374,21 +449,6 @@ export function useTimer() {
     }
   }, [isFetchingQuote, isPremium]);
 
-  const updateRecentProjects = useCallback((projectName?: string) => {
-    if (!projectName || projectName.trim() === "") return;
-    const trimmedProjectName = projectName.trim();
-    
-    setRecentProjects(prev => {
-        const updatedRecent = [trimmedProjectName, ...prev.filter(p => p !== trimmedProjectName)].slice(0, MAX_RECENT_PROJECTS);
-        if (currentUser) {
-            updateFirestore({ recentProjects: updatedRecent });
-        } else {
-            localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
-        }
-        return updatedRecent;
-    });
-  }, [currentUser, updateFirestore]);
-
   const addSession = useCallback((projectName: string) => {
     const trimmedProjectName = projectName.trim();
     if (!trimmedProjectName) {
@@ -400,7 +460,7 @@ export function useTimer() {
       project: trimmedProjectName,
       tasks: [],
       currentInterval: 'work',
-      currentTime: 0, // Work timers start at 0 and count up
+      currentTime: 0, 
       isRunning: false,
       timersCompletedThisSet: 0,
       lastWorkSessionStartTime: null,
@@ -423,9 +483,9 @@ export function useTimer() {
     const newSessions = activeSessions.map(s => {
       if (s.id === sessionId) {
         let { lastWorkSessionStartTime } = s;
-        // If it's a work session starting for the first time
-        if (s.currentInterval === 'work' && lastWorkSessionStartTime === null) {
-            lastWorkSessionStartTime = Date.now();
+        // If it's a work session starting for the first time or after a break
+        if (s.currentInterval === 'work' && (s.lastWorkSessionStartTime === null || s.currentTime === 0)) {
+            lastWorkSessionStartTime = Date.now() - s.currentTime * 1000;
         }
         return { ...s, isRunning: true, lastWorkSessionStartTime };
       }
@@ -513,7 +573,7 @@ export function useTimer() {
       if (s.id === sessionId) {
         return {
           ...s,
-          isRunning: true, // Start break timer immediately
+          isRunning: true, 
           currentInterval: nextInterval,
           timersCompletedThisSet: newPomodorosCompleted,
           currentTime: nextDuration,
@@ -549,10 +609,10 @@ export function useTimer() {
         if (s.id === sessionId) {
             return {
                 ...s,
-                isRunning: false,
+                isRunning: true,
                 currentInterval: 'work' as IntervalType,
                 currentTime: 0,
-                lastWorkSessionStartTime: null,
+                lastWorkSessionStartTime: Date.now(),
             };
         }
         return s;
@@ -567,7 +627,7 @@ export function useTimer() {
 
     toast({
         title: "Back to Work!",
-        description: "Your next focus session is ready.",
+        description: "Your next focus session is starting.",
     });
   }, [activeSessions, currentUser, updateFirestore, toast]);
 
