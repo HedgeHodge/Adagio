@@ -22,7 +22,7 @@ const pacifico = Pacifico({
 
 export const metadata: Metadata = {
   title: 'Adagio',
-  description: 'A simple and beautiful Pomodoro timer to help you focus.',
+  description: 'Finally, a time tracker designed for humans. Track your work, manage tasks, and use the built-in Pomodoro timer to stay focused and energized. Get more done, stress less, and find your flow.',
   applicationName: 'Adagio',
   manifest: '/manifest.json',
   appleWebApp: {
@@ -59,8 +59,7 @@ export default function RootLayout({
     <html lang="en" className={`${domine.variable} ${pacifico.variable}`} suppressHydrationWarning>
        <head>
         <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
-      <meta name="theme-color" content="#D4E9E2" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#0D1B2A" media="(prefers-color-scheme: dark)" />
+      </head>
       </head>
       <body className="font-body antialiased">
         <ClientLayout>{children}</ClientLayout>
