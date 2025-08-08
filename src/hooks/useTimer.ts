@@ -8,7 +8,7 @@ import { getMotivationalQuote, type MotivationalQuoteOutput } from '@/ai/flows/m
 import { isToday, isWithinInterval, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth, subDays, isAfter, startOfDay, subWeeks, subMonths, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, Timestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, updateDoc, onSnapshot } from 'firebase/firestore';
 import type { DateRange } from 'react-day-picker';
 import { summarizeSession } from '@/ai/flows/summarize-session-flow';
 import { summarizePeriod } from '@/ai/flows/summarize-period-flow';
@@ -182,8 +182,8 @@ export function useTimer() {
 
   const logWorkEntry = useCallback(async (session: ActiveSession, summary?: string) => {
     const now = new Date();
-    const startTime = session.lastWorkSessionStartTime || now.getTime();
-    const duration = Math.round((now.getTime() - startTime) / (1000 * 60));
+    // Use totalWorkTime for accurate duration logging, especially after breaks
+    const duration = Math.round(session.totalWorkTime / 60); 
 
     if (duration < 1 && !summary) {
         setSessionToConfirm({session, summary});
@@ -193,7 +193,7 @@ export function useTimer() {
     
     const newLogEntry: LogEntry = cleanLogEntry({
         id: `${now.getTime()}-${session.id}`,
-        startTime: new Date(startTime).toISOString(),
+        startTime: new Date(session.lastWorkSessionStartTime!).toISOString(),
         endTime: now.toISOString(),
         type: 'work',
         duration: duration,
@@ -204,7 +204,7 @@ export function useTimer() {
   
     const newLog = [...log, newLogEntry];
     if (currentUser) {
-        updateFirestore({ log: newLog.map(cleanLogEntry) });
+        updateFirestore({ log: newLog });
     } else {
         localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
     }
@@ -243,24 +243,27 @@ export function useTimer() {
         }
 
         const newPomodorosCompleted = session.timersCompletedThisSet + (session.currentInterval === 'work' ? 1 : 0);
-        const isLongBreak = newPomodorosCompleted % settings.timersPerSet === 0;
+        const isLongBreak = newPomodorosCompleted > 0 && newPomodorosCompleted % settings.timersPerSet === 0;
         
         let nextInterval: IntervalType = 'work';
+        let nextDuration = 0;
         
         if (session.currentInterval === 'work') {
             nextInterval = isLongBreak ? 'longBreak' : 'shortBreak';
+            nextDuration = (isLongBreak ? settings.longBreakDuration : settings.shortBreakDuration) * 60;
         }
 
         const newSessions = activeSessions.map(s => {
           if (s.id === session.id) {
+            const newTotalWorkTime = s.currentInterval === 'work' ? s.totalWorkTime : s.totalWorkTime;
             return {
               ...s,
               isRunning: true,
               currentInterval: nextInterval,
               timersCompletedThisSet: newPomodorosCompleted,
-              currentTime: nextInterval === 'work' ? s.totalWorkTime : (nextInterval === 'longBreak' ? settings.longBreakDuration : settings.shortBreakDuration) * 60,
-              lastWorkSessionStartTime: nextInterval === 'work' ? (Date.now() - s.totalWorkTime * 1000) : null,
-              totalWorkTime: s.currentInterval === 'work' ? s.currentTime : s.totalWorkTime
+              currentTime: nextDuration,
+              totalWorkTime: newTotalWorkTime,
+              lastWorkSessionStartTime: nextInterval === 'work' ? Date.now() : null,
             };
           }
           return s;
@@ -403,8 +406,11 @@ export function useTimer() {
                         prevSessions.map(s => {
                             if (s.id === session.id && s.isRunning) {
                                 let newTime;
+                                let newTotalWorkTime = s.totalWorkTime;
+
                                 if (s.currentInterval === 'work') {
                                     newTime = s.currentTime + 1;
+                                    newTotalWorkTime = newTotalWorkTime + 1;
                                 } else {
                                     newTime = s.currentTime - 1;
                                 }
@@ -413,7 +419,7 @@ export function useTimer() {
                                     advanceInterval(s);
                                     return s; // advanceInterval will update state, avoid double update
                                 }
-                                return { ...s, currentTime: newTime };
+                                return { ...s, currentTime: newTime, totalWorkTime: newTotalWorkTime };
                             }
                             return s;
                         })
@@ -486,7 +492,7 @@ export function useTimer() {
 
     updateRecentProjects(trimmedProjectName);
     setInputProjectName('');
-  }, [toast, updateRecentProjects, activeSessions, updateFirestore, currentUser]);
+  }, [toast, updateRecentProjects, activeSessions, updateFirestore, currentUser, settings]);
 
   const startTimer = useCallback((sessionId: string) => {
     const newSessions = activeSessions.map(s => {
@@ -560,7 +566,7 @@ export function useTimer() {
     logWorkEntry(session);
   
     const newPomodorosCompleted = session.timersCompletedThisSet + 1;
-    const isLongBreak = newPomodorosCompleted % settings.timersPerSet === 0;
+    const isLongBreak = newPomodorosCompleted > 0 && newPomodorosCompleted % settings.timersPerSet === 0;
     const nextInterval: IntervalType = isLongBreak ? 'longBreak' : 'shortBreak';
     const nextDuration = (isLongBreak ? settings.longBreakDuration : settings.shortBreakDuration) * 60;
   
@@ -572,7 +578,6 @@ export function useTimer() {
           currentInterval: nextInterval,
           timersCompletedThisSet: newPomodorosCompleted,
           currentTime: nextDuration,
-          totalWorkTime: s.currentTime, // Persist work time
           lastWorkSessionStartTime: null, // Reset for the next work session
         };
       }
@@ -590,7 +595,7 @@ export function useTimer() {
       title: "Time for a break!",
       description: `Starting a ${isLongBreak ? 'long' : 'short'} break.`,
     });
-  }, [activeSessions, settings, currentUser, isPremium, updateFirestore, toast, logWorkEntry]);
+  }, [activeSessions, settings, currentUser, updateFirestore, toast, logWorkEntry]);
   
   const skipBreak = useCallback((sessionId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
@@ -726,7 +731,7 @@ export function useTimer() {
           clearInterval(timerRefs.current[s.id]!);
           timerRefs.current[s.id] = null;
         }
-        return { ...s, isRunning: false, currentTime: 0, currentInterval: 'work' as IntervalType, timersCompletedThisSet: 0, lastWorkSessionStartTime: null };
+        return { ...s, isRunning: false, currentTime: 0, currentInterval: 'work' as IntervalType, timersCompletedThisSet: 0, lastWorkSessionStartTime: null, totalWorkTime: 0 };
       }
       return s;
     });
@@ -743,7 +748,7 @@ export function useTimer() {
     const newSessions = activeSessions.map(s => {
       if (s.id === sessionId && s.currentInterval === 'work') {
         const elapsedSeconds = s.isRunning ? Math.round((Date.now() - newStartTime) / 1000) : 0;
-        return { ...s, lastWorkSessionStartTime: newStartTime, currentTime: elapsedSeconds };
+        return { ...s, lastWorkSessionStartTime: newStartTime, currentTime: elapsedSeconds, totalWorkTime: elapsedSeconds };
       }
       return s;
     });
@@ -1018,7 +1023,7 @@ export function useTimer() {
       
           const newLog = [...log, newLogEntry];
           if (currentUser) {
-              updateFirestore({ log: newLog.map(cleanLogEntry) });
+              updateFirestore({ log: newLog });
           } else {
               localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
           }
@@ -1103,3 +1108,5 @@ export function useTimer() {
     filteredLogForPeriod,
   };
 }
+
+    
