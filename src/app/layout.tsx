@@ -59,6 +59,8 @@ export default function RootLayout({
     <html lang="en" className={`${domine.variable} ${pacifico.variable}`} suppressHydrationWarning>
        <head>
         <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
+      <meta name="theme-color" content="#D4E9E2" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0D1B2A" media="(prefers-color-scheme: dark)" />
       </head>
       <body className="font-body antialiased">
         <ClientLayout>{children}</ClientLayout>
