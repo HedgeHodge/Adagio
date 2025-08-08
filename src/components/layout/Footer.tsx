@@ -9,6 +9,12 @@ import { Clock, ListChecks, BarChart2 } from 'lucide-react';
 
 type ActiveTab = 'timer' | 'log' | 'insights';
 
+const triggerHapticFeedback = () => {
+    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(10); // Vibrate for 10ms
+    }
+};
+
 const ActionButton = ({ icon, label, className = '', isActive, ...props }: { icon: React.ReactNode, label: string, className?: string, isActive?: boolean, [key: string]: any }) => (
     <div className="flex flex-col items-center gap-2">
         <motion.div
@@ -40,12 +46,6 @@ interface FooterProps {
 }
 
 export function Footer({ activeTab, setActiveTab }: FooterProps) {
-    const triggerHapticFeedback = () => {
-        if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate(10); // Vibrate for 10ms
-        }
-    };
-
     return (
         <footer className="fixed bottom-0 left-0 right-0 flex justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-20 md:hidden">
             <div className="w-full max-w-sm h-28 pointer-events-auto bg-background/40 backdrop-blur-xl rounded-full shadow-2xl shadow-black/10 flex justify-around items-center px-4">
