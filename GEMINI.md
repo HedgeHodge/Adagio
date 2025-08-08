@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-This is a Next.js application called "Adagio", a Pomodoro timer designed to help users focus. It uses Firebase for backend services, including Firestore for the database and Firebase Authentication. The application is a Progressive Web App (PWA) and leverages Genkit for AI-powered features like summarizing work sessions. The UI is built with React, TypeScript, and Tailwind CSS, utilizing a component library from `shadcn/ui`.
+This is a Next.js application called "Adagio", a time tracking application with a built in pomodoro timer to encourage healthy work balance. It uses Firebase for backend services, including Firestore for the database and Firebase Authentication. The application is a Progressive Web App (PWA) and leverages Genkit for AI-powered features like summarizing work sessions. The UI is built with React, TypeScript, and Tailwind CSS, utilizing a component library from `shadcn/ui`.
 
 ## Building and Running
 
