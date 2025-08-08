@@ -56,7 +56,6 @@ export default function RootLayout({
        <head>
         <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
       </head>
-      </head>
       <body className="font-body antialiased">
         <ClientLayout>{children}</ClientLayout>
         <Analytics />
