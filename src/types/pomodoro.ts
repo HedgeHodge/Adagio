@@ -13,7 +13,7 @@ export interface PomodoroSettings {
 }
 
 export interface LogEntry {
-  id: string;
+  id:string;
   startTime: string; // ISO string
   endTime: string; // ISO string
   type: 'work'; // Only logging work pomodoros
@@ -36,6 +36,7 @@ export interface ActivePomodoroSession {
   id: string;
   project: string;
   currentTime: number; // seconds in current interval
+  totalWorkTime: number; // total accumulated work time in seconds for the session
   isRunning: boolean;
   currentInterval: IntervalType;
   timersCompletedThisSet: number;
