@@ -204,7 +204,7 @@ export function useTimer() {
   
     const newLog = [...log, newLogEntry];
     if (currentUser) {
-        updateFirestore({ log: arrayUnion(cleanLogEntry(newLogEntry)) });
+        updateFirestore({ log: newLog.map(cleanLogEntry) });
     } else {
         localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
     }
@@ -1018,7 +1018,7 @@ export function useTimer() {
       
           const newLog = [...log, newLogEntry];
           if (currentUser) {
-              updateFirestore({ log: arrayUnion(cleanLogEntry(newLogEntry)) });
+              updateFirestore({ log: newLog.map(cleanLogEntry) });
           } else {
               localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
           }
@@ -1035,7 +1035,7 @@ export function useTimer() {
       }
       setIsShortSessionConfirmOpen(false);
       setSessionToConfirm(null);
-  }, [sessionToConfirm, log, currentUser, updateFirestore, toast, isPremium, filterLogForFreeTier, updateRecentProjects]);
+  }, [sessionToConfirm, log, currentUser, updateFirestore, toast, filterLogForFreeTier, updateRecentProjects]);
 
   // Media Session API for lock screen controls
   useEffect(() => {
