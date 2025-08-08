@@ -64,6 +64,7 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
         startTimer, 
         pauseTimer, 
         removeSession,
+        endSession,
         openEditActiveSessionModal, 
         addTaskToSession,
         toggleTaskInSession,
@@ -229,7 +230,7 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                                         <TimerControls
                                             session={session}
                                             onStartPause={() => session.isRunning ? pauseTimer(session.id) : startTimer(session.id)}
-                                            onReset={() => pomodoroHooks.resetTimer(session.id)}
+                                            onEndSession={() => endSession(session.id)}
                                             onSkip={() => pomodoroHooks.skipInterval(session.id)}
                                             isTimerRunning={session.isRunning}
                                             mode={session.currentInterval}

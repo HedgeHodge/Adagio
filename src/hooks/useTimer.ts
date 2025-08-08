@@ -430,7 +430,7 @@ export function useTimer() {
   }, [activeSessions, updateFirestore, updateRecentProjects, toast, formatTime]);
 
 
- const logWorkEntry = useCallback((session: ActiveSession, summary?: string, options?: { resetToDefault?: boolean }) => {
+  const logWorkEntry = useCallback((session: ActiveSession, summary?: string) => {
     if (!session.lastWorkSessionStartTime) return null;
 
     const now = Date.now();
@@ -443,7 +443,7 @@ export function useTimer() {
     }
     
     setSessionToSummarize(session);
-  }, []);
+  }, [setSessionToConfirm, setIsShortSessionConfirmOpen, setSessionToSummarize]);
   
   const closeShortSessionConfirm = useCallback((shouldLog: boolean) => {
       setIsShortSessionConfirmOpen(false);
@@ -457,7 +457,30 @@ export function useTimer() {
       setSessionToConfirm(null);
   }, [sessionToConfirm, _actuallyLogWorkEntry, activeSessions, updateFirestore]);
 
-  
+  const endSession = useCallback((sessionId: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime) {
+        logWorkEntry(session);
+    } else {
+        const newSessions = activeSessions.map(s => {
+            if (s.id === sessionId) {
+                return {
+                    ...s, 
+                    lastWorkSessionStartTime: null, 
+                    currentTime: 0, 
+                    tasks: [], 
+                    isRunning: false,
+                    currentInterval: 'work',
+                    timersCompletedThisSet: 0, 
+                };
+            }
+            return s;
+        });
+        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    }
+  }, [activeSessions, logWorkEntry, updateFirestore]);
 
   const removeSession = useCallback((sessionId: string) => {
     let sessionToLog: ActiveSession | undefined;
@@ -483,9 +506,9 @@ export function useTimer() {
   }, [activeSessions, toast, updateFirestore]);
 
   const logSessionFromSummary = useCallback((session: ActiveSession, summary?: string) => {
-      logWorkEntry(session, summary, { resetToDefault: true });
+      _actuallyLogWorkEntry(session, summary, { resetToDefault: true });
       setSessionToSummarize(null);
-  }, [logWorkEntry]);
+  }, [_actuallyLogWorkEntry, setSessionToSummarize]);
 
   const closeSummaryModal = useCallback(() => {
     if (sessionToSummarize) {
@@ -908,7 +931,7 @@ export function useTimer() {
   return {
     settings, updateSettings, activeSessions, log, 
     addTaskToSession, toggleTaskInSession, deleteTaskFromSession,
-    addSession, removeSession, startTimer, pauseTimer,
+    addSession, removeSession, startTimer, pauseTimer, endSession,
     deleteLogEntry, formatTime, isClient, recentProjects, motivationalQuote, isFetchingQuote,
     activeFilter, setActiveFilter, processedChartData, insightsStats, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,

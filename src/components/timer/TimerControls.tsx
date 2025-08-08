@@ -3,14 +3,14 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, StopCircle, Pencil, Settings, ListChecks } from "lucide-react";
+import { Play, Pause, StopCircle, Pencil, ListChecks, Coffee } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface TimerControlsProps {
   session: any;
   onStartPause: () => void;
-  onReset: () => void;
+  onEndSession: () => void;
   onSkip: () => void;
   isTimerRunning: boolean;
   mode: IntervalType;
@@ -25,7 +25,7 @@ const buttonVariants = {
   exit: { opacity: 0, scale: 0.8, y: -5, transition: { duration: 0.15 } },
 };
 
-export function TimerControls({ session, onStartPause, onReset, onSkip, isTimerRunning, mode, onOpenEditActiveSessionModal, onToggleCardFlip, className }: TimerControlsProps) {
+export function TimerControls({ session, onStartPause, onEndSession, onSkip, isTimerRunning, mode, onOpenEditActiveSessionModal, onToggleCardFlip, className }: TimerControlsProps) {
   const isBreakInterval = mode === 'shortBreak' || mode === 'longBreak';
 
   return (
@@ -65,14 +65,28 @@ export function TimerControls({ session, onStartPause, onReset, onSkip, isTimerR
         {isTimerRunning && (
             <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
                 <Button 
-                  onClick={onSkip} 
+                  onClick={onEndSession} 
                   variant="destructive" 
                   size="icon" 
                   className="h-10 w-10 rounded-lg"
-                  aria-label="End Current Tracking"
-                  title="End Current Tracking"
+                  aria-label="End & Log Session"
+                  title="End & Log Session"
                 >
                   <StopCircle className="h-5 w-5" />
+                </Button>
+              </motion.div>
+        )}
+        {isTimerRunning && mode === 'work' && (
+            <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
+                <Button 
+                  onClick={onSkip} 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-lg"
+                  aria-label="Take a Break"
+                  title="Take a Break"
+                >
+                  <Coffee className="h-5 w-5" />
                 </Button>
               </motion.div>
         )}

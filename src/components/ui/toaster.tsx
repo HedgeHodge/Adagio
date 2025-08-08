@@ -4,7 +4,6 @@
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
-  ToastClose,
   ToastDescription,
   ToastProvider,
   ToastTitle,
@@ -27,7 +26,6 @@ export function Toaster() {
               )}
             </div>
             {onUndo && <ToastAction altText="Undo" onClick={onUndo}>Undo</ToastAction>}
-            <ToastClose />
           </Toast>
         )
       })}
