@@ -152,6 +152,183 @@ export function useTimer() {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
+  const updateFirestore = useCallback(async (data: Partial<UserData>) => {
+    if (!currentUser) return;
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    try {
+      await updateDoc(userDocRef, { ...data, lastUpdated: Timestamp.now() });
+    } catch (error) {
+       // If doc doesn't exist, create it.
+      await setDoc(userDocRef, { ...data, lastUpdated: Timestamp.now() }, { merge: true });
+      console.error("Error updating Firestore, attempting to set.", error);
+    }
+  }, [currentUser]);
+
+  const updateRecentProjects = useCallback((projectName?: string) => {
+    if (!projectName || projectName.trim() === "") return;
+    const trimmedProjectName = projectName.trim();
+    
+    setRecentProjects(prev => {
+        const updatedRecent = [trimmedProjectName, ...prev.filter(p => p !== trimmedProjectName)].slice(0, MAX_RECENT_PROJECTS);
+        if (currentUser) {
+            updateFirestore({ recentProjects: updatedRecent });
+        } else {
+            localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
+        }
+        return updatedRecent;
+    });
+  }, [currentUser, updateFirestore]);
+
+  const advanceInterval = useCallback((session: ActiveSession, summary?: string) => {
+    if (session.currentInterval === 'work') {
+      const now = new Date();
+      const newLogEntry: LogEntry = cleanLogEntry({
+        id: `${now.getTime()}-${session.id}`,
+        startTime: new Date(session.lastWorkSessionStartTime || now.getTime()).toISOString(),
+        endTime: now.toISOString(),
+        type: 'work',
+        duration: Math.round(((now.getTime() - (session.lastWorkSessionStartTime || now.getTime())) / (1000 * 60))),
+        project: session.project,
+        summary: summary,
+        sessionId: session.id,
+      });
+
+      const newLog = [...log, newLogEntry];
+      if (currentUser) {
+        updateFirestore({ log: newLog.map(cleanLogEntry) });
+      } else {
+        localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
+      }
+      setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
+      updateRecentProjects(newLogEntry.project);
+      toast({
+        title: "Work session logged!",
+        description: `${newLogEntry.project || 'Work'}: ${formatTime(newLogEntry.duration * 60)}`,
+      });
+    }
+
+    const newPomodorosCompleted = session.currentInterval === 'work' ? session.timersCompletedThisSet + 1 : session.timersCompletedThisSet;
+    const isLongBreak = newPomodorosCompleted > 0 && newPomodorosCompleted % settings.timersPerSet === 0;
+    
+    let nextInterval: IntervalType;
+    let nextDuration: number;
+
+    if (session.currentInterval === 'work') {
+      nextInterval = isLongBreak ? 'longBreak' : 'shortBreak';
+      nextDuration = (isLongBreak ? settings.longBreakDuration : settings.shortBreakDuration) * 60;
+    } else {
+      nextInterval = 'work';
+      nextDuration = settings.workDuration * 60;
+    }
+
+    const newSessions = activeSessions.map(s => {
+      if (s.id === session.id) {
+        return {
+          ...s,
+          currentInterval: nextInterval,
+          timersCompletedThisSet: newPomodorosCompleted,
+          currentTime: nextDuration,
+          isRunning: true,
+        };
+      }
+      return s;
+    });
+
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
+  }, [log, currentUser, isPremium, settings, activeSessions, toast, updateFirestore, filterLogForFreeTier, updateRecentProjects, formatTime]);
+
+
+  const skipInterval = useCallback((sessionId: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+  
+    // Stop the timer
+    if (timerRefs.current[sessionId]) {
+      clearInterval(timerRefs.current[sessionId]!);
+      timerRefs.current[sessionId] = null;
+    }
+  
+    const newPomodorosCompleted = session.currentInterval === 'work' ? session.timersCompletedThisSet + 1 : session.timersCompletedThisSet;
+    const isLongBreak = newPomodorosCompleted > 0 && newPomodorosCompleted % settings.timersPerSet === 0;
+    
+    let nextInterval: IntervalType;
+    let nextDuration: number;
+  
+    if (session.currentInterval === 'work') {
+      nextInterval = isLongBreak ? 'longBreak' : 'shortBreak';
+      nextDuration = (isLongBreak ? settings.longBreakDuration : settings.shortBreakDuration) * 60;
+    } else {
+      nextInterval = 'work';
+      nextDuration = settings.workDuration * 60;
+    }
+  
+    const newSessions = activeSessions.map(s => {
+      if (s.id === sessionId) {
+        return {
+          ...s,
+          isRunning: false, // Pause timer on skip
+          currentInterval: nextInterval,
+          timersCompletedThisSet: newPomodorosCompleted,
+          currentTime: nextDuration,
+        };
+      }
+      return s;
+    });
+  
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
+  
+    toast({
+      title: "Interval Skipped",
+      description: `Starting ${nextInterval === 'work' ? 'work session' : 'break'}.`,
+    });
+  }, [activeSessions, settings, currentUser, updateFirestore, toast]);
+  
+
+  useEffect(() => {
+    activeSessions.forEach(session => {
+      if (session.isRunning) {
+        if (!timerRefs.current[session.id]) {
+          timerRefs.current[session.id] = setInterval(() => {
+            startTransition(() => {
+              setActiveSessions(prevSessions =>
+                prevSessions.map(s => {
+                  if (s.id === session.id && s.isRunning) {
+                    if (s.currentTime > 0) {
+                      return { ...s, currentTime: s.currentTime - 1 };
+                    } else {
+                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
+                      advanceInterval(s);
+                      // Return the updated session from advanceInterval
+                      return prevSessions.find(newS => newS.id === s.id) || s;
+                    }
+                  }
+                  return s;
+                })
+              );
+            });
+          }, 1000);
+        }
+      } else {
+        if (timerRefs.current[session.id]) {
+          clearInterval(timerRefs.current[session.id]!);
+          timerRefs.current[session.id] = null;
+        }
+      }
+    });
+  
+    return () => { Object.values(timerRefs.current).forEach(timerId => { if (timerId) clearInterval(timerId); }); timerRefs.current = {}; };
+  }, [activeSessions, advanceInterval]);
+  
   // Effect for setting up the component and loading initial data
   useEffect(() => {
     setIsClient(true);
@@ -245,18 +422,6 @@ export function useTimer() {
     return () => unsubscribe();
   }, [currentUser, isClient, isPremium, loadLocalData, filterLogForFreeTier, toast]);
 
-  const updateFirestore = useCallback(async (data: Partial<UserData>) => {
-    if (!currentUser) return;
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    try {
-      await updateDoc(userDocRef, { ...data, lastUpdated: Timestamp.now() });
-    } catch (error) {
-       // If doc doesn't exist, create it.
-      await setDoc(userDocRef, { ...data, lastUpdated: Timestamp.now() }, { merge: true });
-      console.error("Error updating Firestore, attempting to set.", error);
-    }
-  }, [currentUser]);
-
   const fetchAndSetQuote = useCallback(async () => {
     if (isFetchingQuote) return;
     setIsFetchingQuote(true);
@@ -276,67 +441,6 @@ export function useTimer() {
     }
   }, [isFetchingQuote, isPremium]);
 
-  useEffect(() => {
-    activeSessions.forEach(session => {
-      if (session.isRunning) {
-        if (!timerRefs.current[session.id]) {
-          timerRefs.current[session.id] = setInterval(() => {
-            startTransition(() => {
-              setActiveSessions(prevSessions =>
-                prevSessions.map(s => {
-                  if (s.id === session.id && s.isRunning) {
-                    if (s.lastWorkSessionStartTime === null) return s; // Should not happen if running
-
-                    const now = Date.now();
-                    const newTime = Math.round((now - s.lastWorkSessionStartTime) / 1000);
-
-                    if (!notificationSentRefs.current[s.id]) {
-                      notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
-                    }
-
-                    if (s.currentInterval === 'work' && !notificationSentRefs.current[s.id].work && newTime >= settings.workDuration * 60) {
-                      setTimeout(() => toast({ title: `Focus: ${s.project}`, description: `Consider a break. ${settings.workDuration} min done.` }), 0);
-                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                      notificationSentRefs.current[s.id].work = true;
-                    } else if (s.currentInterval === 'shortBreak' && !notificationSentRefs.current[s.id].shortBreak && newTime >= settings.shortBreakDuration * 60) {
-                      setTimeout(() => toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.shortBreakDuration}-min break is up.` }), 0);
-                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                      notificationSentRefs.current[s.id].shortBreak = true;
-                    } else if (s.currentInterval === 'longBreak' && !notificationSentRefs.current[s.id].longBreak && newTime >= settings.longBreakDuration * 60) {
-                      setTimeout(() => toast({ title: `Break Over: ${s.project}`, description: `Your ${settings.longBreakDuration}-min break is up.` }), 0);
-                      if(audioRef.current) audioRef.current.play().catch(e => console.warn("Audio play failed", e));
-                      notificationSentRefs.current[s.id].longBreak = true;
-                    }
-                    return { ...s, currentTime: newTime };
-                  }
-                  return s;
-                })
-              );
-            });
-          }, 1000);
-        }
-      } else {
-        if (timerRefs.current[session.id]) {
-          clearInterval(timerRefs.current[session.id]!);
-          timerRefs.current[session.id] = null;
-        }
-      }
-    });
-
-    return () => { Object.values(timerRefs.current).forEach(timerId => { if (timerId) clearInterval(timerId); }); timerRefs.current = {}; };
-  }, [activeSessions, settings, toast]);
-
-  const updateRecentProjects = useCallback((projectName?: string) => {
-    if (!projectName || projectName.trim() === "") return;
-    const trimmedProjectName = projectName.trim();
-    
-    setRecentProjects(prev => {
-        const updatedRecent = [trimmedProjectName, ...prev.filter(p => p !== trimmedProjectName)].slice(0, MAX_RECENT_PROJECTS);
-        updateFirestore({ recentProjects: updatedRecent });
-        return updatedRecent;
-    });
-  }, [updateFirestore]);
-
   const addSession = useCallback((projectName: string) => {
     const trimmedProjectName = projectName.trim();
     if (!trimmedProjectName) {
@@ -347,204 +451,139 @@ export function useTimer() {
       id: Date.now().toString(),
       project: trimmedProjectName,
       tasks: [],
+      currentInterval: 'work',
+      currentTime: settings.workDuration * 60,
+      isRunning: false,
+      timersCompletedThisSet: 0,
+      lastWorkSessionStartTime: null,
     });
 
     const newSessions = [...activeSessions, newSession];
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
 
     updateRecentProjects(trimmedProjectName);
     setInputProjectName('');
-    if (!notificationSentRefs.current[newSession.id]) {
-        notificationSentRefs.current[newSession.id] = { work: false, shortBreak: false, longBreak: false };
-    }
-  }, [toast, updateRecentProjects, activeSessions, updateFirestore]);
+  }, [toast, updateRecentProjects, activeSessions, updateFirestore, currentUser, settings.workDuration]);
 
   const startTimer = useCallback((sessionId: string) => {
     const newSessions = activeSessions.map(s => {
       if (s.id === sessionId) {
         let { lastWorkSessionStartTime } = s;
-        if (s.currentInterval === 'work') {
-          if (s.currentTime === 0 && (lastWorkSessionStartTime === null || s.isRunning === false)) {
+        if (s.currentInterval === 'work' && lastWorkSessionStartTime === null) {
             lastWorkSessionStartTime = Date.now();
-          } else if (s.isRunning === false) {
-            // Adjust start time based on current time to avoid losing progress
-            lastWorkSessionStartTime = Date.now() - s.currentTime * 1000;
-          }
         }
         return { ...s, isRunning: true, lastWorkSessionStartTime };
       }
       return s;
     });
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, updateFirestore]);
+
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+        localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
+  }, [activeSessions, currentUser, updateFirestore]);
 
   const pauseTimer = useCallback((sessionId: string) => {
     const newSessions = activeSessions.map(s => s.id === sessionId ? { ...s, isRunning: false } : s);
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, updateFirestore]);
-
-  const _actuallyLogWorkEntry = useCallback((session: ActiveSession, summary?: string, options: { resetToDefault?: boolean } = {}) => {
-    if (!session.lastWorkSessionStartTime) return null;
-    
-    const now = Date.now();
-    const calculatedDurationMinutes = Math.max(0, Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60)));
-
-    const newLogEntry: LogEntry = cleanLogEntry({
-      id: `${now}-${session.id}`,
-      startTime: new Date(session.lastWorkSessionStartTime).toISOString(),
-      endTime: new Date(now).toISOString(),
-      type: 'work',
-      duration: calculatedDurationMinutes,
-      project: session.project,
-      summary: summary,
-      sessionId: session.id,
-    });
-    
-    updateFirestore({ log: arrayUnion(newLogEntry) as any });
-    updateRecentProjects(newLogEntry.project);
-    
-    toast({
-      title: "Work entry logged!",
-      description: `${newLogEntry.project || 'Work'}: ${formatTime(newLogEntry.duration * 60)}`,
-    });
-    
-    // Reset the session state after logging
-    const newSessions = activeSessions.map(s => {
-        if (s.id === session.id) {
-            if (options.resetToDefault) {
-                return {
-                    ...s, 
-                    lastWorkSessionStartTime: null, 
-                    currentTime: 0, 
-                    tasks: [], 
-                    isRunning: false,
-                    currentInterval: 'work',
-                    timersCompletedThisSet: 0, 
-                };
-            }
-            return {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false};
-        }
-        return s;
-    });
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, updateFirestore, updateRecentProjects, toast, formatTime]);
-
-
-  const logWorkEntry = useCallback((session: ActiveSession, summary?: string) => {
-    if (!session.lastWorkSessionStartTime) return null;
-
-    const now = Date.now();
-    const calculatedDurationMinutes = Math.round((now - session.lastWorkSessionStartTime) / (1000 * 60));
-
-    if (calculatedDurationMinutes < 1) {
-        setSessionToConfirm({ session, summary });
-        setIsShortSessionConfirmOpen(true);
-        return;
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
     }
-    
-    setSessionToSummarize(session);
-  }, [setSessionToConfirm, setIsShortSessionConfirmOpen, setSessionToSummarize]);
-  
-  const closeShortSessionConfirm = useCallback((shouldLog: boolean) => {
-      setIsShortSessionConfirmOpen(false);
-      if (shouldLog && sessionToConfirm) {
-          _actuallyLogWorkEntry(sessionToConfirm.session, sessionToConfirm.summary);
-      } else if (sessionToConfirm) {
-           // Reset session if user cancels logging the short session
-           const newSessions = activeSessions.map(s => s.id === sessionToConfirm.session.id ? {...s, lastWorkSessionStartTime: null, currentTime: 0, tasks: [], isRunning: false} : s);
-           updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-      }
-      setSessionToConfirm(null);
-  }, [sessionToConfirm, _actuallyLogWorkEntry, activeSessions, updateFirestore]);
+    setActiveSessions(newSessions);
+  }, [activeSessions, currentUser, updateFirestore]);
+
+  const logSessionFromSummary = useCallback((session: ActiveSession, summary?: string) => {
+      advanceInterval(session, summary);
+      setSessionToSummarize(null);
+  }, [advanceInterval]);
 
   const endSession = useCallback((sessionId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
-
-    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime) {
-        logWorkEntry(session);
-    } else {
-        const newSessions = activeSessions.map(s => {
-            if (s.id === sessionId) {
-                return {
-                    ...s, 
-                    lastWorkSessionStartTime: null, 
-                    currentTime: 0, 
-                    tasks: [], 
-                    isRunning: false,
-                    currentInterval: 'work',
-                    timersCompletedThisSet: 0, 
-                };
-            }
-            return s;
-        });
-        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    
+    if (timerRefs.current[sessionId]) {
+        clearInterval(timerRefs.current[sessionId]!);
+        timerRefs.current[sessionId] = null;
     }
-  }, [activeSessions, logWorkEntry, updateFirestore]);
-
-  const removeSession = useCallback((sessionId: string) => {
-    let sessionToLog: ActiveSession | undefined;
-    const currentSession = activeSessions.find(s => s.id === sessionId);
-    const projectNameForToast = currentSession?.project || 'Untitled Session';
-
-    if (currentSession && currentSession.currentInterval === 'work' && currentSession.isRunning && currentSession.lastWorkSessionStartTime && currentSession.currentTime > 0) {
-      sessionToLog = { ...currentSession }; 
-    }
-
+    
     const newSessions = activeSessions.filter(s => s.id !== sessionId);
 
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-
-    if (sessionToLog) {
-      setSessionToSummarize(sessionToLog);
+    if (currentUser) {
+        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
     } else {
-        toast({title: `Session "${projectNameForToast}" removed`});
+        localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
     }
+    setActiveSessions(newSessions);
 
-    if (timerRefs.current[sessionId]) { clearInterval(timerRefs.current[sessionId]!); delete timerRefs.current[sessionId]; }
-    if (notificationSentRefs.current[sessionId]) delete notificationSentRefs.current[sessionId];
-  }, [activeSessions, toast, updateFirestore]);
+    if (session.currentInterval === 'work' && session.currentTime < settings.workDuration * 60) {
+      if (isPremium) {
+        setSessionToSummarize(session);
+      } else {
+        advanceInterval(session);
+      }
+    } else {
+        toast({title: `Session "${session.project}" ended`});
+    }
+  }, [activeSessions, currentUser, isPremium, settings.workDuration, toast, updateFirestore, advanceInterval]);
 
-  const logSessionFromSummary = useCallback((session: ActiveSession, summary?: string) => {
-      _actuallyLogWorkEntry(session, summary, { resetToDefault: true });
-      setSessionToSummarize(null);
-  }, [_actuallyLogWorkEntry, setSessionToSummarize]);
+  const removeSession = useCallback((sessionId: string) => {
+    const sessionToEnd = activeSessions.find(s => s.id === sessionId);
+    if (sessionToEnd) {
+        endSession(sessionId);
+    }
+  }, [activeSessions, endSession]);
 
   const closeSummaryModal = useCallback(() => {
-    if (sessionToSummarize) {
-      toast({ title: "Logging Canceled", description: `"${sessionToSummarize.project}" session was not logged. Resuming timer.`, variant: "default" });
-      
-      // Resume the timer
-      const newSessions = activeSessions.map(s => 
-          s.id === sessionToSummarize.id ? { ...s, isRunning: true } : s
-      );
-
-      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-    }
     setSessionToSummarize(null);
-  }, [sessionToSummarize, toast, activeSessions, updateFirestore]);
+  }, []);
 
   const updateSettings = useCallback((newSettings: Partial<TimerSettings>) => { 
     const updatedSettings = { ...settings, ...newSettings };
-    updateFirestore({ settings: updatedSettings });
-  }, [settings, updateFirestore]);
+    if (currentUser) {
+      updateFirestore({ settings: updatedSettings });
+    } else {
+      localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(updatedSettings));
+    }
+    setSettings(updatedSettings);
+  }, [settings, currentUser, updateFirestore]);
 
   const undoDeleteLogEntry = useCallback(async (entry: LogEntry) => {
-    await updateFirestore({ log: arrayUnion(entry) as any });
-  }, [updateFirestore]);
+    const newLog = [...log, entry];
+    if (currentUser) {
+      await updateFirestore({ log: newLog.map(cleanLogEntry) });
+    } else {
+      localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
+    }
+    setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
+  }, [log, currentUser, updateFirestore, isPremium, filterLogForFreeTier]);
 
   const deleteLogEntry = useCallback((id: string) => {
     const entryToDelete = log.find(entry => entry.id === id);
     if (!entryToDelete) return;
   
-    updateFirestore({ log: arrayRemove(entryToDelete) as any });
+    const newLog = log.filter(entry => entry.id !== id);
+    if (currentUser) {
+      updateFirestore({ log: newLog.map(cleanLogEntry) });
+    } else {
+      localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
+    }
+    setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
   
     toast({
       title: "Entry deleted",
       onUndo: () => undoDeleteLogEntry(entryToDelete),
       duration: UNDO_TIMEOUT,
     });
-  }, [log, updateFirestore, toast, undoDeleteLogEntry]);
+  }, [log, currentUser, isPremium, updateFirestore, toast, undoDeleteLogEntry, filterLogForFreeTier]);
   
   const openEditModal = useCallback((entry: LogEntry) => { setEntryToEdit(cleanLogEntry(entry)); setIsEditModalOpen(true); }, []);
   const closeEditModal = useCallback(() => { setIsEditModalOpen(false); setEntryToEdit(null); }, []);
@@ -552,26 +591,34 @@ export function useTimer() {
   const updateLogEntry = useCallback((updatedEntryData: LogEntry) => {
     const cleanedUpdatedEntry = cleanLogEntry(updatedEntryData);
     
-    const entryToUpdate = log.find(e => e.id === cleanedUpdatedEntry.id);
-    if (entryToUpdate) {
-        const newLog = log.map(entry => entry.id === cleanedUpdatedEntry.id ? cleanedUpdatedEntry : entry);
-        updateFirestore({ log: newLog.map(cleanLogEntry) as any });
+    const newLog = log.map(entry => entry.id === cleanedUpdatedEntry.id ? cleanedUpdatedEntry : entry);
+    if (currentUser) {
+      updateFirestore({ log: newLog.map(cleanLogEntry) });
+    } else {
+      localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
     }
+    setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
 
     if (cleanedUpdatedEntry.project) updateRecentProjects(cleanedUpdatedEntry.project);
     toast({ title: "Entry updated successfully!" });
     closeEditModal();
-  }, [toast, closeEditModal, updateRecentProjects, log, updateFirestore]);
+  }, [toast, closeEditModal, updateRecentProjects, log, currentUser, isPremium, updateFirestore, filterLogForFreeTier]);
 
   const addManualLogEntry = useCallback((newEntryData: Omit<LogEntry, 'id' | 'type' | 'sessionId'>) => {
     const newEntry: LogEntry = { ...newEntryData, id: `${Date.now()}-manual`, type: 'work' };
     const cleanedNewEntry = cleanLogEntry(newEntry);
     
-    updateFirestore({ log: arrayUnion(cleanedNewEntry) as any });
+    const newLog = [...log, cleanedNewEntry];
+    if (currentUser) {
+      updateFirestore({ log: newLog.map(cleanLogEntry) });
+    } else {
+      localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(newLog));
+    }
+    setLog(isPremium ? newLog : filterLogForFreeTier(newLog));
 
     if (cleanedNewEntry.project) updateRecentProjects(cleanedNewEntry.project);
     toast({ title: "Manual entry added!" });
-  }, [updateRecentProjects, toast, updateFirestore]);
+  }, [updateRecentProjects, toast, log, currentUser, isPremium, updateFirestore, filterLogForFreeTier]);
   
   const openEditActiveSessionModal = useCallback((session: ActiveSession) => { setActiveSessionToEdit(cleanActiveSession(session)); setIsEditActiveSessionModalOpen(true); }, []);
   const closeEditActiveSessionModal = useCallback(() => { setIsEditActiveSessionModalOpen(false); setActiveSessionToEdit(null); }, []);
@@ -583,84 +630,50 @@ export function useTimer() {
           clearInterval(timerRefs.current[s.id]!);
           timerRefs.current[s.id] = null;
         }
-        // We also need to reset the notification flags for this session
-        if (notificationSentRefs.current[s.id]) {
-            notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
-        }
-        return { ...s, isRunning: false, currentTime: 0, lastWorkSessionStartTime: null };
+        return { ...s, isRunning: false, currentTime: settings.workDuration * 60, currentInterval: 'work' as IntervalType, timersCompletedThisSet: 0 };
       }
       return s;
     });
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, updateFirestore]);
-
-  const skipInterval = useCallback((sessionId: string) => {
-    const session = activeSessions.find(s => s.id === sessionId);
-    if (!session) return;
-
-    // Log the current work session if it's being skipped
-    if (session.currentInterval === 'work' && session.lastWorkSessionStartTime) {
-      logWorkEntry(session);
+    
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
     }
-
-    const newSessions = activeSessions.map(s => {
-      if (s.id === sessionId) {
-        const newPomodorosCompleted = s.currentInterval === 'work' ? s.timersCompletedThisSet + 1 : s.timersCompletedThisSet;
-        const isLongBreak = newPomodorosCompleted > 0 && newPomodorosCompleted % settings.timersPerSet === 0;
-        
-        let nextInterval: IntervalType;
-        if (s.currentInterval === 'work') {
-          nextInterval = isLongBreak ? 'longBreak' : 'shortBreak';
-        } else {
-          nextInterval = 'work';
-        }
-
-        if (timerRefs.current[s.id]) {
-          clearInterval(timerRefs.current[s.id]!);
-          timerRefs.current[s.id] = null;
-        }
-        
-        // Reset notification flags for the new interval
-        if (notificationSentRefs.current[s.id]) {
-            notificationSentRefs.current[s.id] = { work: false, shortBreak: false, longBreak: false };
-        }
-
-        return {
-          ...s,
-          currentInterval: nextInterval,
-          timersCompletedThisSet: nextInterval === 'work' ? s.timersCompletedThisSet : newPomodorosCompleted,
-          currentTime: 0,
-          isRunning: false,
-          lastWorkSessionStartTime: null,
-        };
-      }
-      return s;
-    });
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, settings.timersPerSet, updateFirestore, logWorkEntry]);
+    setActiveSessions(newSessions);
+  }, [activeSessions, settings.workDuration, currentUser, updateFirestore]);
 
   const updateActiveSessionStartTime = useCallback((sessionId: string, newStartTime: number) => {""
     const newSessions = activeSessions.map(s => {
       if (s.id === sessionId && s.lastWorkSessionStartTime !== null) {
         const newCurrentTime = Math.max(0, Math.round((Date.now() - newStartTime) / 1000));
-        if (notificationSentRefs.current[s.id]) notificationSentRefs.current[s.id].work = false;
-        return { ...s, lastWorkSessionStartTime: newStartTime, currentTime: newCurrentTime };
+        return { ...s, lastWorkSessionStartTime: newStartTime, currentTime: settings.workDuration * 60 - newCurrentTime };
       }
       return s;
     });
 
-    updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    if (currentUser) {
+      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+      localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
     
     closeEditActiveSessionModal();
     toast({ title: "Start time updated!" });
-  }, [closeEditActiveSessionModal, toast, activeSessions, updateFirestore]);
+  }, [closeEditActiveSessionModal, toast, activeSessions, currentUser, updateFirestore, settings.workDuration]);
 
   const updateSessionTasks = useCallback((sessionId: string, newTasks: Task[]) => {
       const newSessions = activeSessions.map(session =>
         session.id === sessionId ? { ...session, tasks: newTasks } : session
       );
-      updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
-  }, [activeSessions, updateFirestore]);
+      if (currentUser) {
+        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+      } else {
+        localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+      }
+      setActiveSessions(newSessions);
+  }, [activeSessions, currentUser, updateFirestore]);
 
   const addTaskToSession = useCallback((sessionId: string, text: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
@@ -799,7 +812,12 @@ export function useTimer() {
     const newEntries = cleanedEntries.filter(e => !existingIds.has(e.id));
     
     const combinedLog = [...log, ...newEntries];
-    updateFirestore({ log: combinedLog.map(cleanLogEntry) });
+    if (currentUser) {
+        updateFirestore({ log: combinedLog.map(cleanLogEntry) });
+    } else {
+        localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(combinedLog));
+    }
+    setLog(isPremium ? combinedLog : filterLogForFreeTier(combinedLog));
 
     updateRecentProjects(testProjects[0]);
     updateRecentProjects(testProjects[1]);
@@ -808,16 +826,21 @@ export function useTimer() {
     updateRecentProjects(testProjects[4]);
 
     toast({ title: "Test Data Populated!", description: "10 new log entries added." });
-  }, [toast, log, updateFirestore, updateRecentProjects]);
+  }, [toast, log, updateFirestore, updateRecentProjects, currentUser, isPremium, filterLogForFreeTier]);
 
   const removeRecentProject = useCallback((projectName: string) => {
     const updatedRecent = recentProjects.filter(p => p !== projectName);
-    updateFirestore({ recentProjects: updatedRecent });
+    if (currentUser) {
+        updateFirestore({ recentProjects: updatedRecent });
+    } else {
+        localStorage.setItem(LOCAL_RECENT_PROJECTS_KEY, JSON.stringify(updatedRecent));
+    }
+    setRecentProjects(updatedRecent);
     toast({
       title: "Project Removed",
       description: `"${projectName}" has been removed from your recent projects.`,
     });
-  }, [toast, recentProjects, updateFirestore]);
+  }, [toast, recentProjects, updateFirestore, currentUser]);
 
   const wipeAllData = useCallback(() => {
     // Clear local state
@@ -904,11 +927,7 @@ export function useTimer() {
       try {
         navigator.mediaSession.setActionHandler('play', () => startTimer(firstRunningSession.id));
         navigator.mediaSession.setActionHandler('pause', () => pauseTimer(firstRunningSession.id));
-        if (firstRunningSession.currentInterval === 'work') {
-          navigator.mediaSession.setActionHandler('stop', () => logWorkEntry(firstRunningSession));
-        } else {
-            navigator.mediaSession.setActionHandler('stop', null);
-        }
+        navigator.mediaSession.setActionHandler('stop', () => endSession(firstRunningSession.id));
       } catch (error) {
         console.error("Error setting media session action handlers:", error);
       }
@@ -925,7 +944,7 @@ export function useTimer() {
          console.error("Error clearing media session action handlers:", error);
       }
     }
-  }, [activeSessions, isClient, startTimer, pauseTimer, formatTime, logWorkEntry]);
+  }, [activeSessions, isClient, startTimer, pauseTimer, endSession, formatTime]);
 
 
   return {
@@ -944,8 +963,7 @@ export function useTimer() {
     isSettingsModalOpen, openSettingsModal, closeSettingsModal,
     isWipeConfirmOpen, setIsWipeConfirmOpen, wipeAllData,
     hasExceededFreeLogLimit,
-    isShortSessionConfirmOpen, closeShortSessionConfirm,
-
+    isShortSessionConfirmOpen,
     isGeneratingSummary, generatePeriodSummary, periodSummary, isPeriodSummaryModalOpen, closePeriodSummaryModal,
     filteredLogForPeriod,
   };
