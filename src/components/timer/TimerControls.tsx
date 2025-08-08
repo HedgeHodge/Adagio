@@ -3,7 +3,7 @@
 
 import type { IntervalType } from '@/types/pomodoro';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, StopCircle, Pencil, ListChecks, Coffee } from "lucide-react";
+import { Play, Pause, StopCircle, Pencil, ListChecks, Coffee, FastForward } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +12,7 @@ interface TimerControlsProps {
   onStartPause: () => void;
   onEndSession: () => void;
   onSkip: () => void;
+  onSkipBreak: () => void;
   isTimerRunning: boolean;
   mode: IntervalType;
   onOpenEditActiveSessionModal: () => void;
@@ -25,7 +26,7 @@ const buttonVariants = {
   exit: { opacity: 0, scale: 0.8, y: -5, transition: { duration: 0.15 } },
 };
 
-export function TimerControls({ session, onStartPause, onEndSession, onSkip, isTimerRunning, mode, onOpenEditActiveSessionModal, onToggleCardFlip, className }: TimerControlsProps) {
+export function TimerControls({ session, onStartPause, onEndSession, onSkip, onSkipBreak, isTimerRunning, mode, onOpenEditActiveSessionModal, onToggleCardFlip, className }: TimerControlsProps) {
   const isBreakInterval = mode === 'shortBreak' || mode === 'longBreak';
 
   return (
@@ -90,6 +91,20 @@ export function TimerControls({ session, onStartPause, onEndSession, onSkip, isT
                 </Button>
               </motion.div>
         )}
+         {isTimerRunning && isBreakInterval && (
+            <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.05 }}>
+                <Button 
+                  onClick={onSkipBreak} 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-lg"
+                  aria-label="End Break"
+                  title="End Break"
+                >
+                  <FastForward className="h-5 w-5" />
+                </Button>
+              </motion.div>
+        )}
         <motion.div variants={buttonVariants} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
           <Button 
             onClick={onOpenEditActiveSessionModal} 
@@ -118,3 +133,5 @@ export function TimerControls({ session, onStartPause, onEndSession, onSkip, isT
     </div>
   );
 }
+
+    

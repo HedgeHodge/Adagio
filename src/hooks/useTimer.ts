@@ -536,6 +536,41 @@ export function useTimer() {
     });
   }, [activeSessions, settings, currentUser, isPremium, updateFirestore, toast, logWorkEntry]);
   
+  const skipBreak = useCallback((sessionId: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session || (session.currentInterval !== 'shortBreak' && session.currentInterval !== 'longBreak')) return;
+
+    if (timerRefs.current[sessionId]) {
+        clearInterval(timerRefs.current[sessionId]!);
+        timerRefs.current[sessionId] = null;
+    }
+
+    const newSessions = activeSessions.map(s => {
+        if (s.id === sessionId) {
+            return {
+                ...s,
+                isRunning: false,
+                currentInterval: 'work' as IntervalType,
+                currentTime: 0,
+                lastWorkSessionStartTime: null,
+            };
+        }
+        return s;
+    });
+
+    if (currentUser) {
+        updateFirestore({ activeSessions: newSessions.map(cleanActiveSession) });
+    } else {
+        localStorage.setItem(LOCAL_ACTIVE_SESSIONS_KEY, JSON.stringify(newSessions));
+    }
+    setActiveSessions(newSessions);
+
+    toast({
+        title: "Back to Work!",
+        description: "Your next focus session is ready.",
+    });
+  }, [activeSessions, currentUser, updateFirestore, toast]);
+
   const removeSession = useCallback((sessionId: string) => {
     const sessionToEnd = activeSessions.find(s => s.id === sessionId);
     if (sessionToEnd) {
@@ -956,7 +991,7 @@ export function useTimer() {
     activeFilter, setActiveFilter, processedChartData, insightsStats, isEditModalOpen, entryToEdit, openEditModal,
     closeEditModal, updateLogEntry, addManualLogEntry, populateTestData, isDataLoading,
     isEditActiveSessionModalOpen, activeSessionToEdit, openEditActiveSessionModal, closeEditActiveSessionModal, updateActiveSessionStartTime,
-    resetTimer, skipInterval,
+    resetTimer, skipInterval, skipBreak,
     sessionToSummarize, logSessionFromSummary, removeRecentProject, closeSummaryModal,
     inputProjectName, setInputProjectName,
     customDateRange, setCustomDateRange,
@@ -969,3 +1004,5 @@ export function useTimer() {
     filteredLogForPeriod,
   };
 }
+
+    

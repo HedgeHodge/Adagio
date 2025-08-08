@@ -71,6 +71,7 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
         toggleTaskInSession,
         deleteTaskFromSession,
         addSession,
+        skipBreak,
     } = pomodoroHooks;
     
     const [isFlipped, setIsFlipped] = useState(false);
@@ -233,6 +234,7 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
                                             onStartPause={() => session.isRunning ? pauseTimer(session.id) : startTimer(session.id)}
                                             onEndSession={() => endSession(session.id)}
                                             onSkip={() => pomodoroHooks.skipInterval(session.id)}
+                                            onSkipBreak={() => skipBreak(session.id)}
                                             isTimerRunning={session.isRunning}
                                             mode={session.currentInterval}
                                             onOpenEditActiveSessionModal={() => openEditActiveSessionModal(session)}
@@ -293,3 +295,5 @@ export function SessionCard({ session, index, activeSessionIndex, paginate, swip
         </AnimatePresence>
     );
 }
+
+    
