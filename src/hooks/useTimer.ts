@@ -902,7 +902,7 @@ export function useTimer() {
          console.error("Error clearing media session action handlers:", error);
       }
     }
-  }, [activeSessions, isClient, startTimer, pauseTimer, formatTime]);
+  }, [activeSessions, isClient, startTimer, pauseTimer, formatTime, logWorkEntry]);
 
 
   return {
