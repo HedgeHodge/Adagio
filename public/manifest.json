@@ -3,10 +3,10 @@
   "short_name": "Adagio",
   "start_url": "/",
   "scope": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#D4E9E2",
   "theme_color": "#D4E9E2",
-  "description": "A simple and beautiful Pomodoro timer to help you focus.",
+  "description": "Finally, a time tracker designed for humans. Track your work, manage tasks, and use the built-in Pomodoro timer to stay focused and energized. Get more done, stress less, and find your flow.",
   "icons": [
     {
       "src": "/icons/android/mipmap-mdpi/adagio_icon.png",
