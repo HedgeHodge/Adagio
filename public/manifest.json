@@ -4,8 +4,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#D4E9E2",
-  "theme_color": "#D4E9E2",
+  
   "description": "Finally, a time tracker designed for humans. Track your work, manage tasks, and use the built-in Pomodoro timer to stay focused and energized. Get more done, stress less, and find your flow.",
   "icons": [
     {
