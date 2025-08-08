@@ -513,7 +513,7 @@ export function useTimer() {
       if (s.id === sessionId) {
         return {
           ...s,
-          isRunning: false, // Pause timer on skip
+          isRunning: true, // Start break timer immediately
           currentInterval: nextInterval,
           timersCompletedThisSet: newPomodorosCompleted,
           currentTime: nextDuration,
