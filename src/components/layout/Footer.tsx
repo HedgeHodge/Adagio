@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -52,6 +53,7 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                     icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Timer"
                     onMouseDown={triggerHapticFeedback}
+                    onTouchStart={triggerHapticFeedback}
                     onClick={() => setActiveTab('timer')}
                     isActive={activeTab === 'timer'}
                     className="rounded-2xl"
@@ -60,6 +62,7 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                     icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Log"
                     onMouseDown={triggerHapticFeedback}
+                    onTouchStart={triggerHapticFeedback}
                     onClick={() => setActiveTab('log')}
                     isActive={activeTab === 'log'}
                     className="rounded-2xl"
@@ -68,6 +71,7 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                     icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Insights"
                     onMouseDown={triggerHapticFeedback}
+                    onTouchStart={triggerHapticFeedback}
                     onClick={() => setActiveTab('insights')}
                     isActive={activeTab === 'insights'}
                     className="rounded-2xl"
