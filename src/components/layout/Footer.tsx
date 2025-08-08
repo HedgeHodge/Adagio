@@ -52,7 +52,6 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                 <ActionButton
                     icon={<Clock className={cn("h-10 w-10", activeTab === 'timer' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Timer"
-                    onMouseDown={triggerHapticFeedback}
                     onTouchStart={triggerHapticFeedback}
                     onClick={() => setActiveTab('timer')}
                     isActive={activeTab === 'timer'}
@@ -61,7 +60,6 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                 <ActionButton
                     icon={<ListChecks className={cn("h-10 w-10", activeTab === 'log' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Log"
-                    onMouseDown={triggerHapticFeedback}
                     onTouchStart={triggerHapticFeedback}
                     onClick={() => setActiveTab('log')}
                     isActive={activeTab === 'log'}
@@ -70,7 +68,6 @@ export function Footer({ activeTab, setActiveTab }: FooterProps) {
                 <ActionButton
                     icon={<BarChart2 className={cn("h-10 w-10", activeTab === 'insights' ? 'text-primary' : 'text-muted-foreground')} />}
                     label="Insights"
-                    onMouseDown={triggerHapticFeedback}
                     onTouchStart={triggerHapticFeedback}
                     onClick={() => setActiveTab('insights')}
                     isActive={activeTab === 'insights'}
